@@ -1,30 +1,30 @@
 {
   "timers": {
     "workspace_analysis": {
-      "avg": 981,
-      "min": 981,
-      "max": 981,
+      "avg": 1121,
+      "min": 1121,
+      "max": 1121,
       "count": 1,
-      "total": 981,
-      "p95": 981,
-      "p99": 981
+      "total": 1121,
+      "p95": 1121,
+      "p99": 1121
     },
     "total_generation": {
-      "avg": 3,
-      "min": 3,
-      "max": 3,
+      "avg": 7,
+      "min": 7,
+      "max": 7,
       "count": 1,
-      "total": 3,
-      "p95": 3,
-      "p99": 3
+      "total": 7,
+      "p95": 7,
+      "p99": 7
     }
   },
   "counters": {},
   "gauges": {},
   "distributions": {},
   "metadata": {
-    "startTime": 2761.914292,
-    "endTime": 1751643306720,
-    "duration": 1751643303958.0857
+    "startTime": 2891.643917,
+    "endTime": 1751643972297,
+    "duration": 1751643969405.3562
   }
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-07-04T15:35:06.716Z",
+  "generatedAt": "2025-07-04T15:46:12.288Z",
   "stats": {
     "totalFiles": 82,
     "processedFiles": 0,
@@ -15,10 +15,10 @@
       "batchIndex": 0,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/index.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/index.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/types.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/types.ts"
         }
       ],
       "totalTokens": 5889,
@@ -31,52 +31,52 @@
       "batchIndex": 1,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/config.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/config.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/analytics/index.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/analytics/index.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/analyzer/index.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/commands/index.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/cli/index.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/analyzer/index.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/config/index.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/cli/index.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/commands/index.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/config/index.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/embeddings/index.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/embeddings/index.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/features/index.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/features/index.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/generator/index.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/operations/index.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/migration/index.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/migration/index.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/reporting/index.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/generator/index.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/operations/index.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/reporting/index.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/plugins/index.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/plugins/index.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/utils/index.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/utils/index.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/examples/plugins/api-documentation.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/examples/plugins/api-documentation.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/generator/AIClient.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/generator/AIClient.ts"
         }
       ],
       "totalTokens": 6721,
@@ -89,16 +89,19 @@
       "batchIndex": 2,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/plugins/ApiDocumentationPlugin.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/plugins/ApiDocumentationPlugin.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/types/quality.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/types/quality.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/cli.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/cli.ts"
+        },
+        {
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/commands/ValidateConfigCommand.ts"
         }
       ],
-      "totalTokens": 5818,
+      "totalTokens": 6341,
       "processingTimeMs": 0,
       "errors": []
     },
@@ -108,16 +111,13 @@
       "batchIndex": 3,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/config/ConfigValidator.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/config/ConfigValidator.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/commands/ValidateConfigCommand.ts"
-        },
-        {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/migration/ConfigMigrator.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/migration/ConfigMigrator.ts"
         }
       ],
-      "totalTokens": 7005,
+      "totalTokens": 6482,
       "processingTimeMs": 0,
       "errors": []
     },
@@ -127,22 +127,22 @@
       "batchIndex": 4,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/utils/CommandUtils.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/utils/CommandUtils.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/utils/fileUtils.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/utils/fileUtils.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/jest.config.js"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/jest.config.js"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/config/eslint.config.js"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/config/eslint.config.js"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/examples/plugins/react-component.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/examples/plugins/react-component.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/plugins/ReactComponentPlugin.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/plugins/ReactComponentPlugin.ts"
         }
       ],
       "totalTokens": 7194,
@@ -155,10 +155,10 @@
       "batchIndex": 5,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/examples/workflows/complete.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/examples/workflows/complete.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/examples/workflows/quickstart.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/examples/workflows/quickstart.ts"
         }
       ],
       "totalTokens": 4941,
@@ -171,13 +171,25 @@
       "batchIndex": 6,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/analytics/AnalyticsDashboard.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/analytics/AnalyticsDashboard.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/analytics/TelemetryCollector.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/analytics/TelemetryCollector.ts"
+        },
+        {
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/commands/AnalyzeCommand.ts"
+        },
+        {
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/commands/BenchmarkCommand.ts"
+        },
+        {
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/commands/GenerateCommand.ts"
+        },
+        {
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/commands/IncrementalCommand.ts"
         }
       ],
-      "totalTokens": 5876,
+      "totalTokens": 7970,
       "processingTimeMs": 0,
       "errors": []
     },
@@ -187,16 +199,25 @@
       "batchIndex": 7,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/analyzer/FileBatcher.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/commands/InfoCommand.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/analyzer/GitAnalyzer.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/commands/QualityCheckCommand.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/analyzer/PackageDetector.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/commands/SetupCommand.ts"
+        },
+        {
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/commands/WatchCommand.ts"
+        },
+        {
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/analyzer/FileBatcher.ts"
+        },
+        {
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/analyzer/GitAnalyzer.ts"
         }
       ],
-      "totalTokens": 5444,
+      "totalTokens": 6514,
       "processingTimeMs": 0,
       "errors": []
     },
@@ -206,16 +227,16 @@
       "batchIndex": 8,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/analyzer/QualityAnalyzer.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/analyzer/PackageDetector.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/analyzer/SymbolReferenceAnalyzer.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/analyzer/QualityAnalyzer.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/analyzer/WorkspaceAnalyzer.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/analyzer/SymbolReferenceAnalyzer.ts"
         }
       ],
-      "totalTokens": 7084,
+      "totalTokens": 7104,
       "processingTimeMs": 0,
       "errors": []
     },
@@ -225,16 +246,19 @@
       "batchIndex": 9,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/cli/CommandRunner.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/analyzer/WorkspaceAnalyzer.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/cli/HelpSystem.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/cli/CommandRunner.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/cli/InteractiveCLI.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/cli/HelpSystem.ts"
+        },
+        {
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/cli/InteractiveCLI.ts"
         }
       ],
-      "totalTokens": 5225,
+      "totalTokens": 7030,
       "processingTimeMs": 0,
       "errors": []
     },
@@ -244,34 +268,16 @@
       "batchIndex": 10,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/config/AuthManager.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/config/AuthManager.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/commands/AnalyzeCommand.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/embeddings/EmbeddingGenerator.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/commands/BenchmarkCommand.ts"
-        },
-        {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/commands/GenerateCommand.ts"
-        },
-        {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/commands/IncrementalCommand.ts"
-        },
-        {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/commands/InfoCommand.ts"
-        },
-        {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/commands/QualityCheckCommand.ts"
-        },
-        {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/commands/SetupCommand.ts"
-        },
-        {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/commands/WatchCommand.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/embeddings/InMemoryVectorStore.ts"
         }
       ],
-      "totalTokens": 7901,
+      "totalTokens": 6383,
       "processingTimeMs": 0,
       "errors": []
     },
@@ -281,19 +287,13 @@
       "batchIndex": 11,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/embeddings/EmbeddingGenerator.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/embeddings/RelationshipAnalyzer.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/embeddings/InMemoryVectorStore.ts"
-        },
-        {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/embeddings/RelationshipAnalyzer.ts"
-        },
-        {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/features/DynamicTemplateSystem.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/features/DynamicTemplateSystem.ts"
         }
       ],
-      "totalTokens": 7448,
+      "totalTokens": 4218,
       "processingTimeMs": 0,
       "errors": []
     },
@@ -303,16 +303,16 @@
       "batchIndex": 12,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/features/SmartDocumentationEngine.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/features/SmartDocumentationEngine.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/features/TemplateSystem.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/features/TemplateSystem.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/generator/DocumentationGenerator.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/operations/AnalyzeWorkspaceOperation.ts"
         }
       ],
-      "totalTokens": 5921,
+      "totalTokens": 6192,
       "processingTimeMs": 0,
       "errors": []
     },
@@ -322,13 +322,19 @@
       "batchIndex": 13,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/generator/FileProcessor.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/operations/GenerateDocumentationOperation.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/generator/JSDocGenerator.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/operations/PerformQualityCheckOperation.ts"
+        },
+        {
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/operations/RunBenchmarkOperation.ts"
+        },
+        {
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/generator/DocumentationGenerator.ts"
         }
       ],
-      "totalTokens": 5286,
+      "totalTokens": 7814,
       "processingTimeMs": 0,
       "errors": []
     },
@@ -338,10 +344,13 @@
       "batchIndex": 14,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/generator/JSDocManipulator.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/generator/FileProcessor.ts"
+        },
+        {
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/generator/JSDocGenerator.ts"
         }
       ],
-      "totalTokens": 2997,
+      "totalTokens": 5286,
       "processingTimeMs": 0,
       "errors": []
     },
@@ -351,13 +360,10 @@
       "batchIndex": 15,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/generator/NodeContextExtractor.ts"
-        },
-        {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/generator/SmartPromptBuilder.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/generator/JSDocManipulator.ts"
         }
       ],
-      "totalTokens": 7871,
+      "totalTokens": 2997,
       "processingTimeMs": 0,
       "errors": []
     },
@@ -367,16 +373,13 @@
       "batchIndex": 16,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/reporting/ReportGenerator.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/generator/NodeContextExtractor.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/operations/AnalyzeWorkspaceOperation.ts"
-        },
-        {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/operations/GenerateDocumentationOperation.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/generator/SmartPromptBuilder.ts"
         }
       ],
-      "totalTokens": 7967,
+      "totalTokens": 7871,
       "processingTimeMs": 0,
       "errors": []
     },
@@ -386,19 +389,16 @@
       "batchIndex": 17,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/operations/PerformQualityCheckOperation.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/reporting/ReportGenerator.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/operations/RunBenchmarkOperation.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/plugins/BasePlugin.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/plugins/BasePlugin.ts"
-        },
-        {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/plugins/PluginManager.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/plugins/PluginManager.ts"
         }
       ],
-      "totalTokens": 5985,
+      "totalTokens": 5867,
       "processingTimeMs": 0,
       "errors": []
     },
@@ -408,13 +408,13 @@
       "batchIndex": 18,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/utils/Benchmarker.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/utils/Benchmarker.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/utils/CacheManager.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/utils/CacheManager.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/utils/PerformanceMonitor.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/utils/PerformanceMonitor.ts"
         }
       ],
       "totalTokens": 7660,
@@ -427,19 +427,19 @@
       "batchIndex": 19,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/utils/ProductionMonitor.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/utils/ProductionMonitor.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/utils/ProductionOptimizer.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/utils/ProductionOptimizer.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/utils/WatchMode.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/utils/WatchMode.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/utils/errorHandling.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/utils/errorHandling.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/utils/logger.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/utils/logger.ts"
         }
       ],
       "totalTokens": 7138,
@@ -452,13 +452,13 @@
       "batchIndex": 20,
       "files": [
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/utils/progressBar.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/utils/progressBar.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/utils/rateLimiter.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/utils/rateLimiter.ts"
         },
         {
-          "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash/src/utils/test-setup.ts"
+          "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc/src/utils/test-setup.ts"
         }
       ],
       "totalTokens": 2824,
@@ -469,7 +469,7 @@
   "packages": [
     {
       "name": "monodoc",
-      "path": "/Volumes/Extreme SSD/code/platforms/npm/typedoc_ai/flash",
+      "path": "/Volumes/Extreme SSD/code/platforms/npm/monodoc",
       "version": "unknown",
       "private": false
     }
