@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import globby from 'globby';
 import { logger } from '../utils/logger';
-import { FileBatch, WorkspacePackage, GeneratorConfig } from '../types';
+import { FileBatch, WorkspacePackage, GeneratorConfig, FileInfo } from '../types';
 import { AnalysisError } from '../utils/errorHandling';
 
 /**
@@ -86,7 +86,7 @@ export class FileBatcher {
             filesList.push({
               path: filePath,
               size: stats.size,
-              priority: this.calculateFilePriority(filePath, pkg.priority), // Combine package and file priority
+              priority: this.calculateFilePriority(filePath, pkg.priority || 0), // Line 89: use pkg.priority || 0
             });
           } catch (err) {
             logger.warn(
@@ -151,53 +151,56 @@ export class FileBatcher {
     baseDir: string,
   ): FileBatch[] {
     const batches: FileBatch[] = [];
-    let currentBatch: { files: string[]; estimatedTokens: number; priority: number } = {
+    let batchId = 0;
+    let currentBatch: { files: FileInfo[]; estimatedTokens: number; priority: number } = {
       files: [],
       estimatedTokens: 0,
       priority: 0,
     };
 
     for (const file of sortedFiles) {
-      // Estimate tokens based on file size (very rough, but effective for batching)
       const estimatedFileTokens = Math.ceil(file.size / this.CHARS_PER_TOKEN);
 
-      // If adding the current file exceeds the batch limit, finalize the current batch
-      // and start a new one, but only if the current batch is not empty.
       if (
         currentBatch.files.length > 0 &&
         currentBatch.estimatedTokens + estimatedFileTokens > maxTokensPerBatch
       ) {
-        batches.push({ ...currentBatch });
-        currentBatch = { files: [], estimatedTokens: 0, priority: 0 }; // Reset for new batch
+        batches.push({
+          id: `batch-${batchId++}`,
+          files: currentBatch.files,
+          estimatedTokens: currentBatch.estimatedTokens,
+          priority: currentBatch.priority,
+        });
+        currentBatch = { files: [], estimatedTokens: 0, priority: 0 };
       }
 
-      // If an individual file is larger than the maxTokensPerBatch, it gets its own batch.
-      // This prevents very large files from blocking the batching process.
       if (estimatedFileTokens > maxTokensPerBatch) {
         logger.warn(
-          `Individual file ${path.relative(baseDir, file.path)} (estimated ${estimatedFileTokens} tokens) exceeds configured maxTokensPerBatch (${maxTokensPerBatch}). It will be processed as a single-file batch.`,
+          `File ${file.path} (~${estimatedFileTokens} tokens) exceeds max batch size (${maxTokensPerBatch} tokens). Processing separately.`,
         );
         batches.push({
-          files: [file.path],
+          id: `batch-${batchId++}`,
+          files: [{ path: file.path }],
           estimatedTokens: estimatedFileTokens,
           priority: file.priority,
         });
-        currentBatch = { files: [], estimatedTokens: 0, priority: 0 }; // Reset after single-file batch
       } else {
-        // Add file to current batch
-        currentBatch.files.push(file.path);
+        currentBatch.files.push({ path: file.path });
         currentBatch.estimatedTokens += estimatedFileTokens;
-        // The batch priority is the highest priority of any file within it
         currentBatch.priority = Math.max(currentBatch.priority, file.priority);
       }
     }
 
-    // Add any remaining files in the last batch
     if (currentBatch.files.length > 0) {
-      batches.push({ ...currentBatch });
+      batches.push({
+        id: `batch-${batchId++}`,
+        files: currentBatch.files,
+        estimatedTokens: currentBatch.estimatedTokens,
+        priority: currentBatch.priority,
+      });
     }
 
-    this.sortBatchesByPriorityDescending(batches); // Sort the created batches by their aggregated priority
+    this.sortBatchesByPriorityDescending(batches);
     return batches;
   }
 
@@ -206,7 +209,7 @@ export class FileBatcher {
    * @param batches The array of FileBatch objects to sort.
    */
   private sortBatchesByPriorityDescending(batches: FileBatch[]): void {
-    batches.sort((a, b) => b.priority - a.priority);
+    batches.sort((a, b) => (b.priority || 0) - (a.priority || 0));
   }
 
   /**

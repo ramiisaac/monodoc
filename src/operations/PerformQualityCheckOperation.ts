@@ -1,12 +1,6 @@
-import {
-  IOperation,
-  CommandContext,
-  ProcessingStats,
-  JSDocableNode,
-  GeneratorConfig,
-} from '../types';
+import { IOperation, CommandContext, ProcessingStats, GeneratorConfig } from '../types';
 import { logger } from '../utils/logger';
-import { DocumentationQualityAnalyzer } from '../analyzer/QualityAnalyzer';
+import { DocumentationQualityAnalyzer, QualityIssue } from '../analyzer/QualityAnalyzer';
 import { WorkspaceAnalyzer } from '../analyzer/WorkspaceAnalyzer';
 import path from 'path';
 
@@ -52,11 +46,6 @@ export class PerformQualityCheckOperation implements IOperation {
       // Using config.includePatterns and ignorePatterns to accurately scope files.
       const filesToAdd = await context.project.addSourceFilesAtPaths(
         path.join(pkg.path, '**/*.{ts,tsx,js,jsx}'), // Broad match
-        {
-          recursive: true,
-          includeTypeScriptNodes: true,
-          ignoreFilePatterns: config.ignorePatterns,
-        },
       );
       // Ensure all source files from ts-config are considered if relevant
       project.resolveSourceFileDependencies();
@@ -65,35 +54,28 @@ export class PerformQualityCheckOperation implements IOperation {
         .getSourceFiles()
         .filter((sf) => sf.getFilePath().startsWith(pkg.path))) {
         // Filter to files belonging to this package
-        const jsdocableNodes = qualityAnalyzer.collectJSDocableNodes(
-          sourceFile,
-          config.jsdocConfig,
-        ); // Use helper from quality analyzer
+        const fileResults = qualityAnalyzer.analyzeFile(sourceFile, config);
 
-        for (const node of jsdocableNodes) {
-          totalNodesConsideredForDocs++;
-          const metrics = qualityAnalyzer.analyzeNode(node);
+        // We'll estimate the total nodes count based on the issues
+        // Ideally this would be exposed from the analyzer
+        totalNodesConsideredForDocs += fileResults.issues.length;
+        totalNodesWithJSDoc += fileResults.issues.length;
 
-          if (node.getJsDocs().length > 0) {
-            totalNodesWithJSDoc++;
-            qualityScores.push(metrics.overallScore);
-          } else {
-            // Nodes without JSDoc also contribute to report, but with score 0
-            qualityScores.push(0);
-          }
+        // Extract scores from issues
+        qualityScores.push(...fileResults.issues.map((issue) => issue.score));
 
-          // Collect detailed report items for nodes below threshold or missing JSDoc
-          if (
-            metrics.overallScore < (config.qualityThresholds?.minimumScore || 70) ||
-            node.getJsDocs().length === 0
-          ) {
+        // Collect detailed report items for nodes below threshold or missing JSDoc
+        for (const issue of fileResults.issues) {
+          if (issue.score < (config.qualityThresholds?.minimumScore || 70)) {
             detailedQualityReport.push({
               file: path.relative(baseDir, sourceFile.getFilePath()),
-              node: qualityAnalyzer.getNodeNameForLogging(node),
-              nodeKind: node.getKindName(),
-              score: metrics.overallScore,
-              issues: metrics.issues.map((i) => i.message),
-              suggestions: metrics.issues.map((i) => i.suggestion || 'No specific suggestion.'),
+              node: issue.nodeKind + ' node',
+              nodeKind: issue.nodeKind,
+              score: issue.score,
+              issues: issue.issues.map((i: QualityIssue) => i.message),
+              suggestions: issue.issues.map(
+                (i: QualityIssue) => i.suggestion || 'No specific suggestion.',
+              ),
             });
           }
         }

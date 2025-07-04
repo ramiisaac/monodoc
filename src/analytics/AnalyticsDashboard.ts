@@ -82,12 +82,12 @@ export class AnalyticsDashboard {
   /**
    * Generates the analytics dashboard.
    * @param currentStats The ProcessingStats from the current run.
-   * @param currentTelemetryData The TelemetryData from the current run.
+   * @param _currentTelemetryData The TelemetryData from the current run (marked as unused with `_`).
    * @returns A Promise that resolves to the Markdown content of the dashboard.
    */
   async generateDashboard(
     currentStats: ProcessingStats,
-    currentTelemetryData: TelemetryData,
+    _currentTelemetryData: TelemetryData, // Mark as unused with _
   ): Promise<string> {
     await fs.mkdir(this.analyticsDataDir, { recursive: true });
     const historicalData: HistoricalRunData[] = await this.loadHistoricalData();
@@ -96,35 +96,31 @@ export class AnalyticsDashboard {
     const newHistoryEntry: HistoricalRunData = {
       timestamp: new Date(),
       stats: currentStats,
-      telemetryData: currentTelemetryData,
+      telemetryData: _currentTelemetryData,
       projectPath: process.cwd(), // Store current project path
     };
     historicalData.push(newHistoryEntry);
     await this.saveHistoricalData(historicalData);
 
-    const metrics = await this.collectMetrics(historicalData, currentStats, currentTelemetryData);
+    const metrics = await this.collectMetrics(historicalData);
     return this.renderDashboard(metrics);
   }
 
   /**
    * Collects and aggregates various metrics from historical and current data.
    * @param historicalData All historical run data.
-   * @param currentStats The ProcessingStats from the current run.
-   * @param currentTelemetryData The TelemetryData from the current run.
    * @returns A Promise resolving to the DashboardMetrics.
    */
-  private async collectMetrics(
-    historicalData: HistoricalRunData[],
-    currentStats: ProcessingStats,
-    currentTelemetryData: TelemetryData,
-  ): Promise<DashboardMetrics> {
+  private async collectMetrics(historicalData: HistoricalRunData[]): Promise<DashboardMetrics> {
+    // Current telemetry data is already part of the last historical entry.
+    // So we operate on the full historical data directly for aggregation.
     return {
       totalProjects: this.countUniqueProjects(historicalData),
       averageQualityScore: this.calculateAverageQuality(historicalData),
       processingTrends: this.analyzeProcessingTrends(historicalData),
       errorPatterns: this.identifyErrorPatterns(historicalData),
-      performanceMetrics: this.calculatePerformanceMetrics(historicalData, currentTelemetryData),
-      userEngagement: this.analyzeUserEngagement(historicalData, currentTelemetryData),
+      performanceMetrics: this.calculatePerformanceMetrics(historicalData),
+      userEngagement: this.analyzeUserEngagement(historicalData),
     };
   }
 
@@ -251,15 +247,11 @@ ${Object.entries(metrics.userEngagement.configurationPatterns)
   }
 
   /**
-   * Calculates aggregated performance metrics from historical and current data.
+   * Calculates aggregated performance metrics from historical data.
    * @param historicalData All historical run data.
-   * @param currentTelemetryData The TelemetryData from the current run (for latest trends).
    * @returns The PerformanceMetrics object.
    */
-  private calculatePerformanceMetrics(
-    historicalData: HistoricalRunData[],
-    currentTelemetryData: TelemetryData,
-  ): PerformanceMetrics {
+  private calculatePerformanceMetrics(historicalData: HistoricalRunData[]): PerformanceMetrics {
     const allProcessingTimes = historicalData
       .map((item) => item.telemetryData.performance.averageProcessingTime)
       .filter(Boolean) as number[];
@@ -293,13 +285,9 @@ ${Object.entries(metrics.userEngagement.configurationPatterns)
   /**
    * Analyzes user engagement patterns, such as daily active users and feature usage.
    * @param historicalData All historical run data.
-   * @param currentTelemetryData The TelemetryData from the current run.
    * @returns The UserEngagementMetrics object.
    */
-  private analyzeUserEngagement(
-    historicalData: HistoricalRunData[],
-    currentTelemetryData: TelemetryData,
-  ): UserEngagementMetrics {
+  private analyzeUserEngagement(historicalData: HistoricalRunData[]): UserEngagementMetrics {
     const recentSessions = new Set<string>();
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
 
@@ -309,7 +297,6 @@ ${Object.entries(metrics.userEngagement.configurationPatterns)
         recentSessions.add(item.telemetryData.sessionId);
       }
     });
-    recentSessions.add(currentTelemetryData.sessionId); // Include current session
 
     const featureUsageCounts: Record<string, number> = {};
     const configPatternCounts: Record<string, number> = {};
@@ -322,30 +309,14 @@ ${Object.entries(metrics.userEngagement.configurationPatterns)
         }
       }
       // Configuration patterns (e.g., primary LLM provider)
-      const defaultLLMProvider =
-        item.telemetryData.configuration.aiModelsCount > 0
-          ? (item.stats.configurationUsed?.aiClientConfig?.defaultGenerationModelId as string)
-          : null;
-      if (defaultLLMProvider) {
-        configPatternCounts[defaultLLMProvider] =
-          (configPatternCounts[defaultLLMProvider] || 0) + 1;
+      const aiClientConfig =
+        (item.stats.configurationUsed?.aiClientConfig as Record<string, string>) || {};
+      const defaultGenerationModelId = aiClientConfig.defaultGenerationModelId;
+      if (defaultGenerationModelId) {
+        configPatternCounts[defaultGenerationModelId] =
+          (configPatternCounts[defaultGenerationModelId] || 0) + 1;
       }
     });
-
-    // Add current run's feature usage and config
-    for (const [feature, enabled] of Object.entries(currentTelemetryData.usage?.features || {})) {
-      if (enabled) {
-        featureUsageCounts[feature] = (featureUsageCounts[feature] || 0) + 1;
-      }
-    }
-    const currentDefaultLLMProvider =
-      currentTelemetryData.configuration.aiModelsCount > 0
-        ? (currentTelemetryData.configuration.aiModelsCount as unknown as string)
-        : null; // This mapping might need refinement
-    if (currentDefaultLLMProvider) {
-      configPatternCounts[currentDefaultLLMProvider] =
-        (configPatternCounts[currentDefaultLLMProvider] || 0) + 1;
-    }
 
     return {
       dailyActiveUsers: recentSessions.size,

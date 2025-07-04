@@ -9,9 +9,8 @@ import { logger } from '../utils/logger';
 export class SetupCommand implements ICommand {
   async execute(context: CommandContext): Promise<void> {
     logger.info('Running interactive setup wizard...');
-    const interactiveCLI = new InteractiveCLI();
     try {
-      await interactiveCLI.runSetup(context.baseDir);
+      await InteractiveCLI.runSetup(context.baseDir);
       logger.success('Configuration setup completed successfully.');
     } catch (error) {
       logger.error(

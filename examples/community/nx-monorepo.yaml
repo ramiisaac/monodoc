@@ -1,0 +1,114 @@
+# Nx Monorepo Configuration
+name: "Nx Monorepo JSDoc Configuration"
+description: "Enterprise-grade setup for large Nx workspaces, focusing on libs and apps."
+
+workspaceDirs:
+  - apps
+  - libs
+  - packages
+  - tools # Document Nx tools if desired
+
+includePatterns:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+ignorePatterns:
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/tmp/**" # Nx-specific temp directories
+  - "**/*.spec.{ts,tsx,js}"
+  - "**/*.test.{ts,tsx,js}"
+  - "**/*.stories.{ts,tsx,js}" # Storybook files
+  - "**/*.d.ts"
+  - "**/*jest.config.{js,ts}" # Jest config files
+
+aiModels:
+  - id: openai-nx-gen
+    provider: openai
+    model: gpt-4o
+    type: generation
+    apiKeyEnvVar: OPENAI_API_KEY
+    temperature: 0.1
+    maxOutputTokens: 4096
+  - id: anthropic-nx-fallback
+    provider: anthropic
+    model: claude-3-sonnet-20240229
+    type: generation
+    apiKeyEnvVar: ANTHROPIC_API_KEY
+    temperature: 0.2
+    maxOutputTokens: 4096
+  - id: ollama-nx-gen
+    provider: ollama
+    model: codellama
+    type: generation
+    apiKeyEnvVar: OLLAMA_HOST
+    baseUrl: http://localhost:11434
+    temperature: 0.2
+    maxOutputTokens: 4096
+  - id: openai-nx-embedding
+    provider: openai
+    model: text-embedding-3-large
+    type: embedding
+    apiKeyEnvVar: OPENAI_API_KEY
+    dimensions: 1536
+
+aiClientConfig:
+  defaultGenerationModelId: openai-nx-gen
+  defaultEmbeddingModelId: openai-nx-embedding
+  maxConcurrentRequests: 10 # High concurrency for large monorepos
+  requestDelayMs: 50 # Aggressive delay, monitor API limits
+  maxRetries: 5
+  retryDelayMs: 2000
+  maxTokensPerBatch: 16000 # Very large token batches for efficiency
+
+embeddingConfig:
+  enabled: true
+  modelId: openai-nx-embedding
+  minRelationshipScore: 0.8 # Higher threshold for very relevant relationships
+  maxRelatedSymbols: 10 # More related symbols for Nx's interconnected nature
+  embeddingBatchSize: 150 # Large batches for embedding
+
+jsdocConfig:
+  prioritizeExports: true
+  includePrivate: false
+  generateExamples: true
+  mergeExisting: true
+  minJsdocLength: 100
+  includeSymbolReferences: true
+  includeRelatedSymbols: true
+
+outputConfig:
+  reportDir: ./reports/nx-monorepo
+  reportFileName: nx-jsdoc-report.json
+  logLevel: info
+
+plugins:
+  - name: react-component-plugin
+    enabled: true
+  - name: api-documentation-plugin
+    enabled: true
+  # Add other framework-specific plugins if you use Angular/Vue/etc.
+  # - name: angular-component-plugin # (Requires custom plugin implementation)
+  #   enabled: true
+
+telemetry:
+  enabled: true # Highly recommended for enterprise monitoring
+  anonymize: true
+  collectPerformance: true
+  collectErrors: true
+
+qualityThresholds:
+  minimumScore: 80 # High quality standard
+  requireDescriptions: true
+  requireExamples: false # May not be feasible for all enterprise code
+  requireParams: true
+  requireReturns: true
+
+performance:
+  enableCaching: true
+  maxConcurrentFiles: 12 # Maximize concurrent file processing
+  batchSize: 75 # Larger internal processing batches
+  timeoutMs: 60000 # Longer timeouts for large codebases
+

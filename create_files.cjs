@@ -90,8 +90,8 @@ const invalidPathChars = /[<>:"|?*\0]/;
 
 // Utility to compute line differences
 function computeLineDiff(oldContent, newContent) {
-  const oldLines = oldContent.split('\n').filter(line => line.trim());
-  const newLines = newContent.split('\n').filter(line => line.trim());
+  const oldLines = oldContent.split('\n').filter((line) => line.trim());
+  const newLines = newContent.split('\n').filter((line) => line.trim());
   let added = 0;
   let removed = 0;
 
@@ -125,15 +125,13 @@ console.log('='.repeat(80));
 console.log(' File Creation Script '.padStart(40 + 22, ' ').padEnd(80, '='));
 console.log('='.repeat(80));
 console.log(
-  `Mode: ${isDryRun ? 'Dry Run (No Filesystem Changes)' : 'Actual File Creation/Update'}`
+  `Mode: ${isDryRun ? 'Dry Run (No Filesystem Changes)' : 'Actual File Creation/Update'}`,
 );
 console.log(`Input File: ${filename}`);
-console.log(
-  `Silent Mode: ${silent ? 'Enabled (Per-file logs suppressed)' : 'Disabled'}`
-);
+console.log(`Silent Mode: ${silent ? 'Enabled (Per-file logs suppressed)' : 'Disabled'}`);
 console.log(`Verbose Mode: ${verbose ? 'Enabled' : 'Disabled'}`);
 console.log(
-  `Latest Only Mode: ${latestOnly ? 'Enabled (Skip .1, .2, etc. versions)' : 'Disabled (Create all versions)'}`
+  `Latest Only Mode: ${latestOnly ? 'Enabled (Skip .1, .2, etc. versions)' : 'Disabled (Create all versions)'}`,
 );
 console.log('-'.repeat(80));
 
@@ -150,33 +148,65 @@ async function processFile() {
   let inCodeBlock = false;
   let blockPath = '';
   let blockStartLine = 0;
+  let nestedCodeBlockDepth = 0;
 
   for await (let line of rl) {
     currentLine++;
     line = line.trimEnd();
     if (currentLine % 10000 === 0) {
       console.log(
-        `[PROGRESS] Processed ${currentLine.toLocaleString()} lines (${((Date.now() - startTime) / 1000).toFixed(3)}s)`
+        `[PROGRESS] Processed ${currentLine.toLocaleString()} lines (${((Date.now() - startTime) / 1000).toFixed(3)}s)`,
       );
     }
 
-    const codeBlockStartMatch = line.match(
-      /^`{3,}(?:[\w-]*)\s*:\s*([^\s][^\n]*)$/
-    );
+    // Enhanced regex to better handle markdown files and various code block formats
+    const codeBlockStartMatch = line.match(/^`{3,}([\w-]*)\s*(?::\s*|\s+)([^\s][^\n]*)$/);
+
+    // Extract the path from the match group - unified matching for cleaner extraction
+    const matchedPath = codeBlockStartMatch ? codeBlockStartMatch[2] : null;
+
+    // Handle nested code blocks in markdown files
+    if (
+      inCodeBlock &&
+      blockPath.endsWith('.md') &&
+      line.match(/^`{3,}[\w-]*\s*(?::\s*|\s+)?([^\s][^\n]*)?$/)
+    ) {
+      // This could be a nested code block start within markdown
+      nestedCodeBlockDepth++;
+      blockLines.push(line);
+      continue;
+    }
+
     if (!inCodeBlock && codeBlockStartMatch) {
-      blockPath = codeBlockStartMatch[1].trim();
+      blockPath = matchedPath ? matchedPath.trim() : '';
       inCodeBlock = true;
       blockStartLine = currentLine;
       blockLines = [];
       totalCodeBlocks++;
+      nestedCodeBlockDepth = 0;
       continue;
     }
 
     if (inCodeBlock) {
-      if (line.startsWith('```')) {
-        inCodeBlock = false;
-        blockPosition++;
-        await processBlock(blockPath, blockLines.join('\n'), blockStartLine);
+      // More robust code block end detection - handles closing backticks with trailing spaces/characters
+      if (/^`{3,}\s*$/.test(line)) {
+        if (blockPath.endsWith('.md') && nestedCodeBlockDepth > 0) {
+          // This is a nested code block end, not the actual block end
+          nestedCodeBlockDepth--;
+          blockLines.push(line);
+        } else {
+          // This is the actual end of our code block
+          inCodeBlock = false;
+          blockPosition++;
+          // Special handling for markdown files
+          if (blockPath.endsWith('.md')) {
+            // Do not trim content for markdown files to preserve formatting and front matter
+            await processBlock(blockPath, blockLines.join('\n'), blockStartLine);
+          } else {
+            // For non-markdown files, we can trim content
+            await processBlock(blockPath, blockLines.join('\n'), blockStartLine);
+          }
+        }
       } else {
         blockLines.push(line);
       }
@@ -185,7 +215,7 @@ async function processFile() {
 
   if (inCodeBlock) {
     console.error(
-      `[ERROR] Unclosed code block starting at line ${blockStartLine.toLocaleString()}`
+      `[ERROR] Unclosed code block starting at line ${blockStartLine.toLocaleString()}`,
     );
     skippedCodeBlocks++;
   }
@@ -194,7 +224,7 @@ async function processFile() {
 async function processBlock(filePath, code, startLine) {
   if (!filePath) {
     console.error(
-      `[ERROR] Code block at line ${startLine.toLocaleString()} has no file path. Skipping.`
+      `[ERROR] Code block at line ${startLine.toLocaleString()} has no file path. Skipping.`,
     );
     skippedCodeBlocks++;
     return;
@@ -202,9 +232,7 @@ async function processBlock(filePath, code, startLine) {
 
   if (filePath === 'tree') {
     if (!silent)
-      console.log(
-        `[INFO] Skipping 'tree' diagram block at line ${startLine.toLocaleString()}.`
-      );
+      console.log(`[INFO] Skipping 'tree' diagram block at line ${startLine.toLocaleString()}.`);
     skippedCodeBlocks++;
     return;
   }
@@ -214,32 +242,37 @@ async function processBlock(filePath, code, startLine) {
   }
 
   const safePath = path.normalize(filePath);
-  if (
-    safePath.startsWith('..') ||
-    path.isAbsolute(safePath) ||
-    invalidPathChars.test(safePath)
-  ) {
+  if (safePath.startsWith('..') || path.isAbsolute(safePath) || invalidPathChars.test(safePath)) {
     console.error(
-      `[ERROR] Unsafe or invalid file path at line ${startLine.toLocaleString()}: ${safePath}. Skipping.`
+      `[ERROR] Unsafe or invalid file path at line ${startLine.toLocaleString()}: ${safePath}. Skipping.`,
     );
     skippedCodeBlocks++;
     return;
   }
 
-  const newCodeContent = code.trim();
+  // For markdown files, preserve the original content without trimming
+  // For other files, trim whitespace as before
+  const newCodeContent = safePath.endsWith('.md') ? code : code.trim();
   if (!newCodeContent) {
     console.error(
-      `[ERROR] Empty code block at line ${startLine.toLocaleString()} for path ${safePath}. Skipping.`
+      `[ERROR] Empty code block at line ${startLine.toLocaleString()} for path ${safePath}. Skipping.`,
     );
     skippedCodeBlocks++;
     return;
   }
 
   filesProcessedCount++;
-  if (!silent)
-    console.log(
-      `[PROCESS] Processing code block at line ${startLine.toLocaleString()} for file: ${safePath}`
-    );
+  if (!silent) {
+    if (safePath.endsWith('.md')) {
+      console.log(
+        `[PROCESS] Processing markdown file block at line ${startLine.toLocaleString()} for file: ${safePath}`,
+      );
+    } else {
+      console.log(
+        `[PROCESS] Processing code block at line ${startLine.toLocaleString()} for file: ${safePath}`,
+      );
+    }
+  }
 
   // Store for duplicate detection
   const blockInfo = {
@@ -266,23 +299,18 @@ async function processFileOperations() {
     if (!latestOnly) {
       for (let i = 0; i < otherBlocks.length; i++) {
         const indexedPath = getIndexedFilename(filePath, i + 1);
-        await processSingleBlock(
-          indexedPath,
-          otherBlocks[i].content,
-          otherBlocks[i].line,
-          true
-        );
+        await processSingleBlock(indexedPath, otherBlocks[i].content, otherBlocks[i].line, true);
       }
     } else if (otherBlocks.length > 0) {
       // Track skipped duplicates for reporting
       skippedDuplicates += otherBlocks.length;
       if (!silent) {
         console.log(
-          `[SKIP] Skipping ${otherBlocks.length} older version(s) of ${filePath} (latest-only mode enabled)`
+          `[SKIP] Skipping ${otherBlocks.length} older version(s) of ${filePath} (latest-only mode enabled)`,
         );
         otherBlocks.forEach((block, index) => {
           console.log(
-            `  - Skipped: ${getIndexedFilename(filePath, index + 1)} (line ${block.line.toLocaleString()})`
+            `  - Skipped: ${getIndexedFilename(filePath, index + 1)} (line ${block.line.toLocaleString()})`,
           );
         });
       }
@@ -290,12 +318,7 @@ async function processFileOperations() {
   }
 }
 
-async function processSingleBlock(
-  filePath,
-  code,
-  startLine,
-  isIndexed = false
-) {
+async function processSingleBlock(filePath, code, startLine, isIndexed = false) {
   const fullPath = path.resolve(__dirname, filePath);
   const relativeFullPath = path.relative(__dirname, fullPath);
   const normalizedNewContent = code.replace(/\r\n/g, '\n') + '\n';
@@ -310,27 +333,21 @@ async function processSingleBlock(
 
       if (normalizedOldContent === normalizedNewContent) {
         if (!silent)
-          console.log(
-            `  [DRY RUN] File exists and contents are identical. Would be SKIPPED.`
-          );
+          console.log(`  [DRY RUN] File exists and contents are identical. Would be SKIPPED.`);
         dryRunFilesToSkip++;
       } else {
         if (!silent)
           console.log(
-            `  [DRY RUN] File exists and contents differ. Would be ${isIndexed ? 'CREATED (indexed)' : 'OVERWRITTEN'}.`
+            `  [DRY RUN] File exists and contents differ. Would be ${isIndexed ? 'CREATED (indexed)' : 'OVERWRITTEN'}.`,
           );
         if (isIndexed) {
           dryRunFilesToCreate++;
           linesAdded = normalizedNewContent.split('\n').length - 1;
           totalLinesAdded += linesAdded;
-          if (!silent)
-            console.log(`    Lines Added: ${linesAdded.toLocaleString()}`);
+          if (!silent) console.log(`    Lines Added: ${linesAdded.toLocaleString()}`);
         } else {
           dryRunFilesToOverwrite++;
-          const diff = computeLineDiff(
-            normalizedOldContent,
-            normalizedNewContent
-          );
+          const diff = computeLineDiff(normalizedOldContent, normalizedNewContent);
           linesAdded = diff.added;
           linesRemoved = diff.removed;
           totalLinesAdded += linesAdded;
@@ -343,20 +360,19 @@ async function processSingleBlock(
           });
           if (!silent)
             console.log(
-              `    Lines Added: ${linesAdded.toLocaleString()}, Lines Removed: ${linesRemoved.toLocaleString()}`
+              `    Lines Added: ${linesAdded.toLocaleString()}, Lines Removed: ${linesRemoved.toLocaleString()}`,
             );
         }
       }
     } else {
       if (!silent)
         console.log(
-          `  [DRY RUN] File does not exist. Would be CREATED${isIndexed ? ' (indexed)' : ''}.`
+          `  [DRY RUN] File does not exist. Would be CREATED${isIndexed ? ' (indexed)' : ''}.`,
         );
       dryRunFilesToCreate++;
       linesAdded = normalizedNewContent.split('\n').length - 1;
       totalLinesAdded += linesAdded;
-      if (!silent)
-        console.log(`    Lines Added: ${linesAdded.toLocaleString()}`);
+      if (!silent) console.log(`    Lines Added: ${linesAdded.toLocaleString()}`);
     }
 
     const ext = (path.extname(filePath) || '.no_extension').toLowerCase();
@@ -379,9 +395,7 @@ async function processSingleBlock(
         fs.mkdirSync(dirPath, { recursive: true });
         directoriesCreated.add(relativeDirPath);
       } catch (dirError) {
-        console.error(
-          `[ERROR] Failed to create directory ${relativeDirPath}: ${dirError.message}`
-        );
+        console.error(`[ERROR] Failed to create directory ${relativeDirPath}: ${dirError.message}`);
         return;
       }
     }
@@ -395,24 +409,20 @@ async function processSingleBlock(
       if (normalizedOldContent === normalizedNewContent) {
         if (!silent)
           console.log(
-            `[INFO] File exists: ${relativeFullPath}. Contents identical. Skipping write.`
+            `[INFO] File exists: ${relativeFullPath}. Contents identical. Skipping write.`,
           );
         filesSkippedCount++;
       } else {
         if (!silent)
           console.log(
-            `[${isIndexed ? 'WRITE' : 'OVERWRITE'}] ${isIndexed ? 'Writing new indexed file' : 'File exists'}: ${relativeFullPath}. Contents differ. ${isIndexed ? 'Creating' : 'Overwriting'}.`
+            `[${isIndexed ? 'WRITE' : 'OVERWRITE'}] ${isIndexed ? 'Writing new indexed file' : 'File exists'}: ${relativeFullPath}. Contents differ. ${isIndexed ? 'Creating' : 'Overwriting'}.`,
           );
         if (isIndexed) {
           linesAdded = normalizedNewContent.split('\n').length - 1;
           totalLinesAdded += linesAdded;
-          if (!silent)
-            console.log(`    Lines Added: ${linesAdded.toLocaleString()}`);
+          if (!silent) console.log(`    Lines Added: ${linesAdded.toLocaleString()}`);
         } else {
-          const diff = computeLineDiff(
-            normalizedOldContent,
-            normalizedNewContent
-          );
+          const diff = computeLineDiff(normalizedOldContent, normalizedNewContent);
           linesAdded = diff.added;
           linesRemoved = diff.removed;
           totalLinesAdded += linesAdded;
@@ -425,7 +435,7 @@ async function processSingleBlock(
           });
           if (!silent)
             console.log(
-              `    Lines Added: ${linesAdded.toLocaleString()}, Lines Removed: ${linesRemoved.toLocaleString()}`
+              `    Lines Added: ${linesAdded.toLocaleString()}, Lines Removed: ${linesRemoved.toLocaleString()}`,
             );
         }
         try {
@@ -439,7 +449,7 @@ async function processSingleBlock(
           fileTypesCount[ext] = (fileTypesCount[ext] || 0) + 1;
         } catch (writeError) {
           console.error(
-            `[ERROR] Failed to ${isIndexed ? 'write' : 'overwrite'} file ${relativeFullPath}: ${writeError.message}`
+            `[ERROR] Failed to ${isIndexed ? 'write' : 'overwrite'} file ${relativeFullPath}: ${writeError.message}`,
           );
         }
       }
@@ -447,17 +457,14 @@ async function processSingleBlock(
       if (!silent) console.log(`[WRITE] Writing new file: ${relativeFullPath}`);
       linesAdded = normalizedNewContent.split('\n').length - 1;
       totalLinesAdded += linesAdded;
-      if (!silent)
-        console.log(`    Lines Added: ${linesAdded.toLocaleString()}`);
+      if (!silent) console.log(`    Lines Added: ${linesAdded.toLocaleString()}`);
       try {
         fs.writeFileSync(fullPath, normalizedNewContent);
         filesCreatedCount++;
         const ext = (path.extname(filePath) || '.no_extension').toLowerCase();
         fileTypesCount[ext] = (fileTypesCount[ext] || 0) + 1;
       } catch (writeError) {
-        console.error(
-          `[ERROR] Failed to write file ${relativeFullPath}: ${writeError.message}`
-        );
+        console.error(`[ERROR] Failed to write file ${relativeFullPath}: ${writeError.message}`);
       }
     }
   }
@@ -471,17 +478,11 @@ async function main() {
     // Analyze duplicates
     console.log('\n' + '='.repeat(80));
     console.log(
-      ' Duplicate File Path Analysis in seed7.md '
-        .padStart(40 + 25, ' ')
-        .padEnd(80, '=')
+      ' Duplicate File Path Analysis in seed7.md '.padStart(40 + 25, ' ').padEnd(80, '='),
     );
     console.log('='.repeat(80));
-    console.log(
-      'This section identifies file paths declared multiple times in seed7.md,'
-    );
-    console.log(
-      'categorizing them by whether their content is identical or differing.'
-    );
+    console.log('This section identifies file paths declared multiple times in seed7.md,');
+    console.log('categorizing them by whether their content is identical or differing.');
     console.log('-'.repeat(80));
 
     for (const filePath in seedBlocksByPath) {
@@ -489,9 +490,7 @@ async function main() {
       if (blocks.length > 1) {
         repeatedPathCount++;
         const lastContent = blocks[blocks.length - 1].content;
-        const allIdentical = blocks.every(
-          block => block.content === lastContent
-        );
+        const allIdentical = blocks.every((block) => block.content === lastContent);
         let linesDiff = 0;
 
         if (allIdentical) {
@@ -508,23 +507,21 @@ async function main() {
         duplicateDetails.push({
           'File Path': filePath,
           Declarations: blocks.length,
-          'Line Numbers': blocks.map(b => b.line).join(', '),
+          'Line Numbers': blocks.map((b) => b.line).join(', '),
           'Content Status': allIdentical
             ? 'Identical'
             : `Differing (${formatNumber(linesDiff)} lines changed)`,
           Module: filePath.split('/')[0] || 'root',
         });
 
-        console.log(
-          `[PATH] File path '${filePath}' declared ${blocks.length} times:`
-        );
-        blocks.forEach(block => {
+        console.log(`[PATH] File path '${filePath}' declared ${blocks.length} times:`);
+        blocks.forEach((block) => {
           console.log(
-            `  - Line ${block.line.toLocaleString()} (block position: ${block.position})`
+            `  - Line ${block.line.toLocaleString()} (block position: ${block.position})`,
           );
         });
         console.log(
-          `  ↔ Content: ${allIdentical ? 'Identical across all declarations' : `Differing, ${linesDiff.toLocaleString()} lines changed. Using last declaration.`}`
+          `  ↔ Content: ${allIdentical ? 'Identical across all declarations' : `Differing, ${linesDiff.toLocaleString()} lines changed. Using last declaration.`}`,
         );
       }
     }
@@ -539,13 +536,9 @@ async function main() {
     // Overwritten Files Table
     if (overwriteDetails.length > 0) {
       console.log('\n' + '='.repeat(80));
-      console.log(
-        ' Overwritten Files Overview '.padStart(40 + 20, ' ').padEnd(80, '=')
-      );
+      console.log(' Overwritten Files Overview '.padStart(40 + 20, ' ').padEnd(80, '='));
       console.log('='.repeat(80));
-      console.log(
-        'This section lists files that would be overwritten, with line changes.'
-      );
+      console.log('This section lists files that would be overwritten, with line changes.');
       console.log('-'.repeat(80));
       console.table(overwriteDetails);
     }
@@ -553,9 +546,7 @@ async function main() {
     // Summary
     console.log('\n' + '='.repeat(80));
     console.log(
-      ` Processing Summary${isDryRun ? ' (Dry Run)' : ''} `
-        .padStart(40 + 20, ' ')
-        .padEnd(80, '=')
+      ` Processing Summary${isDryRun ? ' (Dry Run)' : ''} `.padStart(40 + 20, ' ').padEnd(80, '='),
     );
     console.log('='.repeat(80));
 
@@ -572,8 +563,7 @@ async function main() {
         Count: formatNumber(dryRunFilesToOverwrite),
         'Lines Added': formatNumber(
           totalLinesAdded *
-            (dryRunFilesToOverwrite /
-              (dryRunFilesToCreate + dryRunFilesToOverwrite || 1))
+            (dryRunFilesToOverwrite / (dryRunFilesToCreate + dryRunFilesToOverwrite || 1)),
         ),
         'Lines Removed': formatNumber(totalLinesRemoved),
       });
@@ -595,8 +585,7 @@ async function main() {
         Count: formatNumber(filesOverwrittenCount),
         'Lines Added': formatNumber(
           totalLinesAdded *
-            (filesOverwrittenCount /
-              (filesCreatedCount + filesOverwrittenCount || 1))
+            (filesOverwrittenCount / (filesCreatedCount + filesOverwrittenCount || 1)),
         ),
         'Lines Removed': formatNumber(totalLinesRemoved),
       });
@@ -645,9 +634,7 @@ async function main() {
     });
     summaryTable.push({
       Metric: 'Directories to be Created',
-      Count: formatNumber(
-        isDryRun ? dryRunDirectoriesToCreate.size : directoriesCreated.size
-      ),
+      Count: formatNumber(isDryRun ? dryRunDirectoriesToCreate.size : directoriesCreated.size),
       'Lines Added': '-',
       'Lines Removed': '-',
     });
@@ -685,18 +672,18 @@ async function main() {
     if (isDryRun && dryRunDirectoriesToCreate.size > 0) {
       console.log('\nDirectories to be Created (Dry Run):');
       const dirArray = Array.from(dryRunDirectoriesToCreate).sort();
-      dirArray.forEach(dir => console.log(`  - ${dir}`));
+      dirArray.forEach((dir) => console.log(`  - ${dir}`));
     } else if (!isDryRun && directoriesCreated.size > 0) {
       console.log('\nDirectories Created:');
       const dirArray = Array.from(directoriesCreated).sort();
-      dirArray.forEach(dir => console.log(`  - ${dir}`));
+      dirArray.forEach((dir) => console.log(`  - ${dir}`));
     }
 
     console.log('\n' + '-'.repeat(80));
     console.log(
       isDryRun
         ? 'Dry Run Completed. No files or directories modified.'
-        : `Processing of ${filename} completed.`
+        : `Processing of ${filename} completed.`,
     );
     console.log('='.repeat(80));
   } catch (error) {

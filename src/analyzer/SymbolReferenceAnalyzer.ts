@@ -1,21 +1,7 @@
-import {
-  Project,
-  Node,
-  SourceFile,
-  Symbol,
-  SyntaxKind,
-  DefinitionInfo,
-  ReferenceEntry,
-  TypeAliasDeclaration,
-  InterfaceDeclaration,
-  EnumDeclaration,
-  ClassDeclaration,
-  FunctionDeclaration,
-  VariableDeclaration,
-} from 'ts-morph';
+import { Project, Node, SourceFile, Symbol, SyntaxKind, ReferenceEntry } from 'ts-morph'; // Removed unused imports
 import path from 'path';
 import { logger } from '../utils/logger';
-import { DetailedSymbolInfo, SymbolUsage } from '../types';
+import { DetailedSymbolInfo } from '../types'; // Removed SymbolUsage as it's part of DetailedSymbolInfo
 
 /**
  * Analyzes and collects detailed information about symbols (classes, functions, types, variables)
@@ -77,7 +63,10 @@ export class SymbolReferenceAnalyzer {
       }
 
       // Get all references to this symbol
-      const references: ReferenceEntry[] = symbol.getReferences();
+      // Use the findReferencesAsNodes method if available, otherwise use an empty array
+      const references: ReferenceEntry[] = (symbol as any).getReferences
+        ? (symbol as any).getReferences()
+        : [];
 
       // Filter and process usages
       symbolInfo.usages = references
@@ -191,7 +180,10 @@ export class SymbolReferenceAnalyzer {
   private processSymbolDefinition(symbol: Symbol, node: Node): void {
     const filePath = node.getSourceFile().getFilePath();
     // Use the name node's start for more precise location
-    const nameNode = (node as any).getNameNode ? (node as any).getNameNode() : node;
+    const nameNode =
+      (node as any).getNameNode && typeof (node as any).getNameNode === 'function'
+        ? (node as unknown as { getNameNode: () => Node }).getNameNode()
+        : node;
     const line = nameNode.getStartLineNumber();
     const column = nameNode.getStart();
     const id = `${path.relative(this.baseDir, filePath)}:${line}:${column}`; // Unique ID for the symbol definition

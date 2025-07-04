@@ -1,0 +1,190 @@
+# Enterprise-grade configuration with all advanced features enabled
+# This configuration demonstrates the full capabilities of the AI JSDoc Generator
+
+# --- Workspace configuration ---
+workspaceDirs:
+  - packages
+  - apps
+  - services
+  - libs
+  - shared
+  - tools
+
+# --- File patterns ---
+includePatterns:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+ignorePatterns:
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/*.d.ts"
+  - "**/*.test.*"
+  - "**/*.spec.*"
+  - "**/coverage/**"
+  - "**/.next/**"
+
+# --- AI Model Definitions ---
+aiModels:
+  - id: openai-primary-gen
+    provider: openai
+    model: gpt-4o
+    type: generation
+    apiKeyEnvVar: OPENAI_API_KEY
+    temperature: 0.1
+    maxOutputTokens: 4096
+    responseFormat: { type: "text" } # Default is text for JSDoc
+    # Enable safety features specific to provider if needed
+  - id: anthropic-fallback-gen
+    provider: anthropic
+    model: claude-3-5-sonnet-20241022
+    type: generation
+    apiKeyEnvVar: ANTHROPIC_API_KEY
+    temperature: 0.2
+    maxOutputTokens: 4096
+  - id: google-backup-gen
+    provider: google
+    model: gemini-1.5-pro
+    type: generation
+    apiKeyEnvVar: GOOGLE_API_KEY
+    temperature: 0.2
+    maxOutputTokens: 4096
+    enableSafetyFeatures: true # Recommended for Google models
+  - id: ollama-local-gen
+    provider: ollama
+    model: codellama # Ensure this model is pulled in your Ollama instance
+    type: generation
+    apiKeyEnvVar: OLLAMA_HOST
+    baseUrl: http://localhost:11434
+    temperature: 0.2
+    maxOutputTokens: 4096
+  - id: openai-embedding
+    provider: openai
+    model: text-embedding-3-large
+    type: embedding
+    apiKeyEnvVar: OPENAI_API_KEY
+    dimensions: 1536
+  - id: google-embedding
+    provider: google
+    model: embedding-001
+    type: embedding
+    apiKeyEnvVar: GOOGLE_API_KEY
+
+# --- AI Client Configuration (Controls how the AI client uses the models) ---
+aiClientConfig:
+  defaultGenerationModelId: openai-primary-gen # Primary model for JSDoc generation
+  defaultEmbeddingModelId: openai-embedding # Primary model for embeddings
+  maxConcurrentRequests: 8 # High concurrency for enterprise-grade machines
+  requestDelayMs: 100 # Minimal delay between requests (rely on rate limiting)
+  maxRetries: 5 # Robust retry mechanism for transient errors
+  retryDelayMs: 2000 # Exponential backoff retry delay (2s, 4s, 8s...)
+  maxTokensPerBatch: 12000 # Larger token batches for efficiency
+
+# --- Embedding Configuration ---
+embeddingConfig:
+  enabled: true
+  modelId: openai-embedding
+  minRelationshipScore: 0.78 # High score for tighter relationships
+  maxRelatedSymbols: 7 # More related symbols for deeper context
+  embeddingBatchSize: 100 # Larger batches for embedding generation
+
+# --- JSDoc Generation Configuration ---
+jsdocConfig:
+  prioritizeExports: true
+  includePrivate: false # Typically only document public/exported APIs
+  includeNodeKinds:
+    - ClassDeclaration
+    - FunctionDeclaration
+    - MethodDeclaration
+    - InterfaceDeclaration
+    - TypeAliasDeclaration
+    - EnumDeclaration
+    - VariableDeclaration # For exported constants or function expressions
+  excludeNodeKinds:
+    - ConstructorDeclaration
+    - GetAccessor # Accessors often self-explanatory
+    - SetAccessor # Accessors often self-explanatory
+  maxSnippetLength: 4000 # Larger snippets for complex logic
+  generateExamples: true # Generate examples where possible
+  overwriteExisting: false # False means respect existing comments by default
+  mergeExisting: true # Merge with existing JSDoc comments
+  minJsdocLength: 80 # Minimum useful length for AI-generated JSDoc
+  includeSymbolReferences: true # Include direct references
+  includeRelatedSymbols: true # Include semantic relationships
+
+# --- Output Configuration ---
+outputConfig:
+  reportFileName: enterprise-jsdoc-report.json
+  reportDir: ./reports/enterprise
+  logLevel: info # Standard logging for production environments
+
+# --- CLI Flags (Default Behavior) ---
+dryRun: false # Set to true for previewing changes
+forceOverwrite: false
+noMergeExisting: false
+disableEmbeddings: false
+
+# --- Plugin Configuration ---
+plugins:
+  - name: react-component-plugin # Name must match the plugin's exported class name
+    enabled: true
+    options:
+      enhanceProps: true
+      detectHooks: true
+      analyzeContext: true
+  - name: api-documentation-plugin
+    enabled: true
+    options:
+      generateExamples: true
+      includeMiddleware: true
+      detectValidation: true
+  # Example of a custom plugin if you have one locally
+  # - name: MyCustomMonorepoPlugin
+  #   enabled: true
+  #   path: "./src/plugins/MyCustomMonorepoPlugin.ts" # Relative path from project root
+
+# --- Telemetry Configuration ---
+telemetry:
+  enabled: true # Opt-in for performance monitoring and insights
+  endpoint: https://telemetry.ai-jsdoc.com/collect # Replace with your actual telemetry endpoint
+  anonymize: true # Anonymize all collected data (recommended)
+  collectPerformance: true
+  collectErrors: true
+
+# --- Quality Assurance Configuration ---
+qualityThresholds:
+  minimumScore: 85 # Higher minimum quality score for enterprise standards
+  requireDescriptions: true
+  requireExamples: false # Can be set to true if strict example policy
+  requireParams: true
+  requireReturns: true
+
+# --- Performance Optimizations ---
+performance:
+  enableCaching: true # Essential for cost and speed
+  maxConcurrentFiles: 8 # Process more files in parallel
+  batchSize: 50 # Internal batch size for node processing
+  timeoutMs: 60000 # Increased timeout for long-running AI calls
+
+# --- Configuration Migration ---
+migration:
+  enableAutoMigration: true # Automatically migrate old config formats
+  backupConfigs: true # Create a backup of the original config before migration
+  migrationLogLevel: normal # Log migration details
+
+# --- Watch Mode Configuration ---
+watchMode:
+  enabled: false # Default disabled
+  debounceMs: 500 # Debounce file changes for 500ms
+  includePatterns: # Specific patterns to watch (if different from workspaceDirs)
+    - "apps/**/*.ts"
+    - "libs/**/*.tsx"
+  ignorePatterns: # Specific patterns to ignore in watch mode (additional to global)
+    - "**/temp/**"
+    - "**/*.snap"
+
+# --- Production Mode Flag ---
+productionMode: false # Set to `true` when deploying to production environments
+

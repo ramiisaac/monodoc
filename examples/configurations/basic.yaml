@@ -1,0 +1,47 @@
+# Basic configuration for small projects
+workspaceDirs:
+  - packages
+  - apps
+includePatterns:
+  - "**/*.ts"
+  - "**/*.tsx"
+ignorePatterns:
+  - "**/node_modules/**"
+  - "**/*.test.ts"
+  - "**/*.spec.ts"
+aiModels:
+  - id: openai-gpt4o
+    provider: openai
+    model: gpt-4o
+    type: generation
+    apiKeyEnvVar: OPENAI_API_KEY
+    temperature: 0.3
+    maxOutputTokens: 2000
+  - id: openai-embedding
+    provider: openai
+    model: text-embedding-3-small
+    type: embedding
+    apiKeyEnvVar: OPENAI_API_KEY
+    dimensions: 1536
+aiClientConfig:
+  defaultGenerationModelId: openai-gpt4o
+  defaultEmbeddingModelId: openai-embedding
+  maxConcurrentRequests: 3
+  requestDelayMs: 500
+  maxRetries: 3
+  retryDelayMs: 1000
+  maxTokensPerBatch: 4000
+embeddingConfig:
+  enabled: false # Embeddings disabled by default for basic config
+  modelId: openai-embedding
+  minRelationshipScore: 0.7
+  maxRelatedSymbols: 3
+jsdocConfig:
+  generateExamples: true
+  mergeExisting: true
+  includePrivate: false
+  minJsdocLength: 50
+outputConfig:
+  logLevel: info
+  reportDir: ./reports/basic
+

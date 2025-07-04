@@ -1,7 +1,37 @@
-import { NodeContext, GeneratorConfig } from '../types';
+import { TemplateSystem } from './TemplateSystem';
 import { logger } from '../utils/logger';
-import { DynamicTemplateSystem } from './DynamicTemplateSystem';
-import Handlebars from 'handlebars'; // Import Handlebars for template compilation
+import { NodeContext, GeneratorConfig } from '../types';
+import Handlebars from 'handlebars';
+
+/**
+ * Extends the base `TemplateSystem` to provide dynamic loading and management
+ * of Handlebars templates for different documentation strategies.
+ */
+export class DynamicTemplateSystem extends TemplateSystem {
+  /**
+   * Loads a template by name, with caching and error handling.
+   * @param templateName The name of the template to load.
+   * @returns The template content as a string.
+   */
+  async getTemplate(templateName: string): Promise<string> {
+    // First, try to load from the base class (which may load from cache)
+    let templateContent = await super.getTemplate(templateName);
+
+    // If not found, attempt to load from a specific directory structure
+    if (!templateContent) {
+      const fallbackPath = `src/templates/docs/${templateName}.hbs`;
+      logger.info(`Template not found in cache, loading from fallback path: ${fallbackPath}`);
+      templateContent = await super.getTemplate(fallbackPath);
+    }
+
+    // If the template is still not found, throw an error
+    if (!templateContent) {
+      throw new Error(`Template '${templateName}' not found in system.`);
+    }
+
+    return templateContent;
+  }
+}
 
 /**
  * Defines a documentation strategy, including its name, priority,
@@ -12,7 +42,7 @@ export interface DocumentationStrategy {
   name: string;
   priority: number; // Higher number means higher priority
   canHandle(context: NodeContext): boolean;
-  // generate returns the name of the template to use
+  // getTemplateName returns the name of the template to use
   getTemplateName(context: NodeContext): string;
 }
 
@@ -58,6 +88,21 @@ interface GenericTemplateData {
   hasReturnType: boolean;
   isExported: boolean;
   accessModifier?: string;
+  // Add more general properties from NodeContext that all templates might use
+  codeSnippet: string;
+  fileContext: string;
+  packageContext: string;
+  relevantImports?: string[];
+  surroundingContext?: string;
+  symbolUsages?: unknown[]; // Simplified for template data
+  relatedSymbols?: unknown[]; // Simplified for template data
+  parameters?: Array<{ name: string; type: string; optional: boolean }>;
+  returnType?: string;
+  isAsync: boolean;
+  // Pass config flags that affect template rendering (e.g., generateExamples)
+  generateExamples: boolean;
+  // Pass any customData from NodeContext if plugins add it
+  customData?: Record<string, unknown>;
 }
 
 /**
@@ -84,49 +129,49 @@ export class SmartDocumentationEngine {
       name: 'react-component',
       priority: 100, // Highest priority for specific component types
       canHandle: (context) => this.isReactComponent(context),
-      getTemplateName: (context) => 'react-component',
+      getTemplateName: (_context) => 'react-component', // Unused _context lint fix
     });
     this.strategies.push({
       name: 'api-endpoint',
       priority: 90,
       canHandle: (context) => this.isApiEndpoint(context),
-      getTemplateName: (context) => 'api-endpoint',
+      getTemplateName: (_context) => 'api-endpoint', // Unused _context lint fix
     });
     this.strategies.push({
       name: 'utility-function',
       priority: 80,
       canHandle: (context) => this.isUtilityFunction(context),
-      getTemplateName: (context) => 'utility-function',
+      getTemplateName: (_context) => 'utility-function', // Unused _context lint fix
     });
     this.strategies.push({
       name: 'class-method',
       priority: 70,
       canHandle: (context) => context.nodeKind === 'MethodDeclaration',
-      getTemplateName: (context) => 'generic', // Could have a specific one
+      getTemplateName: (_context) => 'generic', // Could have a specific one // Unused _context lint fix
     });
     this.strategies.push({
       name: 'interface',
       priority: 60,
       canHandle: (context) => context.nodeKind === 'InterfaceDeclaration',
-      getTemplateName: (context) => 'generic',
+      getTemplateName: (_context) => 'generic', // Unused _context lint fix
     });
     this.strategies.push({
       name: 'type-alias',
       priority: 50,
       canHandle: (context) => context.nodeKind === 'TypeAliasDeclaration',
-      getTemplateName: (context) => 'generic',
+      getTemplateName: (_context) => 'generic', // Unused _context lint fix
     });
     this.strategies.push({
       name: 'class',
       priority: 40,
       canHandle: (context) => context.nodeKind === 'ClassDeclaration',
-      getTemplateName: (context) => 'generic',
+      getTemplateName: (_context) => 'generic', // Unused _context lint fix
     });
     this.strategies.push({
       name: 'generic',
       priority: 1, // Lowest priority, acts as a fallback
       canHandle: () => true, // Always matches
-      getTemplateName: (context) => 'generic',
+      getTemplateName: (_context) => 'generic', // Unused _context lint fix
     });
 
     // Sort strategies by priority in descending order
@@ -137,26 +182,14 @@ export class SmartDocumentationEngine {
    * Registers custom Handlebars helpers for template rendering.
    */
   private registerHandlebarsHelpers(): void {
-    Handlebars.registerHelper('json', function (context) {
-      return JSON.stringify(context);
-    });
-    Handlebars.registerHelper('if', function (conditional, options) {
-      if (conditional) {
+    Handlebars.registerHelper('eq', (a: unknown, b: unknown) => a === b);
+    Handlebars.registerHelper('neq', (a: unknown, b: unknown) => a !== b);
+    Handlebars.registerHelper('if_eq', function (this: unknown, a, b, options) {
+      // Corrected `any` usage
+      if (a === b) {
         return options.fn(this);
-      } else {
-        return options.inverse(this);
       }
-    });
-    Handlebars.registerHelper('each', function (context, options) {
-      let ret = '';
-      if (context && context.length > 0) {
-        for (let i = 0; i < context.length; i++) {
-          ret = ret + options.fn(context[i]);
-        }
-      } else {
-        ret = options.inverse(this);
-      }
-      return ret;
+      return options.inverse(this);
     });
   }
 
@@ -170,69 +203,53 @@ export class SmartDocumentationEngine {
     const strategy = this.strategies.find((s) => s.canHandle(context));
     if (!strategy) {
       logger.warn(
-        `No documentation strategy found for node: ${context.nodeName}. Falling back to generic.`,
+        `No suitable documentation strategy found for ${context.nodeName}. Falling back to generic.`,
       );
-      // This case should ideally not happen due to the 'generic' fallback strategy
-      return this.generateGenericDoc(context);
+      return this.generateGenericDoc(context, config);
     }
 
     const templateName = strategy.getTemplateName(context);
-    logger.debug(
-      `Using strategy '${strategy.name}' with template '${templateName}' for ${context.nodeName} (${context.nodeKind}).`,
-    );
-
     const templateContent = await this.templateSystem.getTemplate(templateName);
 
     // Compile the template if not already compiled
     if (!this.compiledTemplates.has(templateName)) {
       this.compiledTemplates.set(templateName, Handlebars.compile(templateContent));
     }
-    const template = this.compiledTemplates.get(templateName)!;
+    const compiledTemplate = this.compiledTemplates.get(templateName)!;
 
-    // Prepare data based on the selected strategy's template needs
-    let templateData: any;
+    // Prepare data for the template
+    let templateData: Record<string, unknown>; // Use a generic record for data
     switch (templateName) {
-      case 'react-component':
-        templateData = this.getReactComponentTemplateData(context, config);
+      case 'react-component': {
+        const data = this.getReactComponentTemplateData(context, config);
+        templateData = data as unknown as Record<string, unknown>;
         break;
-      case 'api-endpoint':
-        templateData = this.getApiEndpointTemplateData(context, config);
+      }
+      case 'api-endpoint': {
+        const data = this.getApiEndpointTemplateData(context, config);
+        templateData = data as unknown as Record<string, unknown>;
         break;
-      case 'utility-function':
-        templateData = this.getUtilityFunctionTemplateData(context, config);
+      }
+      case 'utility-function': {
+        const data = this.getUtilityFunctionTemplateData(context, config);
+        templateData = data as unknown as Record<string, unknown>;
         break;
+      }
       case 'generic':
-      default:
-        templateData = this.getGenericTemplateData(context, config);
+      default: {
+        const data = this.getGenericTemplateData(context, config);
+        templateData = data as unknown as Record<string, unknown>;
         break;
+      }
     }
 
-    // Add common data fields for all templates
-    templateData.nodeName = context.nodeName;
-    templateData.nodeKind = context.nodeKind;
-    templateData.signatureDetails = context.signatureDetails;
-    templateData.fileContext = context.fileContext;
-    templateData.packageContext = context.packageContext;
-    templateData.codeSnippet = context.codeSnippet;
-    templateData.relevantImports = context.relevantImports;
-    templateData.surroundingContext = context.surroundingContext;
-    templateData.symbolUsages = context.symbolUsages;
-    templateData.relatedSymbols = context.relatedSymbols;
-    templateData.parameters = context.parameters;
-    templateData.returnType = context.returnType;
-    templateData.isAsync = context.isAsync;
-    templateData.isExported = context.isExported;
-    templateData.accessModifier = context.accessModifier;
-    templateData.generateExamples = config.jsdocConfig.generateExamples; // Pass config flag to template
-
     try {
-      return template(templateData);
-    } catch (templateError) {
+      return compiledTemplate(templateData).trim();
+    } catch (error) {
       logger.error(
-        `Error rendering template '${templateName}' for ${context.nodeName}: ${templateError instanceof Error ? templateError.message : String(templateError)}`,
+        `Error rendering template '${templateName}' for node ${context.nodeName}: ${error instanceof Error ? error.message : String(error)}`,
       );
-      // Fallback to generic template if specific template rendering fails
-      return this.generateGenericDoc(context);
+      return this.generateGenericDoc(context, config); // Fallback to generic on error
     }
   }
 
@@ -244,12 +261,13 @@ export class SmartDocumentationEngine {
    * @returns True if it's a React component, false otherwise.
    */
   private isReactComponent(context: NodeContext): boolean {
-    return (
-      context.codeSnippet.includes('JSX.Element') ||
-      context.codeSnippet.includes('React.FC') ||
-      /return\s*<[A-Za-z]/.test(context.codeSnippet) || // Basic JSX return check
-      (context.nodeKind === 'FunctionDeclaration' && context.nodeName.match(/^[A-Z]/)) // Capitalized function name
-    );
+    const hasJSXElements = context.codeSnippet.includes('JSX.Element');
+    const hasReactFC = context.codeSnippet.includes('React.FC');
+    const hasJSXReturnPattern = /return\s*<[A-Za-z]/.test(context.codeSnippet);
+    const isCapitalizedFunction =
+      context.nodeKind === 'FunctionDeclaration' && !!context.nodeName.match(/^[A-Z]/);
+
+    return hasJSXElements || hasReactFC || hasJSXReturnPattern || isCapitalizedFunction;
   }
 
   /**
@@ -262,6 +280,7 @@ export class SmartDocumentationEngine {
       context.fileContext.includes('/api/') || // Conventional API route directory
       context.fileContext.includes('/routes/') || // Another common API route directory
       /export\s+(default\s+)?(async\s+)?function\s+(GET|POST|PUT|DELETE|PATCH)/.test(
+        // Removed unnecessary escape character
         context.codeSnippet,
       ) // Common HTTP method export patterns
     );
@@ -287,17 +306,17 @@ export class SmartDocumentationEngine {
   /**
    * Prepares data specific to React component templates.
    * @param context The NodeContext.
-   * @param config The GeneratorConfig.
+   * @param _config The GeneratorConfig. (Marked as unused with _)
    * @returns Data for the React component template.
    */
   private getReactComponentTemplateData(
     context: NodeContext,
-    config: GeneratorConfig,
+    _config: GeneratorConfig,
   ): ReactComponentTemplateData {
-    // Extract prop types from interface or type alias definitions within the component's scope
-    const propTypes = this.extractPropTypes(context.codeSnippet);
-    const hookUsage = this.analyzeHookUsage(context.codeSnippet);
-    const componentType = this.getReactComponentType(context.codeSnippet);
+    // These properties are expected to be in customData if the ReactComponentPlugin ran
+    const propTypes = (context.customData?.reactProps as string[]) || [];
+    const hookUsage = (context.customData?.hooksUsed as string[]) || [];
+    const componentType = (context.customData?.componentType as string) || 'functional';
 
     return {
       componentName: context.nodeName,
@@ -310,160 +329,42 @@ export class SmartDocumentationEngine {
   }
 
   /**
-   * Extracts prop names from a React component's code snippet.
-   * This looks for `interface XProps { ... }` or `type XProps = { ... }`.
-   * @param code The component's code snippet.
-   * @returns An array of prop names.
-   */
-  private extractPropTypes(code: string): string[] {
-    const propNames: string[] = [];
-    const interfaceMatch = code.match(/(interface|type)\s+(\w+Props)\s*\{([^}]+)\}/s); // `s` for dotall
-    if (interfaceMatch && interfaceMatch[3]) {
-      const propDefinitions = interfaceMatch[3];
-      // Regex to find `propName: type;` or `propName?: type;`
-      const propRegex = /(\w+)\s*[\?:-]\s*[^;,\n]+/g;
-      let match;
-      while ((match = propRegex.exec(propDefinitions)) !== null) {
-        propNames.push(match[1]);
-      }
-    }
-    // Also consider direct destructuring in function parameters
-    const destructuringMatch = code.match(/function\s+\w+\s*\((?:\{\s*([^}]+)\s*\})?\s*\)/);
-    if (destructuringMatch && destructuringMatch[1]) {
-      const destructuredProps = destructuringMatch[1]
-        .split(',')
-        .map((p) => p.trim().split(':')[0].trim())
-        .filter(Boolean);
-      propNames.push(...destructuredProps);
-    }
-
-    return [...new Set(propNames)]; // Deduplicate
-  }
-
-  /**
-   * Analyzes a React component's code for common hook usage.
-   * @param code The component's code snippet.
-   * @returns An array of hook names used (e.g., 'useState', 'useEffect').
-   */
-  private analyzeHookUsage(code: string): string[] {
-    const hooks = [
-      'useState',
-      'useEffect',
-      'useContext',
-      'useReducer',
-      'useCallback',
-      'useMemo',
-      'useRef',
-      'useRouter',
-      'useSWR',
-    ];
-    return hooks.filter((hook) => code.includes(hook));
-  }
-
-  /**
-   * Determines the type of React component (e.g., functional, class, memoized).
-   * @param code The component's code snippet.
-   * @returns A string describing the component type.
-   */
-  private getReactComponentType(code: string): string {
-    if (code.includes('React.memo') || code.includes('memo(')) return 'memoized functional';
-    if (code.includes('forwardRef')) return 'forwarded-ref functional';
-    if (code.includes('class') && code.includes('extends React.Component')) return 'class';
-    return 'functional';
-  }
-
-  /**
    * Prepares data specific to API endpoint templates.
    * @param context The NodeContext.
-   * @param config The GeneratorConfig.
+   * @param _config The GeneratorConfig. (Marked as unused with _)
    * @returns Data for the API endpoint template.
    */
   private getApiEndpointTemplateData(
     context: NodeContext,
-    config: GeneratorConfig,
+    _config: GeneratorConfig,
   ): ApiEndpointTemplateData {
-    const httpMethod = this.extractHttpMethod(context.codeSnippet);
-    const fullRoutePath = this.extractEndpointPath(context.fileContext);
-    const middleware = this.extractMiddleware(context.codeSnippet); // Extract middleware if identifiable
+    // These properties are expected to be in customData if the ApiDocumentationPlugin ran
+    const httpMethod = (context.customData?.httpMethod as string) || 'UNKNOWN';
+    const routePath = (context.customData?.routePath as string) || '/unknown';
+    const middleware = (context.customData?.middleware as string[]) || [];
 
     return {
       method: httpMethod,
-      endpoint: fullRoutePath.replace(/^\/api\//, '/'), // Display path without /api prefix
-      fullRoutePath: fullRoutePath,
-      hasAuth:
-        context.codeSnippet.includes('auth') ||
-        context.codeSnippet.includes('authenticate') ||
-        context.codeSnippet.includes('authorize'),
+      endpoint: routePath.replace(/^\/api\//, '/'), // Display path without /api prefix
+      fullRoutePath: routePath,
+      hasAuth: !!context.customData?.hasAuth,
       middleware: middleware,
     };
   }
 
   /**
-   * Extracts the HTTP method from an API route handler code snippet.
-   * @param code The code snippet.
-   * @returns The HTTP method (e.g., 'GET', 'POST'), or 'UNKNOWN'.
-   */
-  private extractHttpMethod(code: string): string {
-    const match = code.match(
-      /export\s+(default\s+)?(async\s+)?function\s+(GET|POST|PUT|DELETE|PATCH)/,
-    );
-    return match ? match[3] : 'UNKNOWN';
-  }
-
-  /**
-   * Extracts the API endpoint path from the file context.
-   * Assumes a conventional `/pages/api/` or `/src/routes/api/` structure.
-   * @param filePath The full file path.
-   * @returns The extracted API endpoint path.
-   */
-  private extractEndpointPath(filePath: string): string {
-    const apiIndex = filePath.indexOf('/api/');
-    if (apiIndex !== -1) {
-      let route = filePath.substring(apiIndex + 4); // Get part after '/api/'
-      route = route.replace(/\.[^/.]+$/, ''); // Remove file extension
-      route = route.replace(/\[([^\]]+)\]/g, ':$1'); // Replace [param] with :param for express-style
-      return route;
-    }
-    const routesIndex = filePath.indexOf('/routes/');
-    if (routesIndex !== -1) {
-      let route = filePath.substring(routesIndex + 7);
-      route = route.replace(/\.[^/.]+$/, '');
-      route = route.replace(/\[([^\]]+)\]/g, ':$1');
-      return route;
-    }
-    return '/unknown';
-  }
-
-  /**
-   * Extracts common middleware names from an API route handler code.
-   * @param code The code snippet.
-   * @returns An array of identified middleware names.
-   */
-  private extractMiddleware(code: string): string[] {
-    const middleware: string[] = [];
-    if (code.includes('authenticate') || code.includes('authMiddleware'))
-      middleware.push('authentication');
-    if (code.includes('authorize') || code.includes('permissionMiddleware'))
-      middleware.push('authorization');
-    if (code.includes('validate') || code.includes('schema')) middleware.push('validation');
-    if (code.includes('rateLimit')) middleware.push('rate-limiting');
-    if (code.includes('cors')) middleware.push('CORS');
-    return [...new Set(middleware)]; // Deduplicate
-  }
-
-  /**
    * Prepares data specific to utility function templates.
    * @param context The NodeContext.
-   * @param config The GeneratorConfig.
+   * @param _config The GeneratorConfig. (Marked as unused with _)
    * @returns Data for the utility function template.
    */
   private getUtilityFunctionTemplateData(
     context: NodeContext,
-    config: GeneratorConfig,
+    _config: GeneratorConfig,
   ): UtilityFunctionTemplateData {
     return {
       functionName: context.nodeName,
-      isAsync: context.isAsync || false, // Use NodeContext property
+      isAsync: context.isAsync || false,
       isGeneric: context.codeSnippet.includes('<T>') || context.signatureDetails.includes('<T>'), // Check for generics
     };
   }
@@ -471,7 +372,7 @@ export class SmartDocumentationEngine {
   /**
    * Prepares data for generic templates, suitable for any node type.
    * @param context The NodeContext.
-   * @param config The GeneratorConfig.
+   * @param config The GeneratorConfig. (Marked as used for `generateExamples`)
    * @returns Data for the generic template.
    */
   private getGenericTemplateData(
@@ -480,23 +381,37 @@ export class SmartDocumentationEngine {
   ): GenericTemplateData {
     return {
       name: context.nodeName,
-      nodeType: context.nodeType || context.nodeKind,
-      hasParameters: (context.parameters?.length || 0) > 0,
-      hasReturnType: !!context.returnType && context.returnType !== 'void',
-      isExported: context.isExported || false,
+      nodeType: context.nodeKind,
+      hasParameters: (context.parameters || []).length > 0,
+      hasReturnType: !!context.returnType,
+      isExported: !!context.isExported,
       accessModifier: context.accessModifier,
+      codeSnippet: context.codeSnippet,
+      fileContext: context.fileContext,
+      packageContext: context.packageContext,
+      relevantImports: context.relevantImports,
+      surroundingContext: context.surroundingContext,
+      symbolUsages: context.symbolUsages as unknown[], // Corrected `any` usage
+      relatedSymbols: context.relatedSymbols as unknown[], // Corrected `any` usage
+      parameters: context.parameters,
+      returnType: context.returnType,
+      isAsync: !!context.isAsync,
+      generateExamples: config.jsdocConfig.generateExamples, // Pass example generation flag
+      customData: context.customData,
     };
   }
+  private async generateGenericDoc(context: NodeContext, config: GeneratorConfig): Promise<string> {
+    // Fallback to a very basic, manually constructed JSDoc string
+    const params = (context.parameters || [])
+      .map((p) => `   * @param {${p.type}} ${p.name} - Description for ${p.name}.`)
+      .join('\n');
+    const returns = context.returnType
+      ? `   * @returns {${context.returnType}} - Description of return value.`
+      : '';
 
-  /**
-   * A fallback function to generate a basic JSDoc comment if no specific template/strategy matches
-   * or if template rendering fails. This ensures there's always some output.
-   * @param context The NodeContext.
-   * @returns A basic JSDoc string.
-   */
-  private async generateGenericDoc(context: NodeContext): Promise<string> {
-    const defaultTemplateContent = await this.templateSystem.getTemplate('generic');
-    const template = Handlebars.compile(defaultTemplateContent);
-    return template(this.getGenericTemplateData(context, {} as any)); // Use minimal data for fallback
+    return `/**
+   * @summary ${context.nodeName}
+   * @description A basic description for ${context.nodeName}.
+${params ? `${params}\n` : ''}${returns ? `${returns}\n` : ''}   */`;
   }
 }

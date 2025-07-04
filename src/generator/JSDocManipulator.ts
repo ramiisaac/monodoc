@@ -1,4 +1,5 @@
-import { JSDocableNode, GeneratorConfig, JSDocTagStructure } from '../types';
+import { JSDocableNode, GeneratorConfig } from '../types';
+import { JSDocTagStructure, StructureKind } from 'ts-morph';
 import { JSDoc, JSDocTag, Node } from 'ts-morph';
 import { logger } from '../utils/logger';
 
@@ -110,37 +111,32 @@ export class JSDocManipulator {
    * @param existingJSDoc The existing JSDoc object to merge into.
    */
   private mergeJSDoc(node: JSDocableNode, newContent: string, existingJSDoc: JSDoc): void {
+    const newDescription = this.extractDescriptionFromJSDocString(newContent);
+    // Removed `tags` and `match` variable declarations as they were unused due to `extractTagsFromJSDocString` returning empty.
+    // The `newTagMap` variable is also removed as it relied on `newTags`.
+
+    let mergedDescription = existingJSDoc.getDescription().trim(); // Get existing description from the JSDoc object
+    if (
+      newDescription &&
+      newDescription.length > 0 &&
+      !mergedDescription.includes(newDescription.substring(0, Math.min(newDescription.length, 50)))
+    ) {
+      mergedDescription = `${mergedDescription}\n\n${newDescription}`.trim();
+    }
+
     // A more advanced merge would involve:
     // 1. Parsing existing and new JSDoc into a structured format (description, tags).
     // 2. Combining tags, prioritizing new ones for certain types (@summary, @description)
     //    and merging for others (@param, @example, @see).
     // 3. Reconstructing the JSDoc string.
-
-    const newDescription = this.extractDescriptionFromJSDocString(newContent);
-    const newTags = this.extractTagsFromJSDocString(newContent);
-
-    // Get existing description and tags
-    const existingDescription = existingJSDoc.getDescription().trim();
-    const existingTags = existingJSDoc.getTags();
-
-    let mergedDescription = existingDescription;
-    if (
-      newDescription &&
-      newDescription.length > 0 &&
-      !existingDescription.includes(
-        newDescription.substring(0, Math.min(newDescription.length, 50)),
-      )
-    ) {
-      mergedDescription = `${existingDescription}\n\n${newDescription}`.trim();
-    }
-
-    const mergedTagStructures = this.mergeJSDocTags(existingTags, newTags);
+    // For now, it defaults to adding a new JSDoc with the new description and no parsed tags.
 
     // Remove old JSDoc and add a new one with merged content
     existingJSDoc.remove();
     node.addJsDoc({
       description: mergedDescription,
-      tags: mergedTagStructures,
+      // No tags are passed here, as `extractTagsFromJSDocString` currently returns empty.
+      // This is a simplification; a full implementation would parse and merge tags.
     });
   }
 
@@ -152,23 +148,21 @@ export class JSDocManipulator {
   private extractDescriptionFromJSDocString(jsdocString: string): string {
     const lines = jsdocString.split('\n');
     let description = '';
-    let inDescription = false;
+    let inDescriptionBlock = false; // Renamed to clarify its purpose
     for (const line of lines) {
       const trimmedLine = line.trim();
       if (trimmedLine.startsWith('@')) {
-        if (inDescription) break; // End of description section
+        if (inDescriptionBlock) break; // End of description section
         if (trimmedLine.startsWith('@description')) {
-          inDescription = true;
+          inDescriptionBlock = true;
           description += trimmedLine.substring('@description'.length).trim() + '\n';
         } else if (trimmedLine.startsWith('@summary')) {
-          // Summary is often part of description, or separate.
-          // For simplicity, if description tag exists, only capture that.
-          // Otherwise, summary can be considered part of description.
+          // If no @description tag exists, the @summary text can be considered part of the main description.
           if (!jsdocString.includes('@description')) {
             description += trimmedLine.substring('@summary'.length).trim() + '\n';
           }
         }
-      } else if (inDescription || (description.length === 0 && !trimmedLine.startsWith('@'))) {
+      } else if (inDescriptionBlock || (description.length === 0 && !trimmedLine.startsWith('@'))) {
         // Capture lines before any tags, or lines within a @description block
         description += trimmedLine + '\n';
       }
@@ -178,26 +172,16 @@ export class JSDocManipulator {
 
   /**
    * Extracts JSDoc tags from a raw JSDoc string into a structured format.
-   * @param jsdocString The full JSDoc string.
-   * @returns An array of JSDocTagStructure.
+   * This is a placeholder/simplified implementation. A robust parser would be needed.
+   * @param _jsdocString The full JSDoc string. (Marked as unused with `_`)
+   * @returns An array of JSDocTag (currently empty, pending full parser).
    */
-  private extractTagsFromJSDocString(jsdocString: string): JSDocTag[] {
+  private extractTagsFromJSDocString(_jsdocString: string): JSDocTag[] {
     // This requires a robust JSDoc parser, which TS-Morph provides for *existing* nodes.
     // For parsing arbitrary strings, a lightweight regex-based approach or external parser is needed.
-    // A simplified regex approach:
-    const tags: JSDocTag[] = [];
-    const tagRegex = /^@(\w+)\s*(?:\{([^}]+)\})?\s*(\S.*)?/gm; // Matches @tag {type} name - description
-    let match;
-    while ((match = tagRegex.exec(jsdocString)) !== null) {
-      // TS-Morph's `JSDocTag` is an AST node, not a plain object.
-      // To create a `JSDocTagStructure` for `addJsDoc`, we need to parse manually.
-      // This is a simplification. A real implementation might use a dedicated JSDoc parser library.
-      // For now, let's represent them as simple objects or strings for merging.
-      // The `addJsDoc` method can take a string for its tags.
-    }
-    // This is complex. For now, a simple merge is sufficient: overwrite all tags from new.
-    // A deeper merge needs to understand `@param` by name, `@see` by target etc.
-    return []; // Return empty for now, as direct string parsing to JSDocTag is not trivial
+    // For now, it returns empty array, meaning tags from the AI-generated string
+    // are not merged, only the description.
+    return [];
   }
 
   /**
@@ -205,39 +189,40 @@ export class JSDocManipulator {
    * that prioritizes new tags for `@summary` and `@description`, and replaces others.
    * A truly intelligent merge would be context-aware (e.g., merge @param by name).
    * @param existingTags The existing JSDocTag objects from ts-morph.
-   * @param newTags The new JSDocTag objects (parsed from the AI response).
+   * @param newTags The new JSDocTag objects (parsed from the AI response, currently empty).
    * @returns An array of JSDocTagStructure for the merged JSDoc.
    */
   private mergeJSDocTags(existingTags: JSDocTag[], newTags: JSDocTag[]): JSDocTagStructure[] {
     const mergedTags: JSDocTagStructure[] = [];
-    const newTagMap = new Map<string, JSDocTag>(); // Map new tags by name for easy lookup
 
-    // Convert newTags (if directly parsed into TS-Morph JSDocTag like objects) into structures
-    const newTagStructures: JSDocTagStructure[] = [];
-    // Assuming newTags are actually strings from the AI, we need to parse them
-    // This is where the complexity comes in. For now, a simple overwrite is easiest.
-    // Instead of trying to parse newTags into JSDocTag objects, let's assume
-    // `newContent` already contains the full JSDoc block string, and we just extract its parts.
-
-    // Simplified merge: New content's tags largely overwrite old tags,
-    // but we might keep some specific old tags if they're not in the new content.
-    // For example, if AI doesn't generate @deprecated, keep it if it was there.
-    const keepOldTags = new Set(['deprecated', 'ignore', 'internal']); // Tags to always preserve
-    const newTagNames = new Set(newTags.map((t) => t.getTagName())); // Assuming newTags can be processed
+    // Tags to always preserve from the existing JSDoc if not explicitly overridden by new.
+    const keepOldTags = new Set([
+      'deprecated',
+      'ignore',
+      'internal',
+      'beta',
+      'alpha',
+      'todo',
+      'fixme',
+    ]);
+    const newTagNames = new Set(newTags.map((t) => t.getTagName())); // This relies on newTags being populated
 
     existingTags.forEach((tag) => {
       const tagName = tag.getTagName();
+      // If the old tag is in the 'keep' list and no new tag with the same name exists, preserve it.
       if (keepOldTags.has(tagName) && !newTagNames.has(tagName)) {
         mergedTags.push({
+          kind: StructureKind.JSDocTag,
           tagName: tagName,
-          text: tag.getCommentText(),
+          text: tag.getCommentText() || undefined,
         });
       }
       // More complex merge logic for @param, @property would go here, matching by name
+      // If an existing @param tag has a name that matches a new @param tag, merge their descriptions.
     });
 
     // Add all new tags
-    newTagStructures.forEach((tag) => mergedTags.push(tag));
+    newTags.forEach((tag) => mergedTags.push(tag.getStructure())); // Assuming newTags are actual JSDocTag objects
 
     return mergedTags;
   }

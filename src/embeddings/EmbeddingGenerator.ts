@@ -1,9 +1,9 @@
 import { Node, SourceFile } from 'ts-morph';
 import { logger } from '../utils/logger';
 import { GeneratorConfig, EmbeddedNode, JSDocableNode, AIModelConfig, NodeContext } from '../types';
-import { EmbeddingError, LLMError } from '../utils/errorHandling';
+import { EmbeddingError } from '../utils/errorHandling'; // Removed LLMError, as it's not directly thrown here
 import { AIClient } from '../generator/AIClient';
-import { NodeContextExtractor } from '../generator/NodeContextExtractor'; // Now explicitly imported and injected
+import { NodeContextExtractor } from '../generator/NodeContextExtractor';
 import path from 'path';
 
 /**
@@ -114,11 +114,11 @@ export class EmbeddingGenerator {
         }
 
         for (let j = 0; j < embeddingsResult.length; j++) {
-          const { id, node, textContent } = textsToEmbed[j];
+          const { id, node, text } = textsToEmbed[j];
           embeddedNodes.push({
             id: id,
             embedding: embeddingsResult[j],
-            textContent: textContent,
+            textContent: text,
             nodeName: this.getNodeNameForLogging(node),
             nodeKind: node.getKindName(),
             filePath: node.getSourceFile().getFilePath(),
@@ -127,10 +127,11 @@ export class EmbeddingGenerator {
           logger.trace(`    Generated embedding for: ${this.getNodeNameForLogging(node)}`);
         }
         successfulBatches++;
-      } catch (error) {
+      } catch (error: unknown) {
+        // Catch unknown errors properly
         failedBatches++;
         logger.error(
-          `  ❌ Failed to generate embeddings for batch ${Math.floor(i / batchSize) + 1} (starting with ${textsToEmbed[0]?.id}): ${
+          `  ❌ Failed to generate embeddings for batch ${Math.floor(i / batchSize) + 1} (starting with ${textsToEmbed?.[0]?.id || 'unknown'}): ${
             error instanceof Error ? error.message : String(error)
           }. Skipping this batch.`,
         );
@@ -139,6 +140,7 @@ export class EmbeddingGenerator {
     }
 
     if (successfulBatches === 0 && failedBatches > 0 && nodes.length > 0) {
+      // If there were nodes to process and ALL batches failed
       throw new EmbeddingError(
         `All embedding batches failed. Embedding generation could not be completed.`,
       );
@@ -211,8 +213,12 @@ export class EmbeddingGenerator {
     if (symbol) {
       return symbol.getName();
     }
-    if (Node.hasName(node) && typeof (node as any).getName === 'function') {
-      const name = (node as any).getName();
+    // Corrected `any` usage
+    if (
+      Node.hasName(node) &&
+      typeof (node as { getName?: () => string | undefined }).getName === 'function'
+    ) {
+      const name = (node as { getName: () => string | undefined }).getName();
       return name || node.getKindName();
     }
     return node.getKindName();

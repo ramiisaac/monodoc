@@ -1,0 +1,156 @@
+# Production-ready configuration for JSDoc AI
+# This configuration is designed for automated, cost-efficient, and reliable documentation generation
+# in CI/CD pipelines or scheduled tasks.
+
+# --- Workspace Configuration ---
+workspaceDirs:
+  - packages
+  - apps
+  - libs
+targetPaths: [] # Typically set by CI via `ai-jsdoc incremental` or specific patterns
+
+# --- File Filtering ---
+includePatterns:
+  - "**/*.ts"
+  - "**/*.tsx"
+ignorePatterns:
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/*.test.{ts,tsx}"
+  - "**/*.spec.{ts,tsx}"
+  - "**/*.d.ts"
+  - "**/__tests__/**"
+  - "**/__mocks__/**"
+  - "**/temp/**"
+  - "**/tmp/**"
+  - "**/.next/**" # Next.js build artifacts
+
+# --- AI Model Definitions (Optimized for Production Cost & Reliability) ---
+aiModels:
+  - id: openai-production-gen
+    provider: openai
+    model: gpt-4o-mini # Cost-effective generation model for production
+    type: generation
+    apiKeyEnvVar: OPENAI_API_KEY
+    temperature: 0.1 # Lower temperature for more deterministic/consistent output
+    maxOutputTokens: 2048 # Limit max output tokens for cost control
+  - id: google-production-fallback
+    provider: google
+    model: gemini-1.5-flash # Fast and cost-effective fallback
+    type: generation
+    apiKeyEnvVar: GOOGLE_API_KEY
+    temperature: 0.15
+    maxOutputTokens: 2048
+    enableSafetyFeatures: true
+  - id: openai-production-embedding
+    provider: openai
+    model: text-embedding-3-small # Cost-effective embedding model
+    type: embedding
+    apiKeyEnvVar: OPENAI_API_KEY
+    dimensions: 1536 # Optimal dimensions for 'small' model
+  - id: ollama-production-embedding
+    provider: ollama
+    model: nomic-embed-text # Local embedding option for high volume/privacy
+    type: embedding
+    apiKeyEnvVar: OLLAMA_HOST
+    baseUrl: http://localhost:11434
+
+# --- AI Client Configuration (Reliability & Cost Control) ---
+aiClientConfig:
+  defaultGenerationModelId: openai-production-gen # Primary production generation model
+  defaultEmbeddingModelId: openai-production-embedding # Primary production embedding model
+  maxConcurrentRequests: 3 # Conservative concurrency to avoid rate limits
+  requestDelayMs: 1000 # Significant delay to prevent hitting API bursts
+  maxRetries: 5 # Robust retries for transient network/API issues
+  retryDelayMs: 2000 # Exponential backoff retry delay (2s, 4s, 8s, ...)
+  maxTokensPerBatch: 4000 # Keep token batches moderate for stable performance
+
+# --- Embedding Configuration ---
+embeddingConfig:
+  enabled: true
+  modelId: openai-production-embedding
+  minRelationshipScore: 0.78 # High score for relevant relationships
+  maxRelatedSymbols: 5 # Limit to essential related symbols
+  embeddingBatchSize: 50 # Moderate batch size for embedding requests
+
+# --- JSDoc Generation Configuration ---
+jsdocConfig:
+  prioritizeExports: true
+  includePrivate: false # Only document public APIs in production
+  includeNodeKinds:
+    - ClassDeclaration
+    - FunctionDeclaration
+    - MethodDeclaration
+    - InterfaceDeclaration
+    - TypeAliasDeclaration
+    - EnumDeclaration
+    - VariableDeclaration # For exported constants/functions
+  excludeNodeKinds:
+    - ConstructorDeclaration
+  maxSnippetLength: 3000 # Sufficient snippet length
+  generateExamples: false # Disable example generation in production to save costs
+  overwriteExisting: false
+  mergeExisting: true # Always merge to retain manual edits
+  minJsdocLength: 50 # Ensure generated JSDoc is substantial
+  includeSymbolReferences: true
+  includeRelatedSymbols: true
+
+# --- Output Configuration ---
+outputConfig:
+  reportFileName: production-jsdoc-report.json
+  reportDir: ./reports/production # Dedicated directory for production reports
+  logLevel: info # Only log important information in production
+
+# --- CLI Flags (Default Behavior for Production) ---
+dryRun: false # Must be false for actual generation
+forceOverwrite: false
+noMergeExisting: false
+disableEmbeddings: false # Should be handled by embeddingConfig.enabled
+
+# --- Plugin Configuration ---
+plugins:
+  - name: react-component-plugin
+    enabled: true
+  - name: api-documentation-plugin
+    enabled: true
+
+# --- Telemetry Configuration (CRITICAL FOR PRODUCTION MONITORING) ---
+telemetry:
+  enabled: true # Highly recommended for production monitoring
+  endpoint: https://telemetry.ai-jsdoc.com/collect # Replace with your actual secure telemetry endpoint
+  anonymize: true # Ensure PII is anonymized
+  collectPerformance: true
+  collectErrors: true
+
+# --- Quality Assurance Configuration ---
+qualityThresholds:
+  minimumScore: 75 # Maintain a good quality standard
+  requireDescriptions: true
+  requireExamples: false # Not required if `generateExamples` is false
+  requireParams: true
+  requireReturns: true
+
+# --- Performance Optimizations (tuned for CI/Server) ---
+performance:
+  enableCaching: true # Absolutely essential for repeated runs in CI
+  maxConcurrentFiles: 5 # Balance between resource usage and throughput
+  batchSize: 30 # Moderate internal batch size
+  timeoutMs: 90000 # Longer timeout for robust AI responses
+
+# --- Configuration Migration ---
+migration:
+  enableAutoMigration: true
+  backupConfigs: true
+  migrationLogLevel: silent # Keep migration logs minimal in production
+
+# --- Watch Mode Configuration ---
+watchMode:
+  enabled: false # Typically not enabled in production deployments
+  debounceMs: 1000
+  includePatterns: []
+  ignorePatterns: []
+
+# --- Production Mode Flag ---
+productionMode: true # This flag activates production-specific behaviors in the tool itself
+

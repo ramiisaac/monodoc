@@ -1,24 +1,50 @@
 import { Node, JSDoc, JSDocTagStructure } from 'ts-morph';
-import { ToolDefinition } from 'ai'; // Vercel AI SDK types
-import { ModelProvider } from 'ai'; // Ensure ModelProvider is imported for type inference if needed later
+import { ReportGenerator } from './reporting/ReportGenerator';
+import { CacheManager } from './utils/CacheManager';
+import { TelemetryCollector } from './analytics/TelemetryCollector';
+import { PluginManager } from './plugins/PluginManager';
+import { Project } from 'ts-morph';
+import { QualityIssueType } from './types/quality';
 
 // --- Core Utility Types ---
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal' | 'silent';
 
 // --- Workspace & Processing Types ---
+/**
+ * Represents a package in a monorepo workspace.
+ */
 export interface WorkspacePackage {
   name: string;
   path: string;
-  type: string;
-  tsConfigPath: string;
-  packageJsonPath: string;
-  priority: number;
+  version?: string;
+  private?: boolean;
+  type?: string; // Add type property
+  priority?: number; // Add priority property
+  tsConfigPath?: string; // Add tsConfigPath property
 }
 
+export interface FileInfo {
+  path: string;
+  packageName?: string; // Add for ReportGenerator compatibility
+  batchIndex?: number; // Add for ReportGenerator compatibility
+  totalTokens?: number; // Add for ReportGenerator compatibility
+  processingTimeMs?: number; // Add for ReportGenerator compatibility
+  errors?: any[]; // Add for ReportGenerator compatibility
+}
+
+/**
+ * Represents a batch of files to be processed together.
+ */
 export interface FileBatch {
-  files: string[];
-  estimatedTokens: number;
-  priority: number;
+  id: string;
+  files: FileInfo[];
+  packageName?: string;
+  batchIndex?: number;
+  totalTokens?: number;
+  processingTimeMs?: number;
+  errors?: any[];
+  priority?: number; // Add priority property
+  estimatedTokens?: number; // Add estimatedTokens property
 }
 
 export interface ProcessingStats {
@@ -36,10 +62,15 @@ export interface ProcessingStats {
   embeddingFailures: number;
   totalRelationshipsDiscovered: number;
   startTime: number;
-  durationSeconds?: number;
-  errors: Array<{ file: string; nodeName?: string; error: string; stack?: string; timestamp?: number }>;
+  durationSeconds?: number, // Already present, ensure it's optional
+  errors: any[];
   dryRun: boolean;
-  configurationUsed: Record<string, unknown>;
+  configurationUsed: any;
+  totalNodes?: number; // Add these properties
+  nodesWithJSDoc?: number;
+  generatedJSDocCount?: number;
+  fileBatches?: Map<string, FileBatch>;
+  packages?: WorkspacePackage[];
 }
 
 // --- CLI Types ---
@@ -69,6 +100,10 @@ export interface CliOptions {
   version?: boolean;
   quickStart?: boolean;
   troubleshoot?: boolean;
+  listModels?: boolean; // Added: List available AI models
+  listCredentials?: boolean; // Added: List saved credentials
+  removeCredentials?: string; // Added: Remove saved credentials by key
+  examples?: boolean; // Added: Show usage examples
 }
 
 // --- Symbol & Node Context Types ---
@@ -140,6 +175,9 @@ export interface RelatedSymbol {
 export interface JSDocableNode extends Node {
   getJsDocs(): JSDoc[];
   addJsDoc(text: string | { description: string; tags?: JSDocTagStructure[] }): JSDoc;
+  addJsDocs(texts: string[]): JSDoc[];
+  insertJsDoc(index: number, text: string): JSDoc;
+  insertJsDocs(index: number, texts: string[]): JSDoc[];
   removeJsDoc(jsDoc: JSDoc): void;
 }
 
@@ -147,6 +185,17 @@ export interface AIResponse {
   jsdocContent: string | null;
   status: 'success' | 'skip' | 'error';
   reason?: string;
+}
+
+/**
+ * Represents an API endpoint for documentation purposes.
+ */
+export interface ApiEndpoint {
+  method: string;
+  path: string;
+  params?: string[];
+  middleware?: string[];
+  description?: string;
 }
 
 // --- AI SDK Configuration (Revised) ---
@@ -200,6 +249,7 @@ export interface GeneratorConfig {
   workspaceDirs: string[];
   includePatterns: string[];
   ignorePatterns: string[];
+    documentPrivate?: boolean; // Add this property
   targetPaths: string[]; // Files specifically targeted via CLI
   aiModels: AIModelConfig[]; // New simplified array of AI models
   embeddingConfig: EmbeddingConfig;
@@ -226,6 +276,7 @@ export interface GeneratorConfig {
   forceOverwrite: boolean; // CLI flag: force overwrite all existing JSDoc
   noMergeExisting: boolean; // CLI flag: disable merging, implies overwrite behavior
   disableEmbeddings: boolean; // CLI flag: disable embedding-based features
+  incremental?: boolean; // Added: Flag for incremental mode
   plugins?: PluginConfig[];
   telemetry?: TelemetryConfig;
   qualityThresholds?: {
@@ -248,9 +299,9 @@ export interface GeneratorConfig {
   };
   watchMode?: {
     enabled: boolean;
-    debounceMs: number;
-    ignorePatterns: string[];
-    includePatterns: string[];
+    debounceMs?: number;
+    ignorePatterns?: string[];
+    includePatterns?: string[];
   };
   productionMode?: boolean; // Indicates if the configuration is optimized for production
 }
@@ -269,6 +320,7 @@ export interface Plugin {
   disable(): void;
   isEnabled(): boolean;
   getTools?(): VercelAITool[]; // New: Plugins can provide AI SDK tools
+  getName(): string;
 }
 
 export interface PluginConfig {
@@ -330,7 +382,11 @@ export interface TelemetryData {
 export interface VercelAITool {
   name: string;
   description: string;
-  parameters: ToolDefinition['parameters'];
+  parameters: { 
+    type: string;
+    properties: Record<string, unknown>;
+    required?: string[];
+  };
   execute: (...args: any[]) => Promise<any>; // Matches AI SDK tool execute signature
 }
 
@@ -343,6 +399,10 @@ export interface CommandContext {
   telemetry: TelemetryCollector;
   pluginManager: PluginManager;
   cliOptions: CliOptions;
+  reportGenerator: ReportGenerator;
+  project: Project;
+  aiClient: any; // Will be AIClient once fully implemented
+  packages?: WorkspacePackage[];
   // Add other shared resources as needed like ReportGenerator, Project instance, etc.
 }
 
@@ -354,4 +414,38 @@ export interface IOperation {
 export interface ICommand {
   execute(context: CommandContext, ...args: any[]): Promise<void>;
 }
+
+// --- Code Quality Analysis Types ---
+export interface QualityMetrics {
+  score: number; // 0-100 score based on various factors
+  missingJsdoc: boolean;
+  incompleteJsdoc: boolean;
+  outdatedJsdoc: boolean;
+  complexity: number; // 0-10 complexity score (higher = more complex)
+  issues: QualityIssue[]; // Detailed list of issues found
+  suggestions: string[]; // Suggestions for improvement
+  overallScore: number; // Overall weighted score
+  completenessScore: number; // Score for completeness of documentation
+  consistencyScore: number; // Score for consistency of documentation
+  exampleQuality: number; // Score for quality of examples
+}
+
+export interface QualityIssue {
+  type: QualityIssueType;
+  message: string;
+  severity: 'error' | 'warning' | 'info';
+  nodeName?: string;
+  lineNumber?: number;
+  columnNumber?: number;
+  suggestion?: string; // Added suggestion property
+  filePath?: string; // Added file path property
+}
+
+// --- Add JsDocConfig type ---
+export type JsDocConfig = GeneratorConfig['jsdocConfig'];
+
+// --- Re-export quality types ---
+export { NodeQualityMetrics, QualityIssueType } from './types/quality';
+
+
 

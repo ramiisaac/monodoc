@@ -1,0 +1,32 @@
+version: 2
+updates:
+  # Enable version updates for npm (JavaScript/TypeScript)
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: daily
+      time: "04:00" # UTC time to check for updates
+    target-branch: main
+    open-pull-requests-limit: 10
+    pull-request-branch-name:
+      separator: '-'
+    reviewers:
+      - ramiisaac
+    labels:
+      - dependencies
+      - version update
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        patterns:
+          - eslint*
+          - jest*
+          - typedoc*
+          - '@types/*'
+      prod-dependencies:
+        update-types:
+          - patch
+          - minor
+        patterns:
+          - '*'
+

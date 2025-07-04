@@ -38,7 +38,7 @@ export class TemplateSystem {
       name: 'generic',
       description: 'Default template for any code element',
       pattern: /.*/, // Matches everything if used for pattern matching
-      generate: (context, config) =>
+      generate: (_context: NodeContext, _config: GeneratorConfig) =>
         `
 /**
  * @summary {{nodeName}}
@@ -112,5 +112,19 @@ export class TemplateSystem {
       }
     }
     return null;
+  }
+
+  /**
+   * Loads a template by name. Base implementation for derived classes to extend.
+   * @param templateName The name of the template to load.
+   * @returns A promise resolving to the template content as a string, or undefined if not found.
+   */
+  async getTemplate(templateName: string): Promise<string | undefined> {
+    // Base implementation just checks if the template exists in the registered templates
+    const template = this.templates.get(templateName);
+    if (template) {
+      return template.generate({} as NodeContext, {} as GeneratorConfig);
+    }
+    return undefined;
   }
 }

@@ -1,11 +1,10 @@
 import { logger } from './logger';
-import { CliOptions, GeneratorConfig, AuthManager } from '../types'; // Adjust AuthManager type if needed
-import { detectProviderTypeFromModel, getDefaultApiKeyEnvVar } from './commandHelpers'; // Assuming these are external now
+import { CliOptions, GeneratorConfig } from '../types'; // Removed unused AuthManager type
+import { AuthManager } from '../config/AuthManager'; // Import AuthManager explicitly
 import chalk from 'chalk';
 
 // This file is intended for general utility functions that might be used across multiple commands.
-// For now, it will primarily contain the functions that were previously in src/cli.ts
-// for applying CLI overrides to config, and handling API key saving/model detection.
+// It contains functions for applying CLI overrides to config, and handling API key saving/model detection.
 
 /**
  * Applies CLI-specified model and API key overrides to the configuration.
@@ -144,6 +143,7 @@ export function getDefaultApiKeyEnvVar(provider: string): string {
 /**
  * Prints a formatted table of available AI models from the default configuration.
  * This function is used by the `InfoCommand`.
+ * @param aiModels The array of AI models from the configuration.
  */
 export function printAvailableModels(aiModels: GeneratorConfig['aiModels']): void {
   logger.log(chalk.bold.blue('\n🤖 Available AI Models\n'));

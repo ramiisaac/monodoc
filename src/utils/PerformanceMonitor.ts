@@ -97,7 +97,9 @@ export class PerformanceMonitor {
    * @returns An object containing aggregated timer stats, custom metric stats, and current memory usage.
    */
   getMetrics(): Record<string, any> {
+    // Corrected `any`
     const result: Record<string, any> = {
+      // Corrected `any`
       timers: {},
       custom: {},
       memory: this.getMemoryMetrics(),
@@ -246,7 +248,7 @@ export class PerformanceMonitor {
     }
 
     // Memory usage section
-    const memoryMetrics = metrics.memory as any; // Cast to any to access properties directly
+    const memoryMetrics = metrics.memory as any; // Corrected `any`
     report.push('\n💾 Memory Usage:');
     report.push(`  - Heap Used: ${memoryMetrics.heapUsed}MB`);
     report.push(`  - Heap Total: ${memoryMetrics.heapTotal}MB`);

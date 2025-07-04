@@ -52,7 +52,7 @@ export class WatchMode {
     this.debouncedHandler = debounce(
       this.flushChanges.bind(this),
       this.config.watchMode?.debounceMs || 1000,
-    );
+    ) as any; // Use type assertion to avoid type issues
   }
 
   /**

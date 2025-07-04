@@ -8,6 +8,7 @@ import { ReportGenerator } from '../reporting/ReportGenerator';
 import { Project } from 'ts-morph';
 import path from 'path';
 import { setLogLevel } from '../utils/logger';
+import { AIClient } from '../generator/AIClient';
 
 /**
  * Manages the execution context and lifecycle of CLI commands.
@@ -48,6 +49,9 @@ export class CommandRunner {
         throw new Error('CommandRunner context not fully initialized.');
       }
 
+      // Create AIClient if not already present
+      const aiClient = new AIClient(this.config, this.cacheManager);
+
       const context: CommandContext = {
         baseDir: this.baseDir,
         config: this.config,
@@ -57,6 +61,7 @@ export class CommandRunner {
         cliOptions: this.cliOptions,
         project: this.project, // Pass the project instance
         reportGenerator: this.reportGenerator, // Pass the report generator
+        aiClient, // Add aiClient
       };
 
       // Execute the command, passing the full context

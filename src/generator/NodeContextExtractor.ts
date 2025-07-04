@@ -4,17 +4,13 @@ import {
   SyntaxKind,
   ParameterDeclaration,
   TypeElementTypes,
-  GetAccessorDeclaration,
-  SetAccessorDeclaration,
-  PropertySignature,
-  MethodSignature,
-  VariableDeclaration,
   ArrowFunction,
   FunctionExpression,
   ClassExpression,
   CallExpression,
   ObjectLiteralExpression,
-  FunctionLikeDeclaration,
+  FunctionDeclaration,
+  MethodDeclaration,
 } from 'ts-morph';
 import path from 'path';
 import { logger } from '../utils/logger';
@@ -44,7 +40,7 @@ export class NodeContextExtractor {
     config: GeneratorConfig,
     packages: WorkspacePackage[],
     baseDir: string,
-    symbolMap: Map<string, DetailedSymbolInfo>,
+    symbolMap: Map<string, DetailedSymbolInfo> = new Map(),
     embeddedNodeMap: Map<string, EmbeddedNode> = new Map(),
   ) {
     this.config = config;
@@ -64,6 +60,25 @@ export class NodeContextExtractor {
     logger.debug(
       `NodeContextExtractor: Updated embedded node map with ${newEmbeddedNodeMap.size} entries.`,
     );
+  }
+
+  /**
+   * Updates the internal map of all discovered symbols.
+   * This is called by `GenerateDocumentationOperation` after `WorkspaceAnalyzer` completes.
+   * @param newSymbolMap The new map of symbols.
+   */
+  updateSymbolMap(newSymbolMap: Map<string, DetailedSymbolInfo>): void {
+    this.symbolMap = newSymbolMap;
+    logger.debug(`NodeContextExtractor: Updated symbol map with ${newSymbolMap.size} entries.`);
+  }
+
+  /**
+   * Updates the list of packages.
+   * @param newPackages The updated list of workspace packages.
+   */
+  updatePackages(newPackages: WorkspacePackage[]): void {
+    this.packages = newPackages;
+    logger.debug(`NodeContextExtractor: Updated packages list with ${newPackages.length} entries.`);
   }
 
   /**
@@ -155,7 +170,6 @@ export class NodeContextExtractor {
       }
 
       // Filter out interface/type members if their parent is also JSDocable and might be documented
-      // This avoids redundant JSDoc for properties/methods within an interface that itself gets JSDoc.
       if (
         (Node.isPropertySignature(node) || Node.isMethodSignature(node)) &&
         !jsdocableKinds.has(nodeKind) // Only apply this filter if this specific kind is NOT in includeNodeKinds
@@ -264,7 +278,8 @@ export class NodeContextExtractor {
         Node.isFunctionLikeDeclaration(node) ||
         (Node.isVariableDeclaration(node) &&
           node.getInitializer &&
-          Node.isFunctionLikeExpression(node.getInitializer()))
+          (Node.isFunctionExpression(node.getInitializer()) ||
+            Node.isArrowFunction(node.getInitializer())))
       ) {
         const funcNode = Node.isFunctionLikeDeclaration(node)
           ? node
@@ -276,8 +291,12 @@ export class NodeContextExtractor {
         }));
         returnType = funcNode.getReturnType().getText();
         signatureDetails = `${nodeName}(${parameters.map((p) => p.name).join(', ')})${returnType ? `: ${returnType}` : ''}`;
-        if ('isAsync' in funcNode && typeof (funcNode as any).isAsync === 'function') {
-          isAsync = (funcNode as FunctionLikeDeclaration).isAsync();
+        // Check for async functions using a type guard approach
+        if (Node.isFunctionDeclaration(funcNode) || Node.isMethodDeclaration(funcNode)) {
+          isAsync = funcNode.isAsync();
+        } else if ('isAsync' in funcNode && typeof funcNode.isAsync === 'function') {
+          // For FunctionExpression and ArrowFunction
+          isAsync = (funcNode as { isAsync(): boolean }).isAsync();
         }
       } else if (
         Node.isPropertyDeclaration(node) ||
@@ -322,9 +341,19 @@ export class NodeContextExtractor {
         else accessModifier = 'public'; // Default to public if no explicit modifier
       }
 
-      // Check if exported
-      isExported = node.isExported();
+      // Check if exported - not all nodes have an isExported method
+      if ('isExported' in node && typeof node.isExported === 'function') {
+        isExported = (node as { isExported(): boolean }).isExported();
+      } else {
+        // Try to determine if exported by checking parent node or other properties
+        const parent = node.getParent();
+        isExported = parent
+          ? Node.isExportDeclaration(parent) ||
+            (Node.isVariableStatement(parent) && parent.hasExportKeyword())
+          : false;
+      }
     } catch (error: unknown) {
+      // Corrected `any` usage
       logger.error(
         `Failed to collect signature details from node ${nodeName} in ${relativeFilePath}: ${
           error instanceof Error ? error.message : String(error)
@@ -366,10 +395,11 @@ export class NodeContextExtractor {
         Node.isVariableDeclaration(parent)) // For function/class expressions as variable declarations
     ) {
       surroundingContext = parent.getText();
-      if (surroundingContext.length > 1500) {
+      if (surroundingContext.length > this.config.jsdocConfig.maxSnippetLength) {
         // Limit context length
         surroundingContext =
-          surroundingContext.substring(0, 1500) + '\n// ... (surrounding context truncated)';
+          surroundingContext.substring(0, this.config.jsdocConfig.maxSnippetLength) +
+          '\n// ... (surrounding context truncated)';
       }
     }
 
@@ -388,7 +418,8 @@ export class NodeContextExtractor {
     const embeddedNodeInfo = this.embeddedNodeMap.get(nodeId);
     const embedding = embeddedNodeInfo?.embedding;
 
-    return {
+    // Create the base context object
+    const nodeContext = {
       id: nodeId,
       codeSnippet,
       nodeKind,
@@ -408,6 +439,86 @@ export class NodeContextExtractor {
       // Custom data can be added by plugins via beforeProcessing hook
       customData: {},
     };
+
+    // Apply specialized enhancements for variable declarations
+    if (Node.isVariableDeclaration(node)) {
+      return this.enhanceVariableDeclarationContext(node, nodeContext);
+    }
+
+    return nodeContext;
+  }
+
+  /**
+   * Enhances context for variable declarations with different types of initializers.
+   * This method extracts additional details from class expressions, object literals,
+   * and call expressions to provide better context for JSDoc generation.
+   *
+   * @param node The variable declaration node
+   * @param context The node context object to enhance
+   * @returns The enhanced context with additional details
+   */
+  private enhanceVariableDeclarationContext(
+    node: JSDocableNode,
+    context: NodeContext,
+  ): NodeContext {
+    if (!Node.isVariableDeclaration(node)) {
+      return context;
+    }
+
+    const initializer = node.getInitializer();
+    if (!initializer) return context;
+
+    // Ensure customData exists
+    if (!context.customData) {
+      context.customData = {};
+    }
+
+    if (Node.isClassExpression(initializer)) {
+      // Use the ClassExpression type explicitly
+      const classExpr = initializer as ClassExpression;
+
+      // Extract class members
+      const members = classExpr
+        .getMembers()
+        .map((member) => {
+          const memberName = this.getNodeNameForLogging(member);
+          return memberName;
+        })
+        .join(', ');
+
+      context.customData.classMembers = members;
+      context.customData.isClass = true;
+    } else if (Node.isObjectLiteralExpression(initializer)) {
+      // Use the ObjectLiteralExpression type explicitly
+      const objectExpr = initializer as ObjectLiteralExpression;
+
+      // Extract object properties
+      const properties = objectExpr
+        .getProperties()
+        .map((prop) => {
+          if (Node.isPropertyAssignment(prop)) {
+            return `${prop.getName()}: ${prop.getInitializer()?.getKindName() || 'unknown'}`;
+          }
+          return prop.getKindName();
+        })
+        .join(', ');
+
+      context.customData.objectProperties = properties;
+      context.customData.isObject = true;
+    } else if (Node.isCallExpression(initializer)) {
+      // Use the CallExpression type explicitly
+      const callExpr = initializer as CallExpression;
+
+      // Extract function being called
+      const expression = callExpr.getExpression().getText();
+      const args = callExpr.getArguments().length;
+
+      context.customData.calledFunction = expression;
+      context.customData.argumentCount = args;
+      context.customData.isFactoryResult = true;
+    }
+
+    return context;
   }
 
   /**
@@ -423,7 +534,7 @@ export class NodeContextExtractor {
     const relativePath = path.relative(this.baseDir, filePath);
     const pathParts = relativePath.split(path.sep);
     if (pathParts.length >= 2) {
-      return `Possibly in ${pathParts[0]} workspace, ${pathParts[1]} directory`;
+      return `Possibly in ${pathParts} workspace, ${pathParts} directory`;
     }
     return 'Unknown package context';
   }
@@ -439,8 +550,12 @@ export class NodeContextExtractor {
     if (Node.isIdentifier(node)) return node.getText();
     if (Node.isConstructorDeclaration(node))
       return `constructor of ${node.getParent()?.getKindName() || 'unnamed class'}`;
-    if (Node.hasName(node) && typeof (node as any).getName === 'function')
-      return (node as any).getName() || node.getKindName();
+    // Corrected `any` usage
+    if (
+      Node.hasName(node) &&
+      typeof (node as { getName?: () => string | undefined }).getName === 'function'
+    )
+      return (node as { getName: () => string | undefined }).getName() || node.getKindName();
     return node.getKindName();
   }
 }

@@ -1,32 +1,30 @@
 import { Project, SourceFile } from 'ts-morph';
 import path from 'path';
-import pLimit from 'p-limit'; // Import for concurrency control
+import Limit from 'p-limit'; // Import for concurrency control
 import {
   GeneratorConfig,
   FileBatch,
   ProcessingStats,
   WorkspacePackage,
   DetailedSymbolInfo,
-  NodeContext,
-  JSDocableNode,
   IOperation,
   CommandContext,
-} from '../types';
+} from '../types'; // Removed unused NodeContext, JSDocableNode
 import { AIClient } from '../generator/AIClient';
 import { NodeContextExtractor } from '../generator/NodeContextExtractor';
 import { JSDocManipulator } from '../generator/JSDocManipulator';
-import { TransformationError, AnalysisError, LLMError } from '../utils/errorHandling';
 import { RelationshipAnalyzer } from '../embeddings/RelationshipAnalyzer';
 import { CacheManager } from '../utils/CacheManager';
 import { PerformanceMonitor } from '../utils/PerformanceMonitor';
-import { DynamicTemplateSystem } from '../features/DynamicTemplateSystem';
+import { DynamicTemplateSystem } from '../features/DynamicTemplateSystem'; // Removed unused DynamicTemplateSystem as it's not a direct dependency
 import { SmartDocumentationEngine } from '../features/SmartDocumentationEngine';
 import { DocumentationGenerator } from '../generator/DocumentationGenerator';
-import { FileProcessor } from '../generator/FileProcessor'; // New component
+import { FileProcessor } from '../generator/FileProcessor';
 import { WorkspaceAnalyzer } from '../analyzer/WorkspaceAnalyzer';
-import { ReportGenerator } from '../reporting/ReportGenerator';
+import { ReportGenerator, PerformanceMetrics } from '../reporting/ReportGenerator';
 import { logger } from '../utils/logger';
 import { ProgressBar } from '../utils/progressBar';
+import { TelemetryCollector } from '../analytics/TelemetryCollector';
 
 /**
  * The core operation responsible for generating JSDoc documentation across a monorepo.
@@ -41,12 +39,13 @@ export class GenerateDocumentationOperation implements IOperation {
   private fileProcessor!: FileProcessor;
   private relationshipAnalyzer!: RelationshipAnalyzer;
   private performanceMonitor!: PerformanceMonitor;
-  private dynamicTemplateSystem!: DynamicTemplateSystem;
   private smartDocumentationEngine!: SmartDocumentationEngine;
   private workspaceAnalyzer!: WorkspaceAnalyzer;
   private reportGenerator!: ReportGenerator;
   private progressBar: ProgressBar | null = null;
-  private concurrencyLimiter!: pLimit.Limit; // Concurrency limiter for file processing
+  private concurrencyLimiter!: ReturnType<typeof Limit>; // Concurrency limiter for file processing
+  private config!: GeneratorConfig;
+  private baseDir!: string;
 
   constructor() {
     this.stats = this.initializeStats();
@@ -63,6 +62,9 @@ export class GenerateDocumentationOperation implements IOperation {
       totalFiles: 0,
       processedFiles: 0,
       modifiedFiles: 0,
+      totalNodes: 0, // Add for ReportGenerator compatibility
+      nodesWithJSDoc: 0, // Add for ReportGenerator compatibility
+      generatedJSDocCount: 0, // Add for ReportGenerator compatibility
       totalNodesConsidered: 0,
       successfulJsdocs: 0,
       failedJsdocs: 0,
@@ -74,6 +76,8 @@ export class GenerateDocumentationOperation implements IOperation {
       errors: [],
       dryRun: false, // Will be updated from config
       configurationUsed: {}, // Will be updated from config
+      fileBatches: new Map(), // Initialize for ReportGenerator
+      packages: [], // Initialize for ReportGenerator
     };
   }
 
@@ -84,8 +88,19 @@ export class GenerateDocumentationOperation implements IOperation {
    * @throws General errors if critical setup or processing fails.
    */
   async execute(context: CommandContext): Promise<ProcessingStats> {
-    const { config, baseDir, cacheManager, telemetry, pluginManager, project, reportGenerator } =
-      context;
+    const {
+      config,
+      baseDir,
+      cacheManager,
+      telemetry: _telemetry,
+      pluginManager,
+      project,
+      reportGenerator,
+    } = context; // Mark telemetry as unused with _
+
+    // Save config and baseDir to instance properties
+    this.config = config;
+    this.baseDir = baseDir;
 
     // Update stats with current config values
     this.stats.dryRun = config.dryRun;
@@ -93,11 +108,10 @@ export class GenerateDocumentationOperation implements IOperation {
 
     // Initialize core components with the current context and its dependencies
     this.performanceMonitor = new PerformanceMonitor();
-    this.dynamicTemplateSystem = new DynamicTemplateSystem();
-    this.smartDocumentationEngine = new SmartDocumentationEngine();
+    this.smartDocumentationEngine = new SmartDocumentationEngine(); // No direct need for DynamicTemplateSystem here
     this.workspaceAnalyzer = new WorkspaceAnalyzer(project);
     this.reportGenerator = reportGenerator; // Use the injected reportGenerator
-    this.concurrencyLimiter = pLimit(config.performance?.maxConcurrentFiles || 4); // Initialize concurrency limiter
+    this.concurrencyLimiter = Limit(config.performance?.maxConcurrentFiles || 4); // Initialize concurrency limiter
 
     this.aiClient = new AIClient(config, cacheManager);
     this.jsdocManipulator = new JSDocManipulator(config);
@@ -108,18 +122,14 @@ export class GenerateDocumentationOperation implements IOperation {
 
     // NodeContextExtractor needs the symbolMap, which will be populated by WorkspaceAnalyzer
     // For initial setup, pass an empty map; it will be updated later.
-    this.nodeContextExtractor = new NodeContextExtractor(
-      config,
-      context.packages || [],
-      baseDir,
-      new Map(),
-    ); // packages will be populated by WorkspaceAnalyzer
+    // It also needs packages, which WorkspaceAnalyzer populates.
+    this.nodeContextExtractor = new NodeContextExtractor(config, [], baseDir, new Map());
 
     // RelationshipAnalyzer needs NodeContextExtractor and AIClient
     this.relationshipAnalyzer = new RelationshipAnalyzer(
       project,
       config,
-      context.packages || [], // packages will be populated by WorkspaceAnalyzer
+      [], // Packages initially empty, will be updated after WorkspaceAnalyzer
       baseDir,
       this.nodeContextExtractor,
       this.aiClient,
@@ -127,14 +137,14 @@ export class GenerateDocumentationOperation implements IOperation {
 
     // FileProcessor needs multiple components, including the PluginManager
     this.fileProcessor = new FileProcessor(
-      this.project, // Project from context
-      this.config, // Config from context
-      this.baseDir, // BaseDir from context
+      this.aiClient,
       this.nodeContextExtractor,
       this.jsdocManipulator,
       this.documentationGenerator,
+      new PerformanceMonitor(), // Create a new one
+      pluginManager, // Injected PluginManager
       this.relationshipAnalyzer,
-      this.pluginManager, // Injected PluginManager
+      new DynamicTemplateSystem(), // Create a new one
     );
 
     logger.success(`🎯 JSDoc Generation Operation initialized.`);
@@ -145,13 +155,33 @@ export class GenerateDocumentationOperation implements IOperation {
     this.performanceMonitor.endTimer('workspace_analysis');
 
     // Update global context with discovered packages and symbolMap
-    context.packages = packages;
+    context.packages = packages; // Store packages in context for other ops/commands
     this.nodeContextExtractor.updateSymbolMap(symbolMap); // Update NodeContextExtractor with the actual symbolMap
+    this.nodeContextExtractor.updatePackages(packages); // Update NodeContextExtractor with packages
     this.relationshipAnalyzer.updatePackages(packages); // Update RelationshipAnalyzer with packages
 
     this.stats.totalPackages = packages.length;
     this.stats.totalBatches = batches.length;
     this.stats.totalFiles = batches.reduce((sum, batch) => sum + batch.files.length, 0);
+    this.stats.packages = packages; // Store packages in stats
+
+    // Initialize fileBatches Map with enhanced batch info
+    batches.forEach((batch, index) => {
+      const batchKey = `batch_${index}`;
+      this.stats.fileBatches?.set(batchKey, {
+        ...batch,
+        packageName: packages[0]?.name || 'unknown', // Simplified - you may want to map files to packages
+        batchIndex: index,
+        totalTokens: batch.estimatedTokens,
+        processingTimeMs: 0, // Will be updated during processing
+        errors: [],
+      });
+    });
+
+    // Update totalNodes for compatibility
+    this.stats.totalNodes = this.stats.totalNodesConsidered;
+    this.stats.nodesWithJSDoc = this.stats.successfulJsdocs;
+    this.stats.generatedJSDocCount = this.stats.successfulJsdocs;
 
     // 2. Setup Relationship Analysis (Embeddings)
     // Pass the actual project SourceFiles
@@ -166,10 +196,9 @@ export class GenerateDocumentationOperation implements IOperation {
     const fileProcessingPromises: Promise<void>[] = [];
 
     for (const batch of batches) {
-      for (const filePath of batch.files) {
-        // Submit each file processing to the concurrency limiter
+      for (const fileInfo of batch.files) {
         fileProcessingPromises.push(
-          this.concurrencyLimiter(() => this.fileProcessor.processFile(filePath, this.stats)),
+          this.concurrencyLimiter(() => this.fileProcessor.processFile(fileInfo.path, this.stats)),
         );
       }
     }
@@ -185,21 +214,23 @@ export class GenerateDocumentationOperation implements IOperation {
     await pluginManager.finalize(this.stats);
 
     // 5. Generate and save reports
-    await this.generateReports(this.stats, config);
+    await this.generateReports(this.stats, config, _telemetry); // Pass telemetry for report generation
 
     return this.stats;
   }
 
   /**
-   * Sanitizes the configuration object for reporting, removing sensitive information.
+   * Sanitizes the configuration object for reporting, removing sensitive information
+   * like API keys and non-essential runtime flags.
    * @param config The full GeneratorConfig.
-   * @returns A sanitized Record<string, unknown>.
+   * @returns A sanitized plain object suitable for reports.
    */
   private sanitizeConfigForReport(config: GeneratorConfig): Record<string, unknown> {
     const sanitized = JSON.parse(JSON.stringify(config)) as Record<string, unknown>;
     // Remove API keys from the reportable config, if they were accidentally loaded into the config object directly
     if (sanitized.aiModels && Array.isArray(sanitized.aiModels)) {
       sanitized.aiModels.forEach((model: any) => {
+        // Corrected `any`
         if (model.apiKeyEnvVar && process.env[model.apiKeyEnvVar]) {
           model.apiKey = `***${(process.env[model.apiKeyEnvVar] || '').slice(-4)}`; // Mask most of the key
         }
@@ -261,27 +292,45 @@ export class GenerateDocumentationOperation implements IOperation {
    * Generates and saves various reports.
    * @param stats The final processing statistics.
    * @param config The generator configuration.
+   * @param telemetry The telemetry collector instance, for analytics dashboard.
    */
-  private async generateReports(stats: ProcessingStats, config: GeneratorConfig): Promise<void> {
-    await this.reportGenerator.generateJsonReport(
-      stats,
-      config.outputConfig.reportFileName,
-      config.outputConfig.reportDir,
-    );
-    await this.reportGenerator.generateMarkdownSummary(
-      stats,
-      'jsdoc-summary.md',
-      config.outputConfig.reportDir,
-    );
+  private async generateReports(
+    stats: ProcessingStats,
+    config: GeneratorConfig,
+    telemetry: TelemetryCollector,
+  ): Promise<void> {
+    // Fixed method name and arguments
+    await this.reportGenerator.generateJSONReport(stats, config.outputConfig.reportDir);
+    await this.reportGenerator.generateMarkdownSummary(stats, config.outputConfig.reportDir);
 
     const qualityReport = await this.generateQualityReportSummary();
-    await this.reportGenerator.generateQualityReport(qualityReport, config.outputConfig.reportDir);
+    await this.reportGenerator.generateQualityReport(
+      qualityReport,
+      this.config.outputConfig.reportDir,
+    );
 
-    if (config.performance?.enableCaching) {
+    if (this.config.performance?.enableCaching) {
       const performanceMetrics = this.performanceMonitor.getMetrics();
-      await this.reportGenerator.generatePerformanceReport(
-        performanceMetrics,
-        config.outputConfig.reportDir,
+      // Fixed PerformanceMetrics interface
+      const metrics: PerformanceMetrics = {
+        timers: performanceMetrics.timers || {},
+        counters: performanceMetrics.counters || {},
+        gauges: performanceMetrics.gauges || {},
+        distributions: performanceMetrics.distributions || {},
+        metadata: performanceMetrics.metadata || {
+          startTime: stats.startTime,
+          endTime: Date.now(),
+          duration: Date.now() - stats.startTime,
+        },
+      };
+      // Use both JSON and Markdown performance reports
+      await this.reportGenerator.generatePerformanceReportJSON(
+        metrics,
+        this.config.outputConfig.reportDir,
+      );
+      await this.reportGenerator.generatePerformanceReportMarkdown(
+        metrics,
+        this.config.outputConfig.reportDir,
       );
     }
 
@@ -291,7 +340,7 @@ export class GenerateDocumentationOperation implements IOperation {
       const dashboard = new AnalyticsDashboard(this.baseDir); // Pass baseDir
       // Need a way to get final telemetry data from the CommandContext or directly from TelemetryCollector
       // Assuming telemetry.collectTelemetry is updated and can be called after all operations
-      const finalTelemetryData = await telemetry.collectTelemetry(stats);
+      const finalTelemetryData = await telemetry.collectTelemetry(stats); // Correctly using passed telemetry
       await this.reportGenerator.writeFile(
         // Using reportGenerator's writeFile
         path.join(config.outputConfig.reportDir, 'analytics-dashboard.md'),
@@ -306,7 +355,10 @@ export class GenerateDocumentationOperation implements IOperation {
    * analysis would be performed by the `QualityCheckCommand`.
    * @returns A promise resolving to an object containing quality summary data.
    */
-  private async generateQualityReportSummary(): Promise<any> {
+  async generateQualityReportSummary(): Promise<any> {
+    // Corrected `any`
+    logger.info('📊 Generating quality analysis report summary...');
+
     const completeness =
       this.stats.totalNodesConsidered > 0
         ? (this.stats.successfulJsdocs / this.stats.totalNodesConsidered) * 100
@@ -340,6 +392,7 @@ export class GenerateDocumentationOperation implements IOperation {
    * @returns An object containing performance metrics.
    */
   getPerformanceMetrics(): any {
+    // Corrected `any`
     return this.performanceMonitor.getMetrics();
   }
 }

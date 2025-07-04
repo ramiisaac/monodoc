@@ -7,7 +7,10 @@ import { JSDocManipulator } from './JSDocManipulator';
 import { DocumentationGenerator } from './DocumentationGenerator';
 import { RelationshipAnalyzer } from '../embeddings/RelationshipAnalyzer';
 import { TransformationError, LLMError } from '../utils/errorHandling';
-import { PluginManager } from '../plugins/PluginManager'; // Add PluginManager import
+import { PluginManager } from '../plugins/PluginManager';
+import { AIClient } from './AIClient';
+import { PerformanceMonitor } from '../utils/PerformanceMonitor';
+import { DynamicTemplateSystem } from '../features/DynamicTemplateSystem';
 
 /**
  * Responsible for processing a single source file within the monorepo.
@@ -15,33 +18,28 @@ import { PluginManager } from '../plugins/PluginManager'; // Add PluginManager i
  * and application of changes for all JSDocable nodes within that file.
  */
 export class FileProcessor {
-  private config: GeneratorConfig;
+  private config: GeneratorConfig = {} as GeneratorConfig; // Default init
   private nodeContextExtractor: NodeContextExtractor;
   private jsdocManipulator: JSDocManipulator;
   private documentationGenerator: DocumentationGenerator;
-  private relationshipAnalyzer: RelationshipAnalyzer;
-  private baseDir: string;
-  private project: Project;
+  private baseDir: string = process.cwd(); // Default init
+  private project: Project = new Project(); // Default init
   private pluginManager: PluginManager; // Injected PluginManager
 
   constructor(
-    project: Project,
-    config: GeneratorConfig,
-    baseDir: string,
+    private aiClient: AIClient,
     nodeContextExtractor: NodeContextExtractor,
     jsdocManipulator: JSDocManipulator,
     documentationGenerator: DocumentationGenerator,
-    relationshipAnalyzer: RelationshipAnalyzer,
-    pluginManager: PluginManager, // Inject PluginManager
+    private performanceMonitor: PerformanceMonitor,
+    pluginManager: PluginManager,
+    private relationshipAnalyzer: RelationshipAnalyzer,
+    private dynamicTemplateSystem: DynamicTemplateSystem,
   ) {
-    this.project = project;
-    this.config = config;
-    this.baseDir = baseDir;
     this.nodeContextExtractor = nodeContextExtractor;
     this.jsdocManipulator = jsdocManipulator;
     this.documentationGenerator = documentationGenerator;
-    this.relationshipAnalyzer = relationshipAnalyzer;
-    this.pluginManager = pluginManager; // Assign injected PluginManager
+    this.pluginManager = pluginManager;
   }
 
   /**

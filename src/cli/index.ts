@@ -1,12 +1,15 @@
 // Re-exporting only what is publicly exposed from the CLI module.
-// Note: InteractiveCLI, HelpSystem, and CommandRunner are now primarily internal
-// to the CLI implementation in `src/cli.ts` or specific commands.
 // This index.ts primarily exists to define the module's public API.
 
-// No direct exports needed here as `src/cli.ts` handles all CLI logic directly.
-// The previous `HelpSystem` export could remain if it's considered a public API,
-// but for a clean CLI, the main `cli.ts` manages help output.
-// The goal is to minimize direct public exports from this folder, as the CLI is the interface.
+// We typically do NOT re-export the main CLI entry point (`src/cli.ts`) itself from here,
+// as it's meant to be executed directly as a binary.
 
-// If you want to expose HelpSystem for programmatic use outside of the main CLI, re-add:
-// export { HelpSystem } from './HelpSystem';
+// The CommandRunner is an internal component, not meant for public API access from here.
+
+// HelpSystem can be considered public API if other modules need to programmatically display help.
+export { HelpSystem } from './HelpSystem';
+export { InteractiveCLI } from './InteractiveCLI';
+
+// All specific commands are re-exported via src/commands/index.ts.
+// This index file would typically only re-export things from its own directory (`src/cli/`)
+// that are intended for broader programmatic use, not just CLI execution.

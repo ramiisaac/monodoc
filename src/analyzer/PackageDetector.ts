@@ -48,8 +48,6 @@ export class PackageDetector {
             name: rootPackageJson.name,
             path: baseDir,
             type: 'root', // Custom type for the monorepo root
-            tsConfigPath: hasTsConfig ? path.join(baseDir, 'tsconfig.json') : '',
-            packageJsonPath: rootPackageJsonPath,
             priority: this.calculatePackagePriority(rootPackageJson, 'root', hasTsConfig),
           });
           logger.success(
@@ -97,8 +95,6 @@ export class PackageDetector {
                 name: packageJson.name || subdir.name, // Use package.json name or directory name as fallback
                 path: packagePath,
                 type: dir, // Type derived from the workspace directory name (e.g., 'packages', 'apps')
-                tsConfigPath: hasTsConfig ? tsConfigPath : '',
-                packageJsonPath,
                 priority: this.calculatePackagePriority(packageJson, dir, hasTsConfig),
               };
               packages.push(pkg);
@@ -121,7 +117,7 @@ export class PackageDetector {
     }
 
     // Sort packages by priority so more important packages are analyzed earlier
-    packages.sort((a, b) => b.priority - a.priority);
+    packages.sort((a, b) => (b.priority || 0) - (a.priority || 0));
     logger.info(`📦 Discovered ${packages.length} packages`);
     return packages;
   }

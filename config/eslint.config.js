@@ -38,7 +38,7 @@ export default [
       ...prettierConfig.rules,
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_', ignoreRestSiblings: true }],
       '@typescript-eslint/no-namespace': ['error', { allowDeclarations: true }],
       'prettier/prettier': 'error',
       'no-console': ['warn', { allow: ['warn', 'error', 'info', 'debug', 'log', 'success', 'fatal'] }],

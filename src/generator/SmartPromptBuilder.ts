@@ -1,4 +1,5 @@
 import { NodeContext, GeneratorConfig } from '../types';
+import { logger } from '../utils/logger'; // Added logger for debug/trace
 
 /**
  * Defines a strategy for building AI prompts.
@@ -20,6 +21,32 @@ export interface PromptStrategy {
  */
 export class StandardPromptStrategy implements PromptStrategy {
   name = 'standard';
+
+  protected buildSymbolReferencesSection(
+    nodeContext: NodeContext,
+    config: GeneratorConfig,
+  ): string {
+    if (
+      nodeContext.symbolUsages &&
+      nodeContext.symbolUsages.length > 0 &&
+      config.jsdocConfig.includeSymbolReferences
+    ) {
+      return `\n**DIRECT SYMBOL REFERENCES (where this symbol is used):**\n${nodeContext.symbolUsages.map((u) => `- \`{@link ${u.filePath}:${u.line}}\` (Snippet: \`...${u.snippet || nodeContext.nodeName}...\`)`).join('\n')}\n`;
+    }
+    return '';
+  }
+
+  protected buildRelatedSymbolsSection(nodeContext: NodeContext, config: GeneratorConfig): string {
+    if (
+      nodeContext.relatedSymbols &&
+      nodeContext.relatedSymbols.length > 0 &&
+      config.jsdocConfig.includeRelatedSymbols
+    ) {
+      return `\n**SEMANTICALLY RELATED SYMBOLS (via embeddings):**\n${nodeContext.relatedSymbols.map((s) => `- \`{@link ${s.relativeFilePath}}\` - \`${s.name}\` (${s.kind}) - Score: ${s.relationshipScore.toFixed(2)}`).join('\n')}\n`;
+    }
+    return '';
+  }
+
   buildPrompt(
     nodeContext: NodeContext,
     config: GeneratorConfig,
@@ -59,49 +86,24 @@ Follow these guidelines:
 - Package: ${nodeContext.packageContext}
 ${nodeContext.signatureDetails ? `- Signature: \`${nodeContext.signatureDetails}\`\n` : ''}
 
-${nodeContext.surroundingContext ? `\n**SURROUNDING CONTEXT (e.g., parent class/interface/module):**\n\\\`\`\`typescript\n${nodeContext.surroundingContext}\n\\\`\`\`\n` : ''}
-${nodeContext.relevantImports && nodeContext.relevantImports.length > 0 ? `\n**RELEVANT IMPORTS:**\n\\\`\`\`typescript\n${nodeContext.relevantImports.join('\n')}\n\\\`\`\`\n` : ''}
+${nodeContext.surroundingContext ? `\n**SURROUNDING CONTEXT (e.g., parent class/interface/module):**\n\`\`\`typescript\n${nodeContext.surroundingContext}\n\`\`\`\n` : ''}
+${nodeContext.relevantImports && nodeContext.relevantImports.length > 0 ? `\n**RELEVANT IMPORTS:**\n\`\`\`typescript\n${nodeContext.relevantImports.join('\n')}\n\`\`\`\n` : ''}
 ${this.buildSymbolReferencesSection(nodeContext, config)}
 ${this.buildRelatedSymbolsSection(nodeContext, config)}
 
 **JSDoc TEMPLATE TO FILL:**
-\\\`\`\`jsdoc
+\`\`\`jsdoc
 ${templateContent}
-\\\`\`\`
+\`\`\`
 
 **CODE SNIPPET (Target for JSDoc):**
-\\\`\`\`typescript
+\`\`\`typescript
 ${nodeContext.codeSnippet}
-\\\`\`\`
+\`\`\`
 
 Generate ONLY the JSDoc comment content. Do NOT include markdown code fences (\`\`\`) around the final JSDoc output.`;
 
     return { systemPrompt, userPrompt };
-  }
-
-  protected buildSymbolReferencesSection(
-    nodeContext: NodeContext,
-    config: GeneratorConfig,
-  ): string {
-    if (
-      nodeContext.symbolUsages &&
-      nodeContext.symbolUsages.length > 0 &&
-      config.jsdocConfig.includeSymbolReferences
-    ) {
-      return `\n**DIRECT SYMBOL REFERENCES (where this symbol is used):**\n${nodeContext.symbolUsages.map((u) => `- \`{@link ${u.filePath}:${u.line}}\` (Snippet: \`...${u.snippet || nodeContext.nodeName}...\`)`).join('\n')}\n`;
-    }
-    return '';
-  }
-
-  protected buildRelatedSymbolsSection(nodeContext: NodeContext, config: GeneratorConfig): string {
-    if (
-      nodeContext.relatedSymbols &&
-      nodeContext.relatedSymbols.length > 0 &&
-      config.jsdocConfig.includeRelatedSymbols
-    ) {
-      return `\n**SEMANTICALLY RELATED SYMBOLS (via embeddings):**\n${nodeContext.relatedSymbols.map((s) => `- \`{@link ${s.relativeFilePath}}\` - \`${s.name}\` (${s.kind}) - Score: ${s.relationshipScore.toFixed(2)}`).join('\n')}\n`;
-    }
-    return '';
   }
 }
 
@@ -128,16 +130,16 @@ Do not include @see, @remarks, or overly detailed descriptions.
 If code examples are generated, ensure they are minimal.
 
 **CODE SNIPPET:**
-\\\`\`\`typescript
+\`\`\`typescript
 ${nodeContext.codeSnippet}
-\\\`\`\`
+\`\`\`
 
 **JSDoc TEMPLATE TO FILL:**
-\\\`\`\`jsdoc
+\`\`\`jsdoc
 ${templateContent}
-\\\`\`\`
+\`\`\`
 
-Generate ONLY the JSDoc comment content. Do NOT include markdown code fences.`;
+Generate ONLY the JSDoc comment content. Do NOT include markdown code fences (\`\`\`).`;
     return { systemPrompt, userPrompt };
   }
 }
@@ -238,6 +240,9 @@ export class SmartPromptBuilder {
       isExportedOrPublic &&
       (codeLength > 500 || hasRelatedSymbols || config.jsdocConfig.generateExamples)
     ) {
+      logger.trace(
+        `Prompt Strategy: Detailed for ${nodeContext.nodeName} (exported/public, complex/related/examples)`,
+      );
       return 'detailed';
     } else if (
       codeLength < 100 &&
@@ -245,8 +250,10 @@ export class SmartPromptBuilder {
       !hasRelatedSymbols &&
       !config.jsdocConfig.generateExamples
     ) {
+      logger.trace(`Prompt Strategy: Minimal for ${nodeContext.nodeName} (simple)`);
       return 'minimal';
     } else {
+      logger.trace(`Prompt Strategy: Standard for ${nodeContext.nodeName}`);
       return 'standard';
     }
   }

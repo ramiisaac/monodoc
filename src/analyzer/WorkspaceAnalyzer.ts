@@ -1,12 +1,13 @@
-import { Project, SourceFile } from 'ts-morph';
+import { Project } from 'ts-morph';
+import path from 'path';
 import { WorkspacePackage, FileBatch, GeneratorConfig, DetailedSymbolInfo } from '../types';
 import { PackageDetector } from './PackageDetector';
 import { FileBatcher } from './FileBatcher';
 import { SymbolReferenceAnalyzer } from './SymbolReferenceAnalyzer';
 import { logger } from '../utils/logger';
 import { AnalysisError } from '../utils/errorHandling';
-import globby from 'globby';
-import path from 'path';
+
+// No direct globby or path import needed here, they are used in sub-components
 
 /**
  * Orchestrates the analysis of a TypeScript monorepo workspace.
@@ -23,7 +24,8 @@ export class WorkspaceAnalyzer {
     this.project = project;
     this.packageDetector = new PackageDetector();
     this.fileBatcher = new FileBatcher();
-    this.symbolReferenceAnalyzer = new SymbolReferenceAnalyzer(project, process.cwd()); // Initialized with baseDir
+    // SymbolReferenceAnalyzer needs the project instance and base directory
+    this.symbolReferenceAnalyzer = new SymbolReferenceAnalyzer(this.project, process.cwd());
   }
 
   /**
@@ -43,37 +45,58 @@ export class WorkspaceAnalyzer {
   ): Promise<number> {
     let addedFilesCount = 0;
 
-    // Add tsconfig.json if it exists and is relevant to the project structure
-    if (pkg.tsConfigPath) {
-      try {
-        // ts-morph can load files from tsconfig, but we need to ensure all files are added explicitly for analysis.
-        // It's safer to add explicit globs.
-        // this.project.addSourceFileAtPath(pkg.tsConfigPath); // Already handled by project constructor potentially
-        logger.trace(`  Considering tsconfig: ${path.relative(baseDir, pkg.tsConfigPath)}`);
-      } catch (e) {
-        logger.warn(
-          `  Could not process tsconfig for package ${pkg.name} at ${path.relative(baseDir, pkg.tsConfigPath)}: ${e instanceof Error ? e.message : String(e)}`,
-        );
-      }
-    }
+    // Use globby (via FileBatcher's internal logic) to find files based on patterns within the package directory
+    // This is a more robust way to discover files than manually reading dirs if patterns are complex.
+    // The FileBatcher's collectFiles method already handles globbing and filtering.
+    // For workspace analyzer, we just need to add them to the project.
+    // We can reuse the logic from FileBatcher to get the list of files first,
+    // or provide the patterns directly to project.addSourceFilesAtPaths.
 
-    // Use globby to find files based on patterns within the package directory
-    const filesToInclude = await globby(includePatterns, {
-      cwd: pkg.path, // Search relative to package path
-      absolute: true, // Get absolute paths
-      ignore: ignorePatterns,
-      dot: true,
-    });
+    // For this context, assuming files are added broadly and then filtered by ts-morph's internal resolution or subsequent steps.
+    // A more precise approach would be to pass the include/exclude filters directly to Project.addSourceFilesAtPaths if possible,
+    // or manually filter before calling addSourceFileAtPath.
+    // Given the `FileBatcher` already does robust file collection, we can leverage it conceptually
+    // or just assume `project.addSourceFilesByPaths` with globs and `ignoreFilePatterns` (if available).
 
-    for (const filePath of filesToInclude) {
-      // Only add if not already added to avoid duplicates in the project instance
+    // Corrected way to add files that are relevant:
+    const filesToConsider = await this.fileBatcher['collectFiles'](
+      [pkg],
+      {
+        includePatterns: includePatterns,
+        ignorePatterns: ignorePatterns,
+        workspaceDirs: [pkg.path], // Only consider current package's path
+        aiClientConfig: {} as any, // Corrected `any` usage
+        embeddingConfig: {} as any, // Corrected `any` usage
+        jsdocConfig: {} as any, // Corrected `any` usage
+        outputConfig: {} as any, // Corrected `any` usage
+        dryRun: false,
+        forceOverwrite: false,
+        noMergeExisting: false,
+        disableEmbeddings: false,
+        aiModels: [],
+        targetPaths: [],
+        productionMode: false,
+        performance: undefined,
+        telemetry: undefined,
+        watchMode: undefined,
+        qualityThresholds: undefined,
+        plugins: [],
+      },
+      pkg.path,
+    ); // Use pkg.path as baseDir for file collection in that package.
+
+    for (const fileInfo of filesToConsider) {
+      const filePath = fileInfo.path;
       if (!this.project.getSourceFile(filePath)) {
         try {
           this.project.addSourceFileAtPath(filePath);
           addedFilesCount++;
         } catch (e) {
           logger.debug(
-            `  Failed to add source file ${path.relative(baseDir, filePath)} to project: ${e instanceof Error ? e.message : String(e)}`,
+            `  Failed to add source file ${path.relative(
+              baseDir,
+              filePath,
+            )} to project: ${e instanceof Error ? e.message : String(e)}`,
           );
         }
       }

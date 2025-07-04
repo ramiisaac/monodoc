@@ -1,2 +1,2 @@
 // Re-exporting all public components from the reporting module.
-export { ReportGenerator } from './ReportGenerator';
+export * from './ReportGenerator';

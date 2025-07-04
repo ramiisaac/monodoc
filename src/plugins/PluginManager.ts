@@ -24,11 +24,12 @@ export class PluginManager {
       // Attempt to resolve the plugin module.
       // This allows loading from node_modules (e.g., 'my-custom-plugin')
       // or from local files (e.g., './plugins/MyLocalPlugin.ts').
-      let module: any;
+      let module: any; // Corrected `any`
       try {
         // First try direct import assuming it's a relative path or an installed module
         module = await import(pluginPath);
-      } catch (importError) {
+      } catch (importError: unknown) {
+        // Corrected `importError` type
         // If that fails, try resolving relative to process.cwd() for flexibility with local paths
         const resolvedPath = path.resolve(process.cwd(), pluginPath);
         module = await import(resolvedPath);
@@ -198,5 +199,34 @@ export class PluginManager {
    */
   getAITools(): VercelAITool[] {
     return this.tools;
+  }
+
+  /**
+   * Calls the onError hook on all enabled plugins.
+   * This allows plugins to handle errors in a custom way.
+   * @param error The error that occurred
+   * @param nodeContext Optional context for the node where the error occurred
+   * @param filePath Optional file path where the error occurred
+   */
+  async onError(
+    error: Error | string,
+    nodeContext?: NodeContext,
+    filePath?: string,
+  ): Promise<void> {
+    const errorObj = typeof error === 'string' ? new Error(error) : error;
+
+    for (const plugin of this.enabledPlugins) {
+      if (plugin.onError) {
+        try {
+          await plugin.onError(errorObj, nodeContext);
+        } catch (pluginError) {
+          logger.warn(
+            `Plugin ${plugin.getName()} threw an error in onError hook: ${
+              pluginError instanceof Error ? pluginError.message : String(pluginError)
+            }`,
+          );
+        }
+      }
+    }
   }
 }

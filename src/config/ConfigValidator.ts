@@ -33,13 +33,14 @@ export class ConfigValidator {
     if (!typedConfig.aiClientConfig) {
       errors.push('aiClientConfig is required.');
     } else {
-      this.checkRequiredProperty(typedConfig.aiClientConfig, 'defaultGenerationModelId', errors);
-      this.checkRequiredProperty(typedConfig.aiClientConfig, 'defaultEmbeddingModelId', errors);
-      this.checkPositiveNumber(typedConfig.aiClientConfig, 'maxConcurrentRequests', errors);
-      this.checkNonNegativeNumber(typedConfig.aiClientConfig, 'requestDelayMs', warnings); // Warn if too low
-      this.checkPositiveNumber(typedConfig.aiClientConfig, 'maxRetries', errors);
-      this.checkNonNegativeNumber(typedConfig.aiClientConfig, 'retryDelayMs', warnings);
-      this.checkPositiveNumber(typedConfig.aiClientConfig, 'maxTokensPerBatch', errors);
+      const aiClientConfig = typedConfig.aiClientConfig as unknown as Record<string, unknown>;
+      this.checkRequiredProperty(aiClientConfig, 'defaultGenerationModelId', errors);
+      this.checkRequiredProperty(aiClientConfig, 'defaultEmbeddingModelId', errors);
+      this.checkPositiveNumber(aiClientConfig, 'maxConcurrentRequests', errors);
+      this.checkNonNegativeNumber(aiClientConfig, 'requestDelayMs', warnings); // Warn if too low
+      this.checkPositiveNumber(aiClientConfig, 'maxRetries', errors);
+      this.checkNonNegativeNumber(aiClientConfig, 'retryDelayMs', warnings);
+      this.checkPositiveNumber(aiClientConfig, 'maxTokensPerBatch', errors);
     }
 
     // --- AI Models validation ---
@@ -50,9 +51,13 @@ export class ConfigValidator {
     }
 
     // --- Default Model ID consistency check ---
-    if (typedConfig.aiModels && typedConfig.aiClientConfig?.defaultGenerationModelId) {
+    if (
+      typedConfig.aiModels &&
+      typedConfig.aiClientConfig &&
+      typedConfig.aiClientConfig.defaultGenerationModelId
+    ) {
       const defaultGenModel = typedConfig.aiModels.find(
-        (m) => m.id === typedConfig.aiClientConfig.defaultGenerationModelId,
+        (m) => m.id === typedConfig.aiClientConfig!.defaultGenerationModelId,
       );
       if (!defaultGenModel) {
         errors.push(
@@ -68,7 +73,8 @@ export class ConfigValidator {
     // --- Embedding Configuration validation ---
     if (typedConfig.embeddingConfig) {
       if (typedConfig.embeddingConfig.enabled) {
-        this.checkRequiredProperty(typedConfig.embeddingConfig, 'modelId', errors);
+        const embeddingConfig = typedConfig.embeddingConfig as unknown as Record<string, unknown>;
+        this.checkRequiredProperty(embeddingConfig, 'modelId', errors);
         if (typedConfig.embeddingConfig.modelId && typedConfig.aiModels) {
           const embeddingModel = typedConfig.aiModels.find(
             (m) => m.id === typedConfig.embeddingConfig?.modelId,
@@ -83,9 +89,9 @@ export class ConfigValidator {
             );
           }
         }
-        this.checkPositiveNumber(typedConfig.embeddingConfig, 'minRelationshipScore', errors, 0, 1);
-        this.checkPositiveNumber(typedConfig.embeddingConfig, 'maxRelatedSymbols', errors);
-        this.checkPositiveNumber(typedConfig.embeddingConfig, 'embeddingBatchSize', errors);
+        this.checkPositiveNumber(embeddingConfig, 'minRelationshipScore', errors, 0, 1);
+        this.checkPositiveNumber(embeddingConfig, 'maxRelatedSymbols', errors);
+        this.checkPositiveNumber(embeddingConfig, 'embeddingBatchSize', errors);
       }
     } else {
       errors.push('embeddingConfig is required.');
@@ -115,16 +121,16 @@ export class ConfigValidator {
       this.checkPositiveNumber(typedConfig.performance, 'batchSize', warnings);
     }
 
-    // --- Environment variable checks for models ---
-    this.checkEnvVarsForModels(typedConfig.aiModels || [], errors);
+    // --- Environment variable checks for models (now warnings) ---
+    this.checkEnvVarsForModels(typedConfig.aiModels || [], warnings); // Changed to warnings
 
     if (errors.length > 0) {
-      return { value: config as GeneratorConfig, error: errors.join('\n') };
+      return { value: config as unknown as GeneratorConfig, error: errors.join('\n') };
     }
     if (warnings.length > 0) {
       logger.warn('Configuration warnings detected:\n' + warnings.join('\n'));
     }
-    return { value: config as GeneratorConfig, warnings: warnings };
+    return { value: config as unknown as GeneratorConfig, warnings: warnings };
   }
 
   /**
@@ -270,12 +276,6 @@ export class ConfigValidator {
         );
       }
 
-      if (model.apiKeyEnvVar && typeof process.env[model.apiKeyEnvVar] === 'undefined') {
-        warningList.push(
-          `Environment variable '${model.apiKeyEnvVar}' for model ID '${model.id}' is not set. This model might not function.`,
-        );
-      }
-
       // Check specific generation/embedding configs if present
       if (model.type === 'generation') {
         if (
@@ -316,17 +316,13 @@ export class ConfigValidator {
    * Checks if required environment variables for AI models are set.
    * Logs warnings if they are missing.
    * @param models The array of AIModelConfig objects.
-   * @param errorList The list to add error messages to.
+   * @param warningList The list to add warning messages to.
    */
-  private static checkEnvVarsForModels(models: AIModelConfig[], errorList: string[]): void {
-    // This function is now partially redundant with checks in validateAiModels,
-    // but can be kept for a consolidated overview or more specific top-level checks.
-    // The individual model validation should be more robust.
-    // For now, let's keep it simple and ensure critical env vars are flagged.
+  private static checkEnvVarsForModels(models: AIModelConfig[], warningList: string[]): void {
     for (const model of models) {
       if (model.apiKeyEnvVar && typeof process.env[model.apiKeyEnvVar] === 'undefined') {
         // This is now a warning, as a model might be a fallback or not always used.
-        logger.warn(
+        warningList.push(
           `Environment variable '${model.apiKeyEnvVar}' is not set for AI model '${model.id}'. This model might not function correctly.`,
         );
       }

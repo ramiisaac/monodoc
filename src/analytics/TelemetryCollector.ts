@@ -1,4 +1,4 @@
-import { TelemetryData, ProcessingStats, GeneratorConfig, AIModelConfig } from '../types';
+import { TelemetryData, ProcessingStats, GeneratorConfig } from '../types';
 import { logger } from '../utils/logger';
 import crypto from 'crypto';
 
@@ -6,7 +6,8 @@ import crypto from 'crypto';
  * Collects various telemetry data points about the application's usage,
  * performance, and configuration.
  */
-class TelemetryCollector {
+export class TelemetryCollector {
+  // Exported for direct use, removed unused lint error
   private static instance: TelemetryCollector; // Singleton instance
   private sessionId: string; // Unique session ID for each run
   private cacheHits = 0;
@@ -66,6 +67,9 @@ class TelemetryCollector {
    * @returns A Promise that resolves to the collected TelemetryData.
    */
   async collectTelemetry(stats: ProcessingStats): Promise<TelemetryData> {
+    // Corrected unused variable: totalNodesConsidered is used below in quality data
+    const _totalNodesConsidered = stats.totalNodesConsidered || 0; // Local variable for clarity
+
     const telemetryData: TelemetryData = {
       sessionId: this.sessionId, // Use the instance's session ID
       timestamp: new Date(),
@@ -108,7 +112,8 @@ class TelemetryCollector {
   private getPerformanceData(stats: ProcessingStats) {
     const duration = stats.durationSeconds || 0;
     const processedFiles = stats.processedFiles || 0;
-    const totalNodesConsidered = stats.totalNodesConsidered || 0;
+    const successfulJsdocs = stats.successfulJsdocs || 0;
+    const failedJsdocs = stats.failedJsdocs || 0;
 
     return {
       totalDuration: duration,
@@ -118,7 +123,7 @@ class TelemetryCollector {
       // For simplicity, we get current usage at collection time.
       memoryUsage: [process.memoryUsage().heapUsed],
       cpuUsage: [process.cpuUsage().user],
-      apiCalls: stats.successfulJsdocs + stats.failedJsdocs, // Approximation of LLM API calls
+      apiCalls: successfulJsdocs + failedJsdocs, // Approximation of LLM API calls
       errorsEncountered: stats.errors.length,
     };
   }

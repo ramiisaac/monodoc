@@ -1,0 +1,13 @@
+{
+  "overallScore": 0,
+  "totalNodesAnalyzed": 0,
+  "successfulJsdocs": 0,
+  "qualityMetrics": {
+    "completeness": 0,
+    "consistency": 85,
+    "exampleQuality": 78
+  },
+  "recommendations": [
+    "For a more detailed quality analysis, run `ai-jsdoc quality-check`."
+  ]
+}

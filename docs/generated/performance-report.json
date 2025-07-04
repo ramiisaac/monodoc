@@ -1,0 +1,30 @@
+{
+  "timers": {
+    "workspace_analysis": {
+      "avg": 981,
+      "min": 981,
+      "max": 981,
+      "count": 1,
+      "total": 981,
+      "p95": 981,
+      "p99": 981
+    },
+    "total_generation": {
+      "avg": 3,
+      "min": 3,
+      "max": 3,
+      "count": 1,
+      "total": 3,
+      "p95": 3,
+      "p99": 3
+    }
+  },
+  "counters": {},
+  "gauges": {},
+  "distributions": {},
+  "metadata": {
+    "startTime": 2761.914292,
+    "endTime": 1751643306720,
+    "duration": 1751643303958.0857
+  }
+}

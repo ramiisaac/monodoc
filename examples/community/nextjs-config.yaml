@@ -1,0 +1,86 @@
+# Next.js Project Configuration
+name: "Next.js JSDoc Configuration"
+description: "Optimized for Next.js applications with API routes and components"
+
+workspaceDirs:
+  - pages
+  - components
+  - lib
+  - utils
+  - api
+includePatterns:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js" # Include JS for API routes that might be plain JS
+ignorePatterns:
+  - "**/node_modules/**"
+  - "**/.next/**"
+  - "**/*.test.{ts,tsx,js}"
+  - "**/*.spec.{ts,tsx,js}"
+  - "**/*.d.ts"
+
+aiModels:
+  - id: openai-nextjs-gen
+    provider: openai
+    model: gpt-4o
+    type: generation
+    apiKeyEnvVar: OPENAI_API_KEY
+    temperature: 0.3
+    maxOutputTokens: 2000
+  - id: openai-nextjs-embedding
+    provider: openai
+    model: text-embedding-3-small
+    type: embedding
+    apiKeyEnvVar: OPENAI_API_KEY
+    dimensions: 1536
+
+aiClientConfig:
+  defaultGenerationModelId: openai-nextjs-gen
+  defaultEmbeddingModelId: openai-nextjs-embedding
+  maxConcurrentRequests: 5 # Moderate concurrency for Next.js projects
+  requestDelayMs: 200
+  maxRetries: 3
+  retryDelayMs: 1000
+  maxTokensPerBatch: 6000
+
+embeddingConfig:
+  enabled: true
+  modelId: openai-nextjs-embedding
+  minRelationshipScore: 0.75
+  maxRelatedSymbols: 5
+  embeddingBatchSize: 20
+
+jsdocConfig:
+  prioritizeExports: true
+  includePrivate: false
+  generateExamples: true
+  mergeExisting: true
+  minJsdocLength: 50
+  includeSymbolReferences: true
+  includeRelatedSymbols: true
+
+outputConfig:
+  reportDir: ./reports/nextjs
+  logLevel: info
+
+plugins:
+  - name: react-component-plugin
+    enabled: true
+    options:
+      enhanceProps: true
+      detectHooks: true
+  - name: api-documentation-plugin
+    enabled: true
+    options:
+      generateExamples: true
+      includeMiddleware: true
+      detectValidation: true
+
+performance:
+  enableCaching: true
+  maxConcurrentFiles: 6
+  batchSize: 40
+  timeoutMs: 45000 # Longer timeout for AI calls on potentially larger codebase
+
+# No explicit telemetry or qualityThresholds, using defaults
+

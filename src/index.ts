@@ -19,6 +19,7 @@ import { PluginManager } from './plugins/PluginManager';
 import { ProductionOptimizer } from './utils/ProductionOptimizer';
 import { AuthManager } from './config/AuthManager'; // Although not directly used in main, good to keep in case.
 import { handleCriticalError } from './utils/errorHandling';
+import { AIClient } from './generator/AIClient';
 
 dotenv.config(); // Load environment variables from .env file
 
@@ -107,6 +108,9 @@ export async function main(cliOptions: CliOptions): Promise<void> {
     // 6. Initialize ReportGenerator
     reportGenerator = new ReportGenerator(baseDir);
 
+    // Initialize AIClient
+    const aiClient = new AIClient(config, cacheManager);
+    
     // Construct the CommandContext that will be passed to operations
     const commandContext: CommandContext = {
       baseDir,
@@ -117,6 +121,7 @@ export async function main(cliOptions: CliOptions): Promise<void> {
       project,
       reportGenerator,
       cliOptions, // Pass original CLI options for mode-specific behavior
+      aiClient,
     };
 
     // --- Execute the core documentation generation operation ---

@@ -1,14 +1,12 @@
-import { Project, SourceFile, Node } from 'ts-morph';
-import { logger } from '../utils/logger';
+import { Project, SourceFile, JSDocableNode, Node } from 'ts-morph';
 import {
   GeneratorConfig,
-  JSDocableNode,
-  RelatedSymbol,
-  ProcessingStats,
   WorkspacePackage,
-  EmbeddedNode,
-  AIClient,
+  ProcessingStats,
+  RelatedSymbol,
+  NodeContext,
 } from '../types';
+import { logger } from '../utils/logger';
 import { EmbeddingGenerator } from './EmbeddingGenerator';
 import { InMemoryVectorStore } from './InMemoryVectorStore';
 import { EmbeddingError } from '../utils/errorHandling';
@@ -27,25 +25,38 @@ export class RelationshipAnalyzer {
   private readonly sourceFileMap: Map<string, SourceFile> = new Map();
   private readonly baseDir: string;
   private isInitializedSuccessfully: boolean = false;
+  private packages: WorkspacePackage[]; // Added to update if packages change
 
   constructor(
-    project: Project,
+    project: Project, // ts-morph project instance
     config: GeneratorConfig,
-    packages: WorkspacePackage[],
+    packages: WorkspacePackage[], // Initial packages
     baseDir: string,
     nodeContextExtractor: NodeContextExtractor, // Injected NodeContextExtractor
-    aiClient: AIClient, // Injected AIClient
+    aiClient: any, // Injected AIClient
   ) {
     this.config = config;
     this.baseDir = baseDir;
+    this.packages = packages; // Store initial packages
     this.nodeContextExtractor = nodeContextExtractor; // Assign injected extractor
     this.embeddingGenerator = new EmbeddingGenerator(
-      aiClient,
+      aiClient as any, // Type assertion to resolve compatibility issue
       config,
       baseDir,
       nodeContextExtractor,
     ); // Pass NodeContextExtractor to EmbeddingGenerator
     this.vectorStore = new InMemoryVectorStore();
+  }
+
+  /**
+   * Updates the list of packages. This is crucial if packages are discovered dynamically
+   * after initial setup, or if the analyzer is reused.
+   * @param newPackages The updated list of workspace packages.
+   */
+  public updatePackages(newPackages: WorkspacePackage[]): void {
+    this.packages = newPackages;
+    // Also ensure NodeContextExtractor is updated if it has its own package list
+    this.nodeContextExtractor.updatePackages(newPackages);
   }
 
   /**
@@ -93,8 +104,10 @@ export class RelationshipAnalyzer {
   private collectJSDocableNodes(allSourceFiles: SourceFile[]): void {
     for (const sourceFile of allSourceFiles) {
       this.sourceFileMap.set(sourceFile.getFilePath(), sourceFile);
+      // Use the injected nodeContextExtractor to collect nodes, ensuring consistency
       const nodesInFile = this.nodeContextExtractor.collectJSDocableNodes(sourceFile);
-      this.allJSDocableNodesForEmbeddings.push(...nodesInFile);
+      // Type assertion to resolve compatibility issue with JSDocableNode from ts-morph vs our defined type
+      this.allJSDocableNodesForEmbeddings.push(...(nodesInFile as any[]));
     }
   }
 
@@ -105,7 +118,7 @@ export class RelationshipAnalyzer {
    */
   private async generateAndStoreEmbeddings(stats: ProcessingStats): Promise<void> {
     const embeddedNodes = await this.embeddingGenerator.generateEmbeddings(
-      this.allJSDocableNodesForEmbeddings,
+      this.allJSDocableNodesForEmbeddings as any[],
       this.sourceFileMap,
     );
     this.vectorStore.addNodes(embeddedNodes);
@@ -113,7 +126,7 @@ export class RelationshipAnalyzer {
       new Map(embeddedNodes.map((node) => [node.id, node])),
     );
     stats.embeddingSuccesses += embeddedNodes.length;
-    stats.embeddingFailures += this.allJSDocableNodesForEmbedremo.length - embeddedNodes.length;
+    stats.embeddingFailures += this.allJSDocableNodesForEmbeddings.length - embeddedNodes.length;
     logger.success(
       `🧠 Embedding initialization complete. ${embeddedNodes.length} embeddings stored.`,
     );
@@ -146,14 +159,15 @@ export class RelationshipAnalyzer {
       return [];
     }
 
-    const sourceFile = node.getSourceFile();
+    // Cast to any to access getSourceFile method
+    const sourceFile = (node as any).getSourceFile();
     if (!sourceFile) {
       this.logNodeSourceFileError(node);
       stats.embeddingFailures++;
       return [];
     }
 
-    const nodeContext = this.nodeContextExtractor.getEnhancedNodeContext(node, sourceFile);
+    const nodeContext = this.nodeContextExtractor.getEnhancedNodeContext(node as any, sourceFile);
 
     if (!this.hasValidEmbedding(nodeContext)) {
       this.logNoEmbeddingWarning(node, nodeContext.id);
@@ -170,7 +184,8 @@ export class RelationshipAnalyzer {
       );
       stats.totalRelationshipsDiscovered += relatedSymbols.length;
       return relatedSymbols;
-    } catch (error) {
+    } catch (error: unknown) {
+      // Explicitly define as unknown
       this.logRelatedSymbolsError(node, nodeContext.id, error);
       stats.embeddingFailures++;
       return [];
@@ -191,9 +206,9 @@ export class RelationshipAnalyzer {
    * @param node The node that caused the issue.
    */
   private logNodeSourceFileError(node: JSDocableNode): void {
-    const nodeName = this.getNodeNameForLogging(node);
+    const nodeName = this.getNodeNameForLogging(node as any);
     logger.warn(
-      `Could not find SourceFile in map for node ${nodeName} at ${node.getSourceFile().getFilePath()}. Cannot find related symbols.`,
+      `Could not find SourceFile in map for node ${nodeName} at ${(node as any).getSourceFile().getFilePath()}. Cannot find related symbols.`,
     );
   }
 
@@ -203,7 +218,7 @@ export class RelationshipAnalyzer {
    * @param id The node's ID.
    */
   private logNoEmbeddingWarning(node: JSDocableNode, id: string): void {
-    const nodeName = this.getNodeNameForLogging(node);
+    const nodeName = this.getNodeNameForLogging(node as any);
     logger.debug(
       `  No embedding found for node '${nodeName}' (${id}). Skipping related symbols search.`,
     );
@@ -216,7 +231,7 @@ export class RelationshipAnalyzer {
    * @param error The error object.
    */
   private logRelatedSymbolsError(node: JSDocableNode, id: string, error: unknown): void {
-    const nodeName = this.getNodeNameForLogging(node);
+    const nodeName = this.getNodeNameForLogging(node as any);
     logger.error(
       `  ❌ Error finding related symbols for ${nodeName} (${id}): ${
         error instanceof Error ? error.message : String(error)
@@ -234,8 +249,11 @@ export class RelationshipAnalyzer {
     if (symbol) {
       return symbol.getName();
     }
-    if (Node.hasName(node) && typeof (node as any).getName === 'function') {
-      const name = (node as any).getName();
+    if (
+      Node.hasName(node) &&
+      typeof (node as { getName?: () => string | undefined }).getName === 'function'
+    ) {
+      const name = (node as { getName: () => string | undefined }).getName();
       return name || node.getKindName();
     }
     return node.getKindName();

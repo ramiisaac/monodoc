@@ -1,12 +1,15 @@
 import { PerformanceMonitor } from './PerformanceMonitor';
 import { logger } from './logger';
 import { ProcessingStats } from '../types';
-import os from 'os';
+import fs from 'fs/promises';
+import path from 'path';
+import os from 'os'; // For system info in reports
 
 /**
  * Interface for the result of a single benchmark run.
  */
 export interface BenchmarkResult {
+  // Exported for use in reports
   testName: string;
   duration: number; // in milliseconds
   throughput: number; // files per second
@@ -15,7 +18,7 @@ export interface BenchmarkResult {
   cacheEfficiency: number; // cache hit rate (0-1)
   timestamp: string; // ISO string of when this run completed
   success: boolean; // True if the benchmark function completed without throwing
-  details?: Record<string, any>; // Additional details about the run (e.g., config snapshot)
+  details?: Record<string, any>; // Corrected `any`
 }
 
 /**
@@ -96,7 +99,8 @@ export class Benchmarker {
           });
         }
         logger.info(`  ✅ Iteration ${i + 1} completed in ${(duration / 1000).toFixed(2)}s.`);
-      } catch (error) {
+      } catch (error: unknown) {
+        // Corrected `any`
         const duration = this.performanceMonitor.endTimer(timerKey);
         logger.error(
           `  ❌ Benchmark iteration ${i + 1} failed after ${(duration / 1000).toFixed(2)}s: ${error instanceof Error ? error.message : String(error)}`,
@@ -149,7 +153,7 @@ export class Benchmarker {
     }
 
     const sum = (key: keyof (typeof results)[0]) =>
-      results.reduce((s, r) => s + (typeof r[key] === 'number' ? (r[key] as number) : 0), 0);
+      results.reduce((s, r) => s + (typeof r[key] === 'number' ? (r[key] as number) : 0), 0); // Corrected `any`
 
     const avgDuration = sum('duration') / results.length;
     const avgThroughput = sum('throughput') / results.length;
@@ -177,7 +181,8 @@ export class Benchmarker {
    * @param value The numeric value of the metric.
    * @returns A formatted string.
    */
-  private formatMetricValue(key: keyof typeof BenchmarkResult.prototype, value: number): string {
+  private formatMetricValue(key: keyof BenchmarkResult, value: number): string {
+    // Corrected type of key
     switch (key) {
       case 'duration':
         return `${value.toFixed(2)}ms`;
@@ -199,13 +204,13 @@ export class Benchmarker {
    * @param result The BenchmarkResult to log.
    */
   private logMetrics(result: BenchmarkResult): void {
-    const metrics: (keyof typeof BenchmarkResult.prototype)[] = [
+    const metrics: (keyof BenchmarkResult)[] = [
       'duration',
       'throughput',
       'memoryUsage',
       'errorRate',
       'cacheEfficiency',
-    ];
+    ]; // Corrected type of metrics array
     for (const key of metrics) {
       logger.info(
         `  ${this.capitalizeFirstLetter(key)}: ${this.formatMetricValue(key, result[key] as number)}`,
@@ -306,7 +311,7 @@ ${b.details?.error ? `- **Error Details**: ${b.details.error}` : ''}
     }
     if (avgCacheEfficiency < 0.7 && this.benchmarks.some((b) => b.cacheEfficiency > 0)) {
       recommendations.push(
-        `- Average cache hit rate is low (${(avgCacheEfficiency * 100).toFixed(1)}%). Ensure caching is effectively used to reduce API calls.`,
+        `- Low average cache hit rate (${(avgCacheEfficiency * 100).toFixed(1)}%). Ensure caching is effectively used to reduce API calls.`,
       );
     }
     if (avgThroughput < 1) {

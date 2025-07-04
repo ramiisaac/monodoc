@@ -2,7 +2,7 @@ import { GeneratorConfig, NodeContext, AIResponse } from '../types';
 import { logger } from '../utils/logger';
 import { AIClient } from './AIClient';
 import { SmartPromptBuilder } from './SmartPromptBuilder';
-import { SmartDocumentationEngine } from '../features/SmartDocumentationEngine'; // The intelligent template/strategy selector
+import { SmartDocumentationEngine } from '../features/SmartDocumentationEngine';
 
 /**
  * Orchestrates the generation of JSDoc content for a single TypeScript node.
@@ -66,8 +66,11 @@ export class DocumentationGenerator {
       }
 
       return result;
-    } catch (error: any) {
-      logger.error(`AI generation failed for ${nodeContext.nodeName}: ${error.message}`);
+    } catch (error: unknown) {
+      // Use unknown for generic catch
+      logger.error(
+        `AI generation failed for ${nodeContext.nodeName}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return {
         jsdocContent: null,
         status: 'error',

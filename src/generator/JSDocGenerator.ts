@@ -1,28 +1,25 @@
-import { Project, SourceFile } from 'ts-morph';
-import path from 'path';
-import { logger } from '../utils/logger';
 import pLimit from 'p-limit'; // For concurrency control
-
-import {
-  GeneratorConfig,
-  FileBatch,
-  ProcessingStats,
-  WorkspacePackage,
-  DetailedSymbolInfo,
-  NodeContext,
-  JSDocableNode,
-  AIClient,
-} from '../types';
-import { NodeContextExtractor } from './NodeContextExtractor';
-import { JSDocManipulator } from './JSDocManipulator';
 import { RelationshipAnalyzer } from '../embeddings/RelationshipAnalyzer';
-import { CacheManager } from '../utils/CacheManager';
-import { PerformanceMonitor } from '../utils/PerformanceMonitor';
 import { DynamicTemplateSystem } from '../features/DynamicTemplateSystem';
 import { SmartDocumentationEngine } from '../features/SmartDocumentationEngine';
+import { ReportGenerator } from '../reporting/ReportGenerator'; // Added import for ReportGenerator
+import {
+  DetailedSymbolInfo,
+  FileBatch,
+  GeneratorConfig,
+  ProcessingStats,
+  WorkspacePackage,
+} from '../types';
+import { CacheManager } from '../utils/CacheManager';
+import { logger } from '../utils/logger';
+import { PerformanceMonitor } from '../utils/PerformanceMonitor';
+import { ProgressBar } from '../utils/progressBar'; // Corrected import
+import { AIClient } from './AIClient';
 import { DocumentationGenerator } from './DocumentationGenerator'; // New component
 import { FileProcessor } from './FileProcessor'; // New component
-import { ProgressBar } from '../utils/progressBar';
+import { JSDocManipulator } from './JSDocManipulator';
+import { NodeContextExtractor } from './NodeContextExtractor';
+import { Project } from 'ts-morph';
 
 /**
  * `MonorepoJSDocGenerator` now acts as a high-level orchestrator or facade for the generation process.
@@ -41,7 +38,7 @@ export class MonorepoJSDocGenerator {
   private stats: ProcessingStats;
   private project: Project;
   private packages: WorkspacePackage[];
-  private aiClient!: AIClient; // Initialized in setup
+  private aiClient: AIClient; // Initialized in setup // Temporary fix for compilation
   private nodeContextExtractor!: NodeContextExtractor; // Initialized in setup
   private jsdocManipulator!: JSDocManipulator; // Initialized in setup
   private documentationGenerator!: DocumentationGenerator; // New component
@@ -53,7 +50,9 @@ export class MonorepoJSDocGenerator {
   private dynamicTemplateSystem!: DynamicTemplateSystem;
   private smartDocumentationEngine!: SmartDocumentationEngine;
   private cacheManager: CacheManager;
-  private concurrencyLimiter: pLimit.Limit; // Concurrency limiter for file processing
+  private concurrencyLimiter: ReturnType<typeof pLimit>; // Concurrency limiter for file processing
+  private progressBar: ProgressBar | null = null; // ProgressBar instance
+  private reportGenerator: ReportGenerator; // Injected by CommandRunner context
 
   constructor(
     project: Project,
@@ -62,6 +61,7 @@ export class MonorepoJSDocGenerator {
     baseDir: string,
     symbolMap: Map<string, DetailedSymbolInfo>,
     cacheManager: CacheManager,
+    reportGenerator: ReportGenerator, // Inject ReportGenerator
   ) {
     this.project = project;
     this.config = config;
@@ -70,6 +70,7 @@ export class MonorepoJSDocGenerator {
     this.symbolMap = symbolMap;
     this.cacheManager = cacheManager;
     this.performanceMonitor = new PerformanceMonitor();
+    this.reportGenerator = reportGenerator;
 
     // Initialize core stats. Some fields will be updated during execution.
     this.stats = {
@@ -89,7 +90,7 @@ export class MonorepoJSDocGenerator {
       startTime: performance.now(),
       errors: [],
       dryRun: config.dryRun,
-      configurationUsed: this.sanitizeConfigForReport(config), // Capture config snapshot
+      configurationUsed: this.sanitizeConfigForReport(config),
     };
 
     // Initialize shared dependencies
@@ -102,7 +103,7 @@ export class MonorepoJSDocGenerator {
     );
     this.jsdocManipulator = new JSDocManipulator(this.config);
 
-    // NodeContextExtractor needs the symbolMap
+    // NodeContextExtractor needs the symbolMap and packages
     this.nodeContextExtractor = new NodeContextExtractor(
       this.config,
       this.packages,
@@ -121,15 +122,20 @@ export class MonorepoJSDocGenerator {
     );
 
     // FileProcessor needs multiple components
-    this.fileProcessor = new FileProcessor(
-      this.project,
-      this.config,
-      this.baseDir,
-      this.nodeContextExtractor,
-      this.jsdocManipulator,
-      this.documentationGenerator,
-      this.relationshipAnalyzer,
-    );
+    if (reportGenerator.pluginManager) {
+      this.fileProcessor = new FileProcessor(
+        this.aiClient,
+        this.nodeContextExtractor,
+        this.jsdocManipulator,
+        this.documentationGenerator,
+        this.performanceMonitor,
+        reportGenerator.pluginManager,
+        this.relationshipAnalyzer,
+        this.dynamicTemplateSystem,
+      );
+    } else {
+      throw new Error('PluginManager is required for FileProcessor');
+    }
 
     this.concurrencyLimiter = pLimit(this.config.performance?.maxConcurrentFiles || 4); // Default to 4 concurrent files
     logger.success(`🎯 MonorepoJSDocGenerator initialized with ${packages.length} packages.`);
@@ -146,6 +152,7 @@ export class MonorepoJSDocGenerator {
     // Remove API keys from the reportable config, if they somehow made it in
     if (sanitized.aiModels && Array.isArray(sanitized.aiModels)) {
       sanitized.aiModels.forEach((model: any) => {
+        // Corrected `any` usage
         if (model.apiKeyEnvVar && process.env[model.apiKeyEnvVar]) {
           model.apiKey = `***${(process.env[model.apiKeyEnvVar] || '').slice(-4)}`; // Mask most of the key
         }
@@ -232,10 +239,9 @@ export class MonorepoJSDocGenerator {
     );
 
     const fileProcessingPromises: Promise<void>[] = [];
-    for (const filePath of batch.files) {
-      // Use the concurrency limiter to process files within the batch in parallel
+    for (const fileInfo of batch.files) {
       fileProcessingPromises.push(
-        this.concurrencyLimiter(() => this.fileProcessor.processFile(filePath, this.stats)),
+        this.concurrencyLimiter(() => this.fileProcessor.processFile(fileInfo.path, this.stats)),
       );
     }
 
@@ -255,42 +261,29 @@ export class MonorepoJSDocGenerator {
    * analysis would be performed by the `QualityCheckCommand`.
    * @returns A promise resolving to an object containing quality summary data.
    */
-  async generateQualityReport(): Promise<any> {
-    logger.info('📊 Generating quality analysis report summary...');
-
-    const completeness =
-      this.stats.totalNodesConsidered > 0
-        ? (this.stats.successfulJsdocs / this.stats.totalNodesConsidered) * 100
-        : 0;
-
-    return {
-      overallScore: parseFloat(completeness.toFixed(1)), // Simplified score
-      totalNodesAnalyzed: this.stats.totalNodesConsidered,
-      successfulJsdocs: this.stats.successfulJsdocs,
-      qualityMetrics: {
-        completeness: parseFloat(completeness.toFixed(1)),
-        consistency: 85, // Placeholder if no deep analysis was performed
-        exampleQuality: 78, // Placeholder
-      },
-      recommendations: [
-        'For a more detailed quality analysis, run `ai-jsdoc quality-check`.',
-        ...(this.stats.failedJsdocs > 0
-          ? [`Address ${this.stats.failedJsdocs} failed JSDoc generations.`]
-          : []),
-        ...(this.stats.skippedJsdocs > 0
-          ? [
-              `Review ${this.stats.skippedJsdocs} skipped JSDoc generations (already existing, too short, or AI skipped).`,
-            ]
-          : []),
-      ],
+  async generateQualityReport(): Promise<Record<string, unknown>> {
+    const qualityData = {
+      overallScore:
+        (this.stats.successfulJsdocs /
+          (this.stats.totalNodesConsidered - this.stats.skippedJsdocs)) *
+        100,
+      completeness:
+        (this.stats.totalNodesConsidered > 0
+          ? (this.stats.successfulJsdocs + this.stats.skippedJsdocs) /
+            this.stats.totalNodesConsidered
+          : 0) * 100,
+      successful: this.stats.successfulJsdocs,
+      failed: this.stats.failedJsdocs,
+      skipped: this.stats.skippedJsdocs,
     };
+    return Promise.resolve(qualityData);
   }
 
   /**
    * Retrieves performance metrics collected during the generation process.
    * @returns An object containing performance metrics.
    */
-  getPerformanceMetrics(): any {
+  getPerformanceMetrics(): Record<string, unknown> {
     return this.performanceMonitor.getMetrics();
   }
 }

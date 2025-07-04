@@ -33,15 +33,17 @@ export class RunBenchmarkOperation implements IOperation {
       if (context.cacheManager) {
         await context.cacheManager.clear();
       }
-      context.telemetry.reset(); // Reset telemetry for a clean measurement per iteration
 
       // Re-initialize a minimal context for the inner operation if necessary,
       // or ensure the `GenerateDocumentationOperation` is robust enough to handle its own setup.
       // For simplicity, we'll pass the existing context, assuming `GenerateDocumentationOperation`
       // cleans up or re-initializes its internal components appropriately per run.
       // For more accurate isolation, one might create new Project/PluginManager instances.
+      const compilerOptions = context.project.getCompilerOptions();
+      const configFilePath = compilerOptions.configFilePath as string | undefined;
+
       const tempProject = new Project({
-        tsConfigFilePath: context.project.getCompilerOptions().tsConfigFilePath,
+        tsConfigFilePath: configFilePath,
         skipAddingFilesFromTsConfig: true,
         skipFileDependencyResolution: true,
         useInMemoryFileSystem: false,

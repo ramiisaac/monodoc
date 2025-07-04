@@ -2,7 +2,6 @@ import { ICommand, CommandContext, ProcessingStats } from '../types';
 import { logger } from '../utils/logger';
 import { PerformQualityCheckOperation } from '../operations/PerformQualityCheckOperation';
 import { HelpSystem } from '../cli/HelpSystem'; // For performance metrics display
-import { TelemetryCollector } from '../analytics/TelemetryCollector'; // For performance metrics display
 
 /**
  * Implements the 'quality-check' command logic.

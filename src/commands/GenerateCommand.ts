@@ -22,6 +22,22 @@ export class GenerateCommand implements ICommand {
       throw error; // Re-throw to be caught by CommandRunner's error handling
     }
 
+    // Show completion message
+    console.log('\n╔══════════════════════════════════════════════════════════════╗');
+    console.log('║                     🎉 Generation Complete!                ║');
+    console.log('╚══════════════════════════════════════════════════════════════╝\n');
+
+    // Ensure stats exists before accessing properties
+    if (stats) {
+      console.log(`✅ Successfully processed ${stats.processedFiles || 0} files`);
+      console.log(`📝 Generated ${stats.successfulJsdocs || 0} JSDoc comments`);
+
+    } else {
+      console.log('⚠️ No statistics available from the generation process.');
+    }
+
+    console.log('\nReports saved to the configured output directory.');
+
     if (stats) {
       HelpSystem.showCompletion({
         filesProcessed: stats.processedFiles,

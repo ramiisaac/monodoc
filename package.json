@@ -1,5 +1,5 @@
 {
-  "name": "@raisaac/ai-jsdoc-monorepo-generator",
+  "name": "monodoc",
   "version": "2.0.1",
   "description": "Enterprise-grade AI-powered JSDoc generation for large TypeScript monorepos with advanced features, multi-LLM support, and intelligent caching",
   "main": "dist/src/index.js",
@@ -83,12 +83,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ramiisaac/ai-jsdoc-monorepo-generator.git"
+    "url": "https://github.com/ramiisaac/monodoc.git"
   },
   "bugs": {
-    "url": "https://github.com/ramiisaac/ai-jsdoc-monorepo-generator/issues"
+    "url": "https://github.com/ramiisaac/monodoc/issues"
   },
-  "homepage": "https://github.com/ramiisaac/ai-jsdoc-monorepo-generator#readme",
+  "homepage": "https://github.com/ramiisaac/monodoc#readme",
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
@@ -162,4 +162,3 @@
     ]
   }
 }
-
