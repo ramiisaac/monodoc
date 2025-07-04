@@ -203,6 +203,22 @@ export class CacheManager {
   }
 
   /**
+   * Checks if a cache entry exists for the given key.
+   * @param key The key to check for.
+   * @returns A Promise that resolves to true if the entry exists, false otherwise.
+   */
+  async has(key: string): Promise<boolean> {
+    const cacheKeyHash = this.generateKeyHash(key);
+    const cachePath = this.getCachePath(cacheKeyHash);
+    try {
+      await fs.access(cachePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Deletes a specific entry from the cache.
    * @param key The key of the entry to delete.
    * @returns A Promise that resolves when the entry is deleted (or if it didn't exist).
