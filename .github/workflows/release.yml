@@ -38,21 +38,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'pnpm'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
+          cache: 'npm'
 
       - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Build Project
-        run: pnpm run build
+        run: npm run build
 
       - name: Run Security Audit
-        run: pnpm audit --audit-level=moderate
+        run: npm audit --audit-level=moderate
         continue-on-error: ${{ github.event.inputs.dry_run == true }} # Fail on errors in real runs
 
       - name: Get current version from package.json
@@ -67,7 +62,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/v') && github.event.inputs.dry_run == false
         run: |
           echo "Bumping version to ${{ github.event.inputs.version }}"
-          pnpm version ${{ github.event.inputs.version }} --no-git-tag-version
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
           echo "Updated version to $(node -p "require('./package.json').version")"
           echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
         id: version-bump # Add an ID to this step
@@ -103,13 +98,8 @@ jobs:
           node-version: 18
           registry-url: 'https://registry.npmjs.org/'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Download dist artifacts
         uses: actions/download-artifact@v3
@@ -118,14 +108,14 @@ jobs:
           path: dist/
 
       - name: Publish to NPM
-        run: pnpm publish --access public
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Verify NPM publication
         run: |
           sleep 30 # Give NPM a moment to process
-          pnpm view ${{ needs.release.outputs.package_name }}@${{ needs.release.outputs.release_version }}
+          npm view ${{ needs.release.outputs.package_name }}@${{ needs.release.outputs.release_version }}
 
   publish-github-packages:
     name: Publish to GitHub Packages
@@ -142,13 +132,8 @@ jobs:
           node-version: 18
           registry-url: 'https://npm.pkg.github.com'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
         
       - name: Download dist artifacts
         uses: actions/download-artifact@v3
@@ -157,7 +142,7 @@ jobs:
           path: dist/
 
       - name: Publish to GitHub Packages
-        run: pnpm publish --access public
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Uses the automatically provided GITHUB_TOKEN
 
@@ -165,7 +150,7 @@ jobs:
         run: |
           sleep 30 # Give GitHub Packages a moment to process
           # Note: GitHub Packages uses the repository owner as the scope by default
-          pnpm view ${{ needs.release.outputs.package_name }}@${{ needs.release.outputs.release_version }} --registry=https://npm.pkg.github.com
+          npm view ${{ needs.release.outputs.package_name }}@${{ needs.release.outputs.release_version }} --registry=https://npm.pkg.github.com
 
   create-github-release:
     name: Create GitHub Release

@@ -1,5 +1,5 @@
-import { logger } from './logger';
-import { LLMError } from './errorHandling';
+import { logger } from "./logger";
+import { LLMError } from "./errorHandling";
 
 /**
  * A generic rate limiter for controlling concurrent asynchronous tasks.
@@ -21,8 +21,9 @@ export class RateLimiter {
     private maxConcurrent: number,
     private delayMs: number,
   ) {
-    if (maxConcurrent <= 0) throw new Error('maxConcurrent must be a positive number');
-    if (delayMs < 0) throw new Error('delayMs must be a non-negative number');
+    if (maxConcurrent <= 0)
+      throw new Error("maxConcurrent must be a positive number");
+    if (delayMs < 0) throw new Error("delayMs must be a non-negative number");
   }
 
   /**
@@ -33,7 +34,10 @@ export class RateLimiter {
    * @param operationName A descriptive name for the operation, for logging.
    * @returns A Promise that resolves with the result of `fn`.
    */
-  async execute<T>(fn: () => Promise<T>, operationName: string = 'Unnamed Operation'): Promise<T> {
+  async execute<T>(
+    fn: () => Promise<T>,
+    operationName: string = "Unnamed Operation",
+  ): Promise<T> {
     return new Promise((resolve, reject) => {
       const taskWrapper = async () => {
         try {
@@ -46,7 +50,14 @@ export class RateLimiter {
             `❌ Task '${operationName}' failed: ${error instanceof Error ? error.message : String(error)}`,
           );
           // Directly reject without retry. Retries should be handled upstream (e.g., in AIClient).
-          reject(new LLMError(`Task '${operationName}' failed.`, undefined, 'TASK_FAILURE', error));
+          reject(
+            new LLMError(
+              `Task '${operationName}' failed.`,
+              undefined,
+              "TASK_FAILURE",
+              error,
+            ),
+          );
         } finally {
           this.running--;
           this.scheduleNext(); // Schedule the next task in the queue
@@ -79,7 +90,8 @@ export class RateLimiter {
     this.timer = setTimeout(() => {
       // Check again, as state might have changed during the timeout
       if (this.queue.length > 0 && this.running < this.maxConcurrent) {
-        const nextTask: (() => Promise<unknown>) | undefined = this.queue.shift();
+        const nextTask: (() => Promise<unknown>) | undefined =
+          this.queue.shift();
         if (nextTask) {
           nextTask(); // Execute the next task
         }

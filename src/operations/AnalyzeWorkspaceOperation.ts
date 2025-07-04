@@ -1,8 +1,13 @@
-import { IOperation, CommandContext, ProcessingStats, GeneratorConfig } from '../types';
-import { WorkspaceAnalyzer } from '../analyzer/WorkspaceAnalyzer';
-import { logger } from '../utils/logger';
-import { PerformanceMonitor } from '../utils/PerformanceMonitor';
-import path from 'path';
+import {
+  IOperation,
+  CommandContext,
+  ProcessingStats,
+  GeneratorConfig,
+} from "../types";
+import { WorkspaceAnalyzer } from "../analyzer/WorkspaceAnalyzer";
+import { logger } from "../utils/logger";
+import { PerformanceMonitor } from "../utils/PerformanceMonitor";
+import path from "path";
 
 /**
  * Operation to perform a comprehensive analysis of the monorepo workspace.
@@ -25,31 +30,45 @@ export class AnalyzeWorkspaceOperation implements IOperation {
     const { config, baseDir, project } = context;
 
     const stats: ProcessingStats = this.initializeStats(config);
-    this.performanceMonitor.startTimer('total_analysis');
+    this.performanceMonitor.startTimer("total_analysis");
 
     try {
       const workspaceAnalyzer = new WorkspaceAnalyzer(project);
-      const { packages, batches, symbolMap } = await workspaceAnalyzer.analyze(config, baseDir);
+      const { packages, batches, symbolMap } = await workspaceAnalyzer.analyze(
+        config,
+        baseDir,
+      );
 
       stats.totalPackages = packages.length;
-      stats.totalFiles = batches.reduce((sum, batch) => sum + batch.files.length, 0);
+      stats.totalFiles = batches.reduce(
+        (sum, batch) => sum + batch.files.length,
+        0,
+      );
       stats.totalNodesConsidered = symbolMap.size; // Approximation: count defined symbols
 
-      logger.info(`🔍 Found ${packages.length} packages in ${stats.totalFiles} files.`);
-      logger.info(`✨ Collected ${symbolMap.size} unique symbols across the workspace.`);
+      logger.info(
+        `🔍 Found ${packages.length} packages in ${stats.totalFiles} files.`,
+      );
+      logger.info(
+        `✨ Collected ${symbolMap.size} unique symbols across the workspace.`,
+      );
 
       if (packages.length === 0) {
         logger.warn(
-          'No packages found to analyze in the configured workspace directories. Please check your `workspaceDirs` configuration.',
+          "No packages found to analyze in the configured workspace directories. Please check your `workspaceDirs` configuration.",
         );
       }
 
-      logger.info('\n📦 Discovered Packages:');
+      logger.info("\n📦 Discovered Packages:");
       packages.forEach((pkg) => {
-        logger.info(`  - ${pkg.name} (${pkg.type}) at ${pkg.path.replace(baseDir, '.')}`);
+        logger.info(
+          `  - ${pkg.name} (${pkg.type}) at ${pkg.path.replace(baseDir, ".")}`,
+        );
       });
 
-      logger.info('\n📊 File Batches for Processing (based on token estimates):');
+      logger.info(
+        "\n📊 File Batches for Processing (based on token estimates):",
+      );
       batches.forEach((batch, index) => {
         logger.info(
           `  - Batch ${index + 1}: ${batch.files.length} files, ~${batch.estimatedTokens} tokens`,
@@ -57,8 +76,14 @@ export class AnalyzeWorkspaceOperation implements IOperation {
       });
 
       // Optionally, dump symbol map to a debug file if verbose
-      if (config.outputConfig.logLevel === 'debug' || config.outputConfig.logLevel === 'trace') {
-        const symbolMapPath = path.join(config.outputConfig.reportDir, 'debug-symbol-map.json');
+      if (
+        config.outputConfig.logLevel === "debug" ||
+        config.outputConfig.logLevel === "trace"
+      ) {
+        const symbolMapPath = path.join(
+          config.outputConfig.reportDir,
+          "debug-symbol-map.json",
+        );
         await context.reportGenerator.writeFile(
           symbolMapPath,
           JSON.stringify(Array.from(symbolMap.entries()), null, 2),
@@ -70,7 +95,7 @@ export class AnalyzeWorkspaceOperation implements IOperation {
         `Error during workspace analysis: ${error instanceof Error ? error.message : String(error)}`,
       );
       stats.errors.push({
-        file: 'N/A',
+        file: "N/A",
         error: `Workspace analysis failed: ${error instanceof Error ? error.message : String(error)}`,
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: Date.now(),
@@ -78,7 +103,7 @@ export class AnalyzeWorkspaceOperation implements IOperation {
       throw error; // Re-throw to propagate error
     } finally {
       stats.durationSeconds = (performance.now() - stats.startTime) / 1000;
-      this.performanceMonitor.endTimer('total_analysis');
+      this.performanceMonitor.endTimer("total_analysis");
     }
 
     return stats;

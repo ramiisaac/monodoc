@@ -5,14 +5,11 @@ FROM node:18-alpine AS builder
 # Set working directory inside the container
 WORKDIR /app
 
-# Copy package.json, pnpm-lock.yaml, tsconfig.json to leverage Docker cache
-COPY package.json pnpm-lock.yaml tsconfig.json ./
+# Copy package.json, package-lock.json, tsconfig.json to leverage Docker cache
+COPY package.json package-lock.json tsconfig.json ./
 
-# Install pnpm and then install dependencies.
-# Using `pnpm fetch` and `pnpm install --prod` for production dependencies only.
-RUN npm install -g pnpm@8 && \
-    pnpm fetch --prod && \
-    pnpm install --prod --offline
+# Install dependencies using npm ci for production builds
+RUN npm ci --only=production
 
 # Copy source code
 COPY src/ ./src/
@@ -21,7 +18,7 @@ COPY examples/ ./examples/ # Copy examples if they are needed at runtime (e.g. f
 
 # Build the application
 # This will compile TypeScript to JavaScript in the `dist` directory
-RUN pnpm run build
+RUN npm run build
 
 # Stage 2: Production - Create a lean runtime image
 FROM node:18-alpine AS production

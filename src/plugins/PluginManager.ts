@@ -1,6 +1,12 @@
-import { NodeContext, GeneratorConfig, ProcessingStats, Plugin, VercelAITool } from '../types';
-import { logger } from '../utils/logger';
-import path from 'path'; // For resolving plugin paths
+import {
+  NodeContext,
+  GeneratorConfig,
+  ProcessingStats,
+  Plugin,
+  VercelAITool,
+} from "../types";
+import { logger } from "../utils/logger";
+import path from "path"; // For resolving plugin paths
 
 /**
  * Manages the loading, enabling, and execution of various generator plugins.
@@ -37,7 +43,7 @@ export class PluginManager {
 
       const PluginClass = module.default || module; // Handle ES module default export or CommonJS export
 
-      if (typeof PluginClass !== 'function') {
+      if (typeof PluginClass !== "function") {
         throw new Error(
           `Plugin at ${pluginPath} does not export a loadable constructor (expected a class or function).`,
         );
@@ -53,12 +59,12 @@ export class PluginManager {
       this.plugins.set(pluginInstance.name, pluginInstance); // Store the instance
 
       // Call the plugin's initialize method
-      if (typeof pluginInstance.initialize === 'function') {
+      if (typeof pluginInstance.initialize === "function") {
         await pluginInstance.initialize(this.config);
       }
 
       // If the plugin provides AI SDK tools, collect them
-      if (typeof pluginInstance.getTools === 'function') {
+      if (typeof pluginInstance.getTools === "function") {
         const pluginTools = pluginInstance.getTools();
         this.tools.push(...pluginTools);
         logger.debug(
@@ -66,10 +72,14 @@ export class PluginManager {
         );
       }
 
-      logger.info(`🔌 Loaded plugin: ${pluginInstance.name} v${pluginInstance.version}`);
+      logger.info(
+        `🔌 Loaded plugin: ${pluginInstance.name} v${pluginInstance.version}`,
+      );
     } catch (error: unknown) {
       if (error instanceof Error) {
-        logger.error(`Failed to load plugin from ${pluginPath}: ${error.message}`);
+        logger.error(
+          `Failed to load plugin from ${pluginPath}: ${error.message}`,
+        );
       } else {
         logger.error(`Failed to load plugin from ${pluginPath}: Unknown error`);
       }
@@ -92,7 +102,7 @@ export class PluginManager {
       }
 
       // Call the plugin's `enable` method if it exists
-      if (typeof plugin.enable === 'function') {
+      if (typeof plugin.enable === "function") {
         plugin.enable(); // Let the plugin manage its own internal enabled state
       }
       this.enabledPlugins.push(plugin);
@@ -112,7 +122,7 @@ export class PluginManager {
     let modifiedContext = context;
     for (const plugin of this.enabledPlugins) {
       // Ensure plugin has `beforeProcessing` method and is enabled
-      if (typeof plugin.beforeProcessing === 'function' && plugin.isEnabled()) {
+      if (typeof plugin.beforeProcessing === "function" && plugin.isEnabled()) {
         try {
           modifiedContext = await plugin.beforeProcessing(modifiedContext);
         } catch (error) {
@@ -120,7 +130,7 @@ export class PluginManager {
             `Plugin ${plugin.name} failed in beforeProcessing hook: ${error instanceof Error ? error.message : String(error)}`,
           );
           // Notify the plugin itself about the error if it has an onError hook
-          if (typeof plugin.onError === 'function') {
+          if (typeof plugin.onError === "function") {
             await plugin.onError(
               error instanceof Error ? error : new Error(String(error)),
               context,
@@ -139,19 +149,25 @@ export class PluginManager {
    * @param result The generated JSDoc string.
    * @returns A Promise resolving to the modified JSDoc string.
    */
-  async runAfterProcessing(context: NodeContext, result: string): Promise<string> {
+  async runAfterProcessing(
+    context: NodeContext,
+    result: string,
+  ): Promise<string> {
     let modifiedResult = result;
     for (const plugin of this.enabledPlugins) {
       // Ensure plugin has `afterProcessing` method and is enabled
-      if (typeof plugin.afterProcessing === 'function' && plugin.isEnabled()) {
+      if (typeof plugin.afterProcessing === "function" && plugin.isEnabled()) {
         try {
-          modifiedResult = await plugin.afterProcessing(context, modifiedResult);
+          modifiedResult = await plugin.afterProcessing(
+            context,
+            modifiedResult,
+          );
         } catch (error) {
           logger.warn(
             `Plugin ${plugin.name} failed in afterProcessing hook: ${error instanceof Error ? error.message : String(error)}`,
           );
           // Notify the plugin itself about the error
-          if (typeof plugin.onError === 'function') {
+          if (typeof plugin.onError === "function") {
             await plugin.onError(
               error instanceof Error ? error : new Error(String(error)),
               context,
@@ -169,10 +185,10 @@ export class PluginManager {
    * @param stats The final `ProcessingStats` for the run.
    */
   async finalize(stats?: ProcessingStats): Promise<void> {
-    logger.info('🔌 Finalizing plugins...');
+    logger.info("🔌 Finalizing plugins...");
     for (const plugin of this.enabledPlugins) {
       // Iterate only over plugins that were enabled
-      if (typeof plugin.onComplete === 'function') {
+      if (typeof plugin.onComplete === "function") {
         try {
           if (stats) {
             // Pass stats if available
@@ -184,8 +200,10 @@ export class PluginManager {
             `⚠️ Error finalizing plugin ${plugin.name}: ${error instanceof Error ? error.message : String(error)}`,
           );
           // Notify the plugin itself about the error during finalization
-          if (typeof plugin.onError === 'function') {
-            await plugin.onError(error instanceof Error ? error : new Error(String(error)));
+          if (typeof plugin.onError === "function") {
+            await plugin.onError(
+              error instanceof Error ? error : new Error(String(error)),
+            );
           }
         }
       }
@@ -213,7 +231,7 @@ export class PluginManager {
     nodeContext?: NodeContext,
     filePath?: string,
   ): Promise<void> {
-    const errorObj = typeof error === 'string' ? new Error(error) : error;
+    const errorObj = typeof error === "string" ? new Error(error) : error;
 
     for (const plugin of this.enabledPlugins) {
       if (plugin.onError) {
@@ -222,7 +240,9 @@ export class PluginManager {
         } catch (pluginError) {
           logger.warn(
             `Plugin ${plugin.getName()} threw an error in onError hook: ${
-              pluginError instanceof Error ? pluginError.message : String(pluginError)
+              pluginError instanceof Error
+                ? pluginError.message
+                : String(pluginError)
             }`,
           );
         }

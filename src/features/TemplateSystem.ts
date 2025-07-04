@@ -1,5 +1,5 @@
-import { NodeContext, GeneratorConfig } from '../types';
-import { logger } from '../utils/logger';
+import { NodeContext, GeneratorConfig } from "../types";
+import { logger } from "../utils/logger";
 
 /**
  * Defines the structure for a JSDoc template.
@@ -35,8 +35,8 @@ export class TemplateSystem {
   private registerDefaultTemplates(): void {
     // Register basic generic template
     this.registerTemplate({
-      name: 'generic',
-      description: 'Default template for any code element',
+      name: "generic",
+      description: "Default template for any code element",
       pattern: /.*/, // Matches everything if used for pattern matching
       generate: (_context: NodeContext, _config: GeneratorConfig) =>
         `
@@ -77,7 +77,9 @@ export class TemplateSystem {
     // Register other default templates if they are fundamental and not part of DynamicTemplateSystem's advanced set
     // The `DynamicTemplateSystem` will register more specific templates that might override these.
     // For now, these are the only templates directly registered by this base class.
-    logger.debug('Base TemplateSystem initialized with default generic template.');
+    logger.debug(
+      "Base TemplateSystem initialized with default generic template.",
+    );
   }
 
   /**

@@ -1,12 +1,12 @@
-import { Node, SourceFile, JSDoc, JSDocTag, SyntaxKind } from 'ts-morph';
+import { Node, SourceFile, JSDoc, JSDocTag, SyntaxKind } from "ts-morph";
 import {
   JSDocableNode,
   NodeQualityMetrics,
   QualityIssue,
   QualityIssueType,
   GeneratorConfig,
-} from '../types';
-import { logger } from '../utils/logger';
+} from "../types";
+import { logger } from "../utils/logger";
 
 // Re-export QualityIssue to fix imports elsewhere
 export { QualityIssue };
@@ -58,7 +58,10 @@ export class DocumentationQualityAnalyzer {
 
     for (const node of jsdocableNodes) {
       if (this.shouldDocumentNode(node, config)) {
-        const nodeMetrics = this.analyzeNodeDocumentation(node, config.jsdocConfig);
+        const nodeMetrics = this.analyzeNodeDocumentation(
+          node,
+          config.jsdocConfig,
+        );
 
         if (nodeMetrics.issues.length > 0) {
           issues.push({
@@ -116,11 +119,16 @@ export class DocumentationQualityAnalyzer {
   /**
    * Determine if a node should be documented based on configuration.
    */
-  private shouldDocumentNode(node: JSDocableNode, config: GeneratorConfig): boolean {
+  private shouldDocumentNode(
+    node: JSDocableNode,
+    config: GeneratorConfig,
+  ): boolean {
     // Check visibility
-    if ('getModifiers' in node && typeof node.getModifiers === 'function') {
+    if ("getModifiers" in node && typeof node.getModifiers === "function") {
       const modifiers = node.getModifiers();
-      const isPrivate = modifiers.some((m: any) => m.getKind() === SyntaxKind.PrivateKeyword);
+      const isPrivate = modifiers.some(
+        (m: any) => m.getKind() === SyntaxKind.PrivateKeyword,
+      );
 
       if (isPrivate && !config.documentPrivate) {
         return false;
@@ -135,7 +143,7 @@ export class DocumentationQualityAnalyzer {
    */
   analyzeNodeDocumentation(
     node: JSDocableNode,
-    jsDocConfig: GeneratorConfig['jsdocConfig'],
+    jsDocConfig: GeneratorConfig["jsdocConfig"],
   ): NodeQualityMetrics {
     const jsDoc = this.getNodeJSDoc(node);
 
@@ -150,13 +158,13 @@ export class DocumentationQualityAnalyzer {
         overallScore: 0,
         issues: [
           {
-            type: 'no_jsdoc',
-            severity: 'error',
-            message: 'Missing JSDoc comment',
-            suggestion: 'Add JSDoc documentation for this node',
+            type: "no_jsdoc",
+            severity: "error",
+            message: "Missing JSDoc comment",
+            suggestion: "Add JSDoc documentation for this node",
           },
         ],
-        suggestions: ['Add JSDoc documentation'],
+        suggestions: ["Add JSDoc documentation"],
       };
     }
 
@@ -167,23 +175,27 @@ export class DocumentationQualityAnalyzer {
     // Check description
     if (descriptionLength === 0) {
       issues.push({
-        type: 'missing_description',
-        severity: 'error',
-        message: 'Missing description in JSDoc',
-        suggestion: 'Add a descriptive comment',
+        type: "missing_description",
+        severity: "error",
+        message: "Missing description in JSDoc",
+        suggestion: "Add a descriptive comment",
       });
     } else if (descriptionLength < 20) {
       issues.push({
-        type: 'short_description',
-        severity: 'warning',
-        message: 'Description is too short',
-        suggestion: 'Provide a more detailed description',
+        type: "short_description",
+        severity: "warning",
+        message: "Description is too short",
+        suggestion: "Provide a more detailed description",
       });
     }
 
     // Function-specific checks
     if (this.isFunctionLike(node)) {
-      const funcMetrics = this.analyzeFunctionDocumentation(node, jsDoc, jsDocConfig);
+      const funcMetrics = this.analyzeFunctionDocumentation(
+        node,
+        jsDoc,
+        jsDocConfig,
+      );
       issues = issues.concat(funcMetrics.paramIssues, funcMetrics.returnIssues);
 
       const completeness = this.calculateCompleteness({
@@ -200,7 +212,11 @@ export class DocumentationQualityAnalyzer {
         returnCoverage: funcMetrics.returnCoverage,
         exampleCount,
         descriptionLength,
-        overallScore: this.calculateOverallScore({ completeness, exampleCount, descriptionLength }),
+        overallScore: this.calculateOverallScore({
+          completeness,
+          exampleCount,
+          descriptionLength,
+        }),
         issues,
         suggestions: this.generateSuggestions(issues),
       };
@@ -208,7 +224,11 @@ export class DocumentationQualityAnalyzer {
 
     // Class-specific checks
     if (this.isClassLike(node)) {
-      const classMetrics = this.analyzeClassDocumentation(node, jsDoc, jsDocConfig);
+      const classMetrics = this.analyzeClassDocumentation(
+        node,
+        jsDoc,
+        jsDocConfig,
+      );
       issues = issues.concat(classMetrics.issues);
 
       const completeness = this.calculateCompleteness({
@@ -224,7 +244,11 @@ export class DocumentationQualityAnalyzer {
         returnCoverage: 100,
         exampleCount,
         descriptionLength,
-        overallScore: this.calculateOverallScore({ completeness, exampleCount, descriptionLength }),
+        overallScore: this.calculateOverallScore({
+          completeness,
+          exampleCount,
+          descriptionLength,
+        }),
         issues,
         suggestions: this.generateSuggestions(issues),
       };
@@ -240,14 +264,18 @@ export class DocumentationQualityAnalyzer {
       returnCoverage: 100,
       exampleCount,
       descriptionLength,
-      overallScore: this.calculateOverallScore({ completeness, exampleCount, descriptionLength }),
+      overallScore: this.calculateOverallScore({
+        completeness,
+        exampleCount,
+        descriptionLength,
+      }),
       issues,
       suggestions: this.generateSuggestions(issues),
     };
   }
 
   private getNodeJSDoc(node: JSDocableNode): JSDoc | undefined {
-    if ('getJsDocs' in node && typeof node.getJsDocs === 'function') {
+    if ("getJsDocs" in node && typeof node.getJsDocs === "function") {
       const jsDocs = node.getJsDocs();
       return jsDocs.length > 0 ? jsDocs[0] : undefined;
     }
@@ -272,7 +300,8 @@ export class DocumentationQualityAnalyzer {
   }
 
   private countExamples(jsDoc: JSDoc): number {
-    return jsDoc.getTags().filter((tag) => tag.getTagName() === 'example').length;
+    return jsDoc.getTags().filter((tag) => tag.getTagName() === "example")
+      .length;
   }
 
   private calculateCompleteness(metrics: {
@@ -319,7 +348,7 @@ export class DocumentationQualityAnalyzer {
   private analyzeFunctionDocumentation(
     node: Node,
     jsDoc: JSDoc,
-    _jsDocConfig: GeneratorConfig['jsdocConfig'],
+    _jsDocConfig: GeneratorConfig["jsdocConfig"],
   ): {
     paramCoverage: number;
     returnCoverage: number;
@@ -330,27 +359,31 @@ export class DocumentationQualityAnalyzer {
     const returnIssues: QualityIssue[] = [];
 
     // Simple implementation - you can expand this
-    const paramTags = jsDoc.getTags().filter((tag) => tag.getTagName() === 'param');
-    const returnTag = jsDoc.getTags().find((tag) => tag.getTagName() === 'returns');
+    const paramTags = jsDoc
+      .getTags()
+      .filter((tag) => tag.getTagName() === "param");
+    const returnTag = jsDoc
+      .getTags()
+      .find((tag) => tag.getTagName() === "returns");
 
     const paramCoverage = paramTags.length > 0 ? 100 : 0;
     const returnCoverage = returnTag ? 100 : 0;
 
     if (paramTags.length === 0) {
       paramIssues.push({
-        type: 'missing_param',
-        severity: 'warning',
-        message: 'Missing @param tags',
-        suggestion: 'Add @param tags for function parameters',
+        type: "missing_param",
+        severity: "warning",
+        message: "Missing @param tags",
+        suggestion: "Add @param tags for function parameters",
       });
     }
 
     if (!returnTag) {
       returnIssues.push({
-        type: 'missing_return',
-        severity: 'warning',
-        message: 'Missing @returns tag',
-        suggestion: 'Add @returns tag for function return value',
+        type: "missing_return",
+        severity: "warning",
+        message: "Missing @returns tag",
+        suggestion: "Add @returns tag for function return value",
       });
     }
 
@@ -360,7 +393,7 @@ export class DocumentationQualityAnalyzer {
   private analyzeClassDocumentation(
     node: Node,
     jsDoc: JSDoc,
-    _jsDocConfig: GeneratorConfig['jsdocConfig'],
+    _jsDocConfig: GeneratorConfig["jsdocConfig"],
   ): {
     issues: QualityIssue[];
     hasConstructor: boolean;
@@ -371,8 +404,10 @@ export class DocumentationQualityAnalyzer {
 
     // Simple implementation
     const tags = jsDoc.getTags();
-    const hasConstructor = tags.some((tag) => tag.getTagName() === 'constructor');
-    const hasProperties = tags.some((tag) => tag.getTagName() === 'property');
+    const hasConstructor = tags.some(
+      (tag) => tag.getTagName() === "constructor",
+    );
+    const hasProperties = tags.some((tag) => tag.getTagName() === "property");
 
     return {
       issues,
@@ -383,11 +418,13 @@ export class DocumentationQualityAnalyzer {
   }
 
   private generateSuggestions(issues: QualityIssue[]): string[] {
-    return issues.map((issue) => issue.suggestion).filter((s): s is string => s !== undefined);
+    return issues
+      .map((issue) => issue.suggestion)
+      .filter((s): s is string => s !== undefined);
   }
 
   private analyzeExampleQuality(exampleTag: JSDocTag): number {
-    const content = exampleTag.getCommentText() || '';
+    const content = exampleTag.getCommentText() || "";
     if (content.length < 10) return 0;
     if (content.length < 50) return 50;
     return 100;
@@ -395,12 +432,12 @@ export class DocumentationQualityAnalyzer {
 
   public getNodeNameForLogging(node: Node): string {
     try {
-      if ('getName' in node && typeof node.getName === 'function') {
-        return node.getName() || '<anonymous>';
+      if ("getName" in node && typeof node.getName === "function") {
+        return node.getName() || "<anonymous>";
       }
-      return '<unnamed>';
+      return "<unnamed>";
     } catch (_e) {
-      return '<error getting name>';
+      return "<error getting name>";
     }
   }
 }

@@ -1,6 +1,6 @@
-import { ICommand, CommandContext, ProcessingStats } from '../types';
-import { logger } from '../utils/logger';
-import { AnalyzeWorkspaceOperation } from '../operations/AnalyzeWorkspaceOperation'; // Corrected path
+import { ICommand, CommandContext, ProcessingStats } from "../types";
+import { logger } from "../utils/logger";
+import { AnalyzeWorkspaceOperation } from "../operations/AnalyzeWorkspaceOperation"; // Corrected path
 
 /**
  * Implements the 'analyze' command logic.
@@ -10,7 +10,7 @@ import { AnalyzeWorkspaceOperation } from '../operations/AnalyzeWorkspaceOperati
  */
 export class AnalyzeCommand implements ICommand {
   async execute(context: CommandContext): Promise<void> {
-    logger.info('Starting workspace analysis (analyze-only mode)...');
+    logger.info("Starting workspace analysis (analyze-only mode)...");
 
     const operation = new AnalyzeWorkspaceOperation();
     let stats: ProcessingStats | void; // The operation might return stats or just log info
@@ -24,21 +24,27 @@ export class AnalyzeCommand implements ICommand {
     }
 
     if (stats) {
-      logger.info('\n📊 Analysis Summary:');
+      logger.info("\n📊 Analysis Summary:");
       logger.info(`  • Packages Discovered: ${stats.totalPackages}`);
       logger.info(`  • Total Files Scanned: ${stats.totalFiles}`);
-      logger.info(`  • JSDocable Nodes Identified: ${stats.totalNodesConsidered}`);
-      logger.info(`  • Analysis Duration: ${stats.durationSeconds?.toFixed(2) || 'N/A'} seconds`);
+      logger.info(
+        `  • JSDocable Nodes Identified: ${stats.totalNodesConsidered}`,
+      );
+      logger.info(
+        `  • Analysis Duration: ${stats.durationSeconds?.toFixed(2) || "N/A"} seconds`,
+      );
       if (stats.errors.length > 0) {
         logger.warn(`  • Errors During Analysis: ${stats.errors.length}`);
         stats.errors.slice(0, 5).forEach((err) => {
           logger.warn(`    - ${err.file}: ${err.error}`);
         });
         if (stats.errors.length > 5) {
-          logger.warn(`    ...and ${stats.errors.length - 5} more errors. Check detailed logs.`);
+          logger.warn(
+            `    ...and ${stats.errors.length - 5} more errors. Check detailed logs.`,
+          );
         }
       }
     }
-    logger.info('Workspace analysis completed.');
+    logger.info("Workspace analysis completed.");
   }
 }

@@ -1,8 +1,8 @@
-import { ICommand, CommandContext } from '../types';
-import { GitAnalyzer } from '../analyzer/GitAnalyzer';
-import { logger } from '../utils/logger';
-import { GenerateDocumentationOperation } from '../operations/GenerateDocumentationOperation';
-import { loadAndMergeConfig } from '../config';
+import { ICommand, CommandContext } from "../types";
+import { GitAnalyzer } from "../analyzer/GitAnalyzer";
+import { logger } from "../utils/logger";
+import { GenerateDocumentationOperation } from "../operations/GenerateDocumentationOperation";
+import { loadAndMergeConfig } from "../config";
 
 /**
  * Implements the 'incremental' command logic.
@@ -10,19 +10,23 @@ import { loadAndMergeConfig } from '../config';
  */
 export class IncrementalCommand implements ICommand {
   async execute(context: CommandContext): Promise<void> {
-    logger.info('🔄 Running in incremental mode...');
+    logger.info("🔄 Running in incremental mode...");
     const gitAnalyzer = new GitAnalyzer(context.baseDir);
 
     const isGitRepo = await gitAnalyzer.isGitRepository();
     if (!isGitRepo) {
-      logger.error('❌ Not a Git repository. Incremental mode requires a Git repository.');
-      throw new Error('Not a Git repository');
+      logger.error(
+        "❌ Not a Git repository. Incremental mode requires a Git repository.",
+      );
+      throw new Error("Not a Git repository");
     }
 
     const changedFiles = await gitAnalyzer.getChangedFiles();
 
     if (changedFiles.length === 0) {
-      logger.info('✅ No changes detected since last commit - nothing to process.');
+      logger.info(
+        "✅ No changes detected since last commit - nothing to process.",
+      );
       return;
     }
 
@@ -30,16 +34,18 @@ export class IncrementalCommand implements ICommand {
     const filesToProcess = changedFiles
       .filter(
         (change) =>
-          ['A', 'M'].includes(change.status) &&
-          (change.path.endsWith('.ts') ||
-            change.path.endsWith('.tsx') ||
-            change.path.endsWith('.js') ||
-            change.path.endsWith('.jsx')),
+          ["A", "M"].includes(change.status) &&
+          (change.path.endsWith(".ts") ||
+            change.path.endsWith(".tsx") ||
+            change.path.endsWith(".js") ||
+            change.path.endsWith(".jsx")),
       )
       .map((change) => change.path);
 
     if (filesToProcess.length === 0) {
-      logger.info('✅ No relevant TypeScript/JavaScript changes detected - nothing to process.');
+      logger.info(
+        "✅ No relevant TypeScript/JavaScript changes detected - nothing to process.",
+      );
       return;
     }
 
@@ -56,7 +62,7 @@ export class IncrementalCommand implements ICommand {
     const operation = new GenerateDocumentationOperation();
     try {
       await operation.execute({ ...context, config: runConfig });
-      logger.success('Incremental generation completed successfully.');
+      logger.success("Incremental generation completed successfully.");
     } catch (error) {
       logger.error(
         `Incremental generation failed: ${error instanceof Error ? error.message : String(error)}`,

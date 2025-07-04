@@ -1,7 +1,7 @@
-import { TemplateSystem } from './TemplateSystem';
-import { logger } from '../utils/logger';
-import { NodeContext, GeneratorConfig } from '../types';
-import Handlebars from 'handlebars';
+import { TemplateSystem } from "./TemplateSystem";
+import { logger } from "../utils/logger";
+import { NodeContext, GeneratorConfig } from "../types";
+import Handlebars from "handlebars";
 
 /**
  * Extends the base `TemplateSystem` to provide dynamic loading and management
@@ -20,7 +20,9 @@ export class DynamicTemplateSystem extends TemplateSystem {
     // If not found, attempt to load from a specific directory structure
     if (!templateContent) {
       const fallbackPath = `src/templates/docs/${templateName}.hbs`;
-      logger.info(`Template not found in cache, loading from fallback path: ${fallbackPath}`);
+      logger.info(
+        `Template not found in cache, loading from fallback path: ${fallbackPath}`,
+      );
       templateContent = await super.getTemplate(fallbackPath);
     }
 
@@ -113,7 +115,8 @@ interface GenericTemplateData {
 export class SmartDocumentationEngine {
   private strategies: DocumentationStrategy[] = [];
   private templateSystem: DynamicTemplateSystem;
-  private compiledTemplates: Map<string, Handlebars.TemplateDelegate> = new Map();
+  private compiledTemplates: Map<string, Handlebars.TemplateDelegate> =
+    new Map();
 
   constructor() {
     this.templateSystem = new DynamicTemplateSystem();
@@ -126,52 +129,52 @@ export class SmartDocumentationEngine {
    */
   private initializeStrategies(): void {
     this.strategies.push({
-      name: 'react-component',
+      name: "react-component",
       priority: 100, // Highest priority for specific component types
       canHandle: (context) => this.isReactComponent(context),
-      getTemplateName: (_context) => 'react-component', // Unused _context lint fix
+      getTemplateName: (_context) => "react-component", // Unused _context lint fix
     });
     this.strategies.push({
-      name: 'api-endpoint',
+      name: "api-endpoint",
       priority: 90,
       canHandle: (context) => this.isApiEndpoint(context),
-      getTemplateName: (_context) => 'api-endpoint', // Unused _context lint fix
+      getTemplateName: (_context) => "api-endpoint", // Unused _context lint fix
     });
     this.strategies.push({
-      name: 'utility-function',
+      name: "utility-function",
       priority: 80,
       canHandle: (context) => this.isUtilityFunction(context),
-      getTemplateName: (_context) => 'utility-function', // Unused _context lint fix
+      getTemplateName: (_context) => "utility-function", // Unused _context lint fix
     });
     this.strategies.push({
-      name: 'class-method',
+      name: "class-method",
       priority: 70,
-      canHandle: (context) => context.nodeKind === 'MethodDeclaration',
-      getTemplateName: (_context) => 'generic', // Could have a specific one // Unused _context lint fix
+      canHandle: (context) => context.nodeKind === "MethodDeclaration",
+      getTemplateName: (_context) => "generic", // Could have a specific one // Unused _context lint fix
     });
     this.strategies.push({
-      name: 'interface',
+      name: "interface",
       priority: 60,
-      canHandle: (context) => context.nodeKind === 'InterfaceDeclaration',
-      getTemplateName: (_context) => 'generic', // Unused _context lint fix
+      canHandle: (context) => context.nodeKind === "InterfaceDeclaration",
+      getTemplateName: (_context) => "generic", // Unused _context lint fix
     });
     this.strategies.push({
-      name: 'type-alias',
+      name: "type-alias",
       priority: 50,
-      canHandle: (context) => context.nodeKind === 'TypeAliasDeclaration',
-      getTemplateName: (_context) => 'generic', // Unused _context lint fix
+      canHandle: (context) => context.nodeKind === "TypeAliasDeclaration",
+      getTemplateName: (_context) => "generic", // Unused _context lint fix
     });
     this.strategies.push({
-      name: 'class',
+      name: "class",
       priority: 40,
-      canHandle: (context) => context.nodeKind === 'ClassDeclaration',
-      getTemplateName: (_context) => 'generic', // Unused _context lint fix
+      canHandle: (context) => context.nodeKind === "ClassDeclaration",
+      getTemplateName: (_context) => "generic", // Unused _context lint fix
     });
     this.strategies.push({
-      name: 'generic',
+      name: "generic",
       priority: 1, // Lowest priority, acts as a fallback
       canHandle: () => true, // Always matches
-      getTemplateName: (_context) => 'generic', // Unused _context lint fix
+      getTemplateName: (_context) => "generic", // Unused _context lint fix
     });
 
     // Sort strategies by priority in descending order
@@ -182,9 +185,9 @@ export class SmartDocumentationEngine {
    * Registers custom Handlebars helpers for template rendering.
    */
   private registerHandlebarsHelpers(): void {
-    Handlebars.registerHelper('eq', (a: unknown, b: unknown) => a === b);
-    Handlebars.registerHelper('neq', (a: unknown, b: unknown) => a !== b);
-    Handlebars.registerHelper('if_eq', function (this: unknown, a, b, options) {
+    Handlebars.registerHelper("eq", (a: unknown, b: unknown) => a === b);
+    Handlebars.registerHelper("neq", (a: unknown, b: unknown) => a !== b);
+    Handlebars.registerHelper("if_eq", function (this: unknown, a, b, options) {
       // Corrected `any` usage
       if (a === b) {
         return options.fn(this);
@@ -199,7 +202,10 @@ export class SmartDocumentationEngine {
    * @param config The GeneratorConfig (can influence template behavior, e.g., example generation).
    * @returns A Promise resolving to the generated JSDoc string.
    */
-  async generateDocumentation(context: NodeContext, config: GeneratorConfig): Promise<string> {
+  async generateDocumentation(
+    context: NodeContext,
+    config: GeneratorConfig,
+  ): Promise<string> {
     const strategy = this.strategies.find((s) => s.canHandle(context));
     if (!strategy) {
       logger.warn(
@@ -213,29 +219,32 @@ export class SmartDocumentationEngine {
 
     // Compile the template if not already compiled
     if (!this.compiledTemplates.has(templateName)) {
-      this.compiledTemplates.set(templateName, Handlebars.compile(templateContent));
+      this.compiledTemplates.set(
+        templateName,
+        Handlebars.compile(templateContent),
+      );
     }
     const compiledTemplate = this.compiledTemplates.get(templateName)!;
 
     // Prepare data for the template
     let templateData: Record<string, unknown>; // Use a generic record for data
     switch (templateName) {
-      case 'react-component': {
+      case "react-component": {
         const data = this.getReactComponentTemplateData(context, config);
         templateData = data as unknown as Record<string, unknown>;
         break;
       }
-      case 'api-endpoint': {
+      case "api-endpoint": {
         const data = this.getApiEndpointTemplateData(context, config);
         templateData = data as unknown as Record<string, unknown>;
         break;
       }
-      case 'utility-function': {
+      case "utility-function": {
         const data = this.getUtilityFunctionTemplateData(context, config);
         templateData = data as unknown as Record<string, unknown>;
         break;
       }
-      case 'generic':
+      case "generic":
       default: {
         const data = this.getGenericTemplateData(context, config);
         templateData = data as unknown as Record<string, unknown>;
@@ -261,13 +270,19 @@ export class SmartDocumentationEngine {
    * @returns True if it's a React component, false otherwise.
    */
   private isReactComponent(context: NodeContext): boolean {
-    const hasJSXElements = context.codeSnippet.includes('JSX.Element');
-    const hasReactFC = context.codeSnippet.includes('React.FC');
+    const hasJSXElements = context.codeSnippet.includes("JSX.Element");
+    const hasReactFC = context.codeSnippet.includes("React.FC");
     const hasJSXReturnPattern = /return\s*<[A-Za-z]/.test(context.codeSnippet);
     const isCapitalizedFunction =
-      context.nodeKind === 'FunctionDeclaration' && !!context.nodeName.match(/^[A-Z]/);
+      context.nodeKind === "FunctionDeclaration" &&
+      !!context.nodeName.match(/^[A-Z]/);
 
-    return hasJSXElements || hasReactFC || hasJSXReturnPattern || isCapitalizedFunction;
+    return (
+      hasJSXElements ||
+      hasReactFC ||
+      hasJSXReturnPattern ||
+      isCapitalizedFunction
+    );
   }
 
   /**
@@ -277,8 +292,8 @@ export class SmartDocumentationEngine {
    */
   private isApiEndpoint(context: NodeContext): boolean {
     return (
-      context.fileContext.includes('/api/') || // Conventional API route directory
-      context.fileContext.includes('/routes/') || // Another common API route directory
+      context.fileContext.includes("/api/") || // Conventional API route directory
+      context.fileContext.includes("/routes/") || // Another common API route directory
       /export\s+(default\s+)?(async\s+)?function\s+(GET|POST|PUT|DELETE|PATCH)/.test(
         // Removed unnecessary escape character
         context.codeSnippet,
@@ -293,8 +308,8 @@ export class SmartDocumentationEngine {
    */
   private isUtilityFunction(context: NodeContext): boolean {
     return (
-      context.fileContext.includes('/utils/') ||
-      context.fileContext.includes('/helpers/') ||
+      context.fileContext.includes("/utils/") ||
+      context.fileContext.includes("/helpers/") ||
       /^(is|has|get|set|format|parse|validate|transform|create|update|delete|find|calculate|apply)/.test(
         context.nodeName,
       ) // Common utility function prefixes
@@ -316,7 +331,8 @@ export class SmartDocumentationEngine {
     // These properties are expected to be in customData if the ReactComponentPlugin ran
     const propTypes = (context.customData?.reactProps as string[]) || [];
     const hookUsage = (context.customData?.hooksUsed as string[]) || [];
-    const componentType = (context.customData?.componentType as string) || 'functional';
+    const componentType =
+      (context.customData?.componentType as string) || "functional";
 
     return {
       componentName: context.nodeName,
@@ -339,13 +355,13 @@ export class SmartDocumentationEngine {
     _config: GeneratorConfig,
   ): ApiEndpointTemplateData {
     // These properties are expected to be in customData if the ApiDocumentationPlugin ran
-    const httpMethod = (context.customData?.httpMethod as string) || 'UNKNOWN';
-    const routePath = (context.customData?.routePath as string) || '/unknown';
+    const httpMethod = (context.customData?.httpMethod as string) || "UNKNOWN";
+    const routePath = (context.customData?.routePath as string) || "/unknown";
     const middleware = (context.customData?.middleware as string[]) || [];
 
     return {
       method: httpMethod,
-      endpoint: routePath.replace(/^\/api\//, '/'), // Display path without /api prefix
+      endpoint: routePath.replace(/^\/api\//, "/"), // Display path without /api prefix
       fullRoutePath: routePath,
       hasAuth: !!context.customData?.hasAuth,
       middleware: middleware,
@@ -365,7 +381,9 @@ export class SmartDocumentationEngine {
     return {
       functionName: context.nodeName,
       isAsync: context.isAsync || false,
-      isGeneric: context.codeSnippet.includes('<T>') || context.signatureDetails.includes('<T>'), // Check for generics
+      isGeneric:
+        context.codeSnippet.includes("<T>") ||
+        context.signatureDetails.includes("<T>"), // Check for generics
     };
   }
 
@@ -400,18 +418,23 @@ export class SmartDocumentationEngine {
       customData: context.customData,
     };
   }
-  private async generateGenericDoc(context: NodeContext, config: GeneratorConfig): Promise<string> {
+  private async generateGenericDoc(
+    context: NodeContext,
+    config: GeneratorConfig,
+  ): Promise<string> {
     // Fallback to a very basic, manually constructed JSDoc string
     const params = (context.parameters || [])
-      .map((p) => `   * @param {${p.type}} ${p.name} - Description for ${p.name}.`)
-      .join('\n');
+      .map(
+        (p) => `   * @param {${p.type}} ${p.name} - Description for ${p.name}.`,
+      )
+      .join("\n");
     const returns = context.returnType
       ? `   * @returns {${context.returnType}} - Description of return value.`
-      : '';
+      : "";
 
     return `/**
    * @summary ${context.nodeName}
    * @description A basic description for ${context.nodeName}.
-${params ? `${params}\n` : ''}${returns ? `${returns}\n` : ''}   */`;
+${params ? `${params}\n` : ""}${returns ? `${returns}\n` : ""}   */`;
   }
 }

@@ -1,0 +1,107 @@
+# Vue.js Project Configuration
+name: "Vue.js JSDoc Configuration"
+description: "Optimized for Vue 3 applications with Composition API and TypeScript support"
+
+workspaceDirs:
+  - src
+  - components
+  - composables
+  - stores
+  - utils
+  - plugins
+  - router
+  - types
+
+includePatterns:
+  - "**/*.ts"
+  - "**/*.vue"
+  - "**/*.js"
+
+ignorePatterns:
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/.vite/**"
+  - "**/coverage/**"
+  - "**/*.test.{ts,js}"
+  - "**/*.spec.{ts,js}"
+  - "**/__tests__/**"
+  - "**/*.d.ts"
+  - "**/vite.config.{ts,js}"
+  - "**/vitest.config.{ts,js}"
+
+aiModels:
+  - id: openai-vue-gen
+    provider: openai
+    model: gpt-4o
+    type: generation
+    apiKeyEnvVar: OPENAI_API_KEY
+    temperature: 0.25
+    maxOutputTokens: 2500
+  - id: openai-vue-embedding
+    provider: openai
+    model: text-embedding-3-small
+    type: embedding
+    apiKeyEnvVar: OPENAI_API_KEY
+    dimensions: 1536
+
+aiClientConfig:
+  defaultGenerationModelId: openai-vue-gen
+  defaultEmbeddingModelId: openai-vue-embedding
+  maxConcurrentRequests: 5
+  requestDelayMs: 250
+  maxRetries: 3
+  retryDelayMs: 1000
+  maxTokensPerBatch: 6000
+
+embeddingConfig:
+  enabled: true
+  modelId: openai-vue-embedding
+  minRelationshipScore: 0.75
+  maxRelatedSymbols: 5
+  embeddingBatchSize: 30
+
+jsdocConfig:
+  prioritizeExports: true
+  includePrivate: false
+  generateExamples: true
+  mergeExisting: true
+  minJsdocLength: 50
+  includeSymbolReferences: true
+  includeRelatedSymbols: true
+  # Vue-specific considerations
+  includeNodeKinds:
+    - ClassDeclaration
+    - FunctionDeclaration
+    - MethodDeclaration
+    - InterfaceDeclaration
+    - TypeAliasDeclaration
+    - EnumDeclaration
+    - VariableDeclaration
+    - ArrowFunction
+
+outputConfig:
+  reportDir: ./reports/vue
+  reportFileName: vue-jsdoc-report.json
+  logLevel: info
+
+# Vue-specific file processing
+vueSupport:
+  enabled: true
+  extractScriptBlocks: true
+  supportCompositionAPI: true
+  documentComposables: true
+  analyzeDirectives: true
+
+performance:
+  enableCaching: true
+  maxConcurrentFiles: 6
+  batchSize: 35
+  timeoutMs: 45000
+
+qualityThresholds:
+  minimumScore: 75
+  requireDescriptions: true
+  requireExamples: false
+  requireParams: true
+  requireReturns: true

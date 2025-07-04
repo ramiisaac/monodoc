@@ -1,9 +1,9 @@
-import { PerformanceMonitor } from './PerformanceMonitor';
-import { logger } from './logger';
-import { ProcessingStats } from '../types';
-import fs from 'fs/promises';
-import path from 'path';
-import os from 'os'; // For system info in reports
+import { PerformanceMonitor } from "./PerformanceMonitor";
+import { logger } from "./logger";
+import { ProcessingStats } from "../types";
+import fs from "fs/promises";
+import path from "path";
+import os from "os"; // For system info in reports
 
 /**
  * Interface for the result of a single benchmark run.
@@ -57,7 +57,10 @@ export class Benchmarker {
   ): Promise<BenchmarkResult> {
     logger.info(`🏃 Running benchmark: ${testName} (${iterations} iterations)`);
 
-    const individualResults: Omit<BenchmarkResult, 'testName' | 'timestamp' | 'success'>[] = [];
+    const individualResults: Omit<
+      BenchmarkResult,
+      "testName" | "timestamp" | "success"
+    >[] = [];
 
     for (let i = 0; i < iterations; i++) {
       logger.info(`  - Iteration ${i + 1}/${iterations}...`);
@@ -79,16 +82,26 @@ export class Benchmarker {
           const successfulJsdocs = currentStats.successfulJsdocs || 0;
           const failedJsdocs = currentStats.failedJsdocs || 0;
           const totalApiCalls = successfulJsdocs + failedJsdocs; // Approximation
-          const cacheHits = this.performanceMonitor.getMetrics().custom?.cache_hits?.total || 0;
-          const cacheMisses = this.performanceMonitor.getMetrics().custom?.cache_misses?.total || 0;
+          const cacheHits =
+            this.performanceMonitor.getMetrics().custom?.cache_hits?.total || 0;
+          const cacheMisses =
+            this.performanceMonitor.getMetrics().custom?.cache_misses?.total ||
+            0;
           const totalCacheAccesses = cacheHits + cacheMisses;
 
           individualResults.push({
             duration: duration,
-            throughput: filesProcessed > 0 && duration > 0 ? filesProcessed / (duration / 1000) : 0,
+            throughput:
+              filesProcessed > 0 && duration > 0
+                ? filesProcessed / (duration / 1000)
+                : 0,
             memoryUsage: endMemory - startMemory,
-            errorRate: totalNodesConsidered > 0 ? failedJsdocs / totalNodesConsidered : 0,
-            cacheEfficiency: totalCacheAccesses > 0 ? cacheHits / totalCacheAccesses : 0,
+            errorRate:
+              totalNodesConsidered > 0
+                ? failedJsdocs / totalNodesConsidered
+                : 0,
+            cacheEfficiency:
+              totalCacheAccesses > 0 ? cacheHits / totalCacheAccesses : 0,
             details: {
               filesProcessed: filesProcessed,
               successfulJsdocs: successfulJsdocs,
@@ -98,7 +111,9 @@ export class Benchmarker {
             },
           });
         }
-        logger.info(`  ✅ Iteration ${i + 1} completed in ${(duration / 1000).toFixed(2)}s.`);
+        logger.info(
+          `  ✅ Iteration ${i + 1} completed in ${(duration / 1000).toFixed(2)}s.`,
+        );
       } catch (error: unknown) {
         // Corrected `any`
         const duration = this.performanceMonitor.endTimer(timerKey);
@@ -112,7 +127,9 @@ export class Benchmarker {
           memoryUsage: 0, // Cannot reliably measure if process crashed or failed early
           errorRate: 1, // Assume 100% error rate for a failed iteration
           cacheEfficiency: 0,
-          details: { error: error instanceof Error ? error.message : String(error) },
+          details: {
+            error: error instanceof Error ? error.message : String(error),
+          },
         });
       } finally {
         this.performanceMonitor.reset(); // Reset monitor for next iteration to ensure clean slate
@@ -139,8 +156,8 @@ export class Benchmarker {
    * @returns An object containing the averaged metrics.
    */
   private calculateAverages(
-    results: Omit<BenchmarkResult, 'testName' | 'timestamp' | 'success'>[],
-  ): Omit<BenchmarkResult, 'testName' | 'timestamp' | 'success'> {
+    results: Omit<BenchmarkResult, "testName" | "timestamp" | "success">[],
+  ): Omit<BenchmarkResult, "testName" | "timestamp" | "success"> {
     if (results.length === 0) {
       return {
         duration: 0,
@@ -153,13 +170,16 @@ export class Benchmarker {
     }
 
     const sum = (key: keyof (typeof results)[0]) =>
-      results.reduce((s, r) => s + (typeof r[key] === 'number' ? (r[key] as number) : 0), 0); // Corrected `any`
+      results.reduce(
+        (s, r) => s + (typeof r[key] === "number" ? (r[key] as number) : 0),
+        0,
+      ); // Corrected `any`
 
-    const avgDuration = sum('duration') / results.length;
-    const avgThroughput = sum('throughput') / results.length;
-    const avgMemoryUsage = sum('memoryUsage') / results.length;
-    const avgErrorRate = sum('errorRate') / results.length;
-    const avgCacheEfficiency = sum('cacheEfficiency') / results.length;
+    const avgDuration = sum("duration") / results.length;
+    const avgThroughput = sum("throughput") / results.length;
+    const avgMemoryUsage = sum("memoryUsage") / results.length;
+    const avgErrorRate = sum("errorRate") / results.length;
+    const avgCacheEfficiency = sum("cacheEfficiency") / results.length;
 
     // Aggregate details or just take from the first successful run for typical values
     const firstSuccessfulDetails =
@@ -184,15 +204,15 @@ export class Benchmarker {
   private formatMetricValue(key: keyof BenchmarkResult, value: number): string {
     // Corrected type of key
     switch (key) {
-      case 'duration':
+      case "duration":
         return `${value.toFixed(2)}ms`;
-      case 'throughput':
+      case "throughput":
         return `${value.toFixed(2)} files/sec`;
-      case 'memoryUsage':
+      case "memoryUsage":
         return `${(value / 1024 / 1024).toFixed(2)}MB`; // Convert bytes to MB
-      case 'errorRate':
+      case "errorRate":
         return `${(value * 100).toFixed(2)}%`; // Convert to percentage
-      case 'cacheEfficiency':
+      case "cacheEfficiency":
         return `${(value * 100).toFixed(1)}%`;
       default:
         return value.toString();
@@ -205,11 +225,11 @@ export class Benchmarker {
    */
   private logMetrics(result: BenchmarkResult): void {
     const metrics: (keyof BenchmarkResult)[] = [
-      'duration',
-      'throughput',
-      'memoryUsage',
-      'errorRate',
-      'cacheEfficiency',
+      "duration",
+      "throughput",
+      "memoryUsage",
+      "errorRate",
+      "cacheEfficiency",
     ]; // Corrected type of metrics array
     for (const key of metrics) {
       logger.info(
@@ -234,37 +254,37 @@ export class Benchmarker {
    */
   generateBenchmarkReport(): string {
     if (this.benchmarks.length === 0) {
-      return '# 📊 Benchmark Report\n\nNo benchmark data available.';
+      return "# 📊 Benchmark Report\n\nNo benchmark data available.";
     }
 
     const report: string[] = [
-      '# 📊 Benchmark Report',
+      "# 📊 Benchmark Report",
       `Generated: ${new Date().toISOString()}`,
-      '',
-      '## Environment',
+      "",
+      "## Environment",
       `- Node.js Version: ${process.version}`,
       `- Platform: ${process.platform} (${process.arch})`,
       `- Total Memory: ${(os.totalmem() / 1024 / 1024 / 1024).toFixed(2)} GB`,
       `- CPU Cores: ${os.cpus().length}`,
-      '',
-      '## Summary of All Benchmarks',
-      '| Test Name | Duration (ms) | Throughput (files/sec) | Memory Usage (MB) | Error Rate (%) | Cache Hit Rate (%) |',
-      '|-----------|---------------|------------------------|-------------------|----------------|--------------------|',
+      "",
+      "## Summary of All Benchmarks",
+      "| Test Name | Duration (ms) | Throughput (files/sec) | Memory Usage (MB) | Error Rate (%) | Cache Hit Rate (%) |",
+      "|-----------|---------------|------------------------|-------------------|----------------|--------------------|",
       ...this.benchmarks.map(
         (b) =>
           `| ${b.testName} | ${b.duration.toFixed(2)} | ${b.throughput.toFixed(2)} | ${(b.memoryUsage / 1024 / 1024).toFixed(2)} | ${(b.errorRate * 100).toFixed(2)} | ${(b.cacheEfficiency * 100).toFixed(1)} |`,
       ),
-      '',
-      '## Detailed Results',
+      "",
+      "## Detailed Results",
       ...this.benchmarks.map((b) => this.generateDetailedBenchmarkSection(b)),
-      '',
-      '## Overall Recommendations',
+      "",
+      "## Overall Recommendations",
       this.generateOverallRecommendations(),
-      '',
-      '---',
-      '*Generated by JSDoc AI Benchmarker*',
+      "",
+      "---",
+      "*Generated by JSDoc AI Benchmarker*",
     ];
-    return report.join('\n');
+    return report.join("\n");
   }
 
   /**
@@ -274,14 +294,14 @@ export class Benchmarker {
    */
   private generateDetailedBenchmarkSection(b: BenchmarkResult): string {
     return `
-### ${b.testName} ${b.success ? '✅' : '❌'}
+### ${b.testName} ${b.success ? "✅" : "❌"}
 - **Overall Duration**: ${b.duration.toFixed(2)}ms
 - **Throughput**: ${b.throughput.toFixed(2)} files/sec
 - **Memory Usage (Avg Heap Delta)**: ${(b.memoryUsage / 1024 / 1024).toFixed(2)}MB
 - **Error Rate (JSDoc Failures)**: ${(b.errorRate * 100).toFixed(2)}%
 - **Cache Hit Rate**: ${(b.cacheEfficiency * 100).toFixed(1)}%
-- **Run Status**: ${b.success ? 'Success' : 'Failed'}
-${b.details?.error ? `- **Error Details**: ${b.details.error}` : ''}
+- **Run Status**: ${b.success ? "Success" : "Failed"}
+${b.details?.error ? `- **Error Details**: ${b.details.error}` : ""}
 `;
   }
 
@@ -291,25 +311,32 @@ ${b.details?.error ? `- **Error Details**: ${b.details.error}` : ''}
    */
   private generateOverallRecommendations(): string {
     if (this.benchmarks.length === 0) {
-      return '- No benchmark data available to provide recommendations.';
+      return "- No benchmark data available to provide recommendations.";
     }
 
     const recommendations: string[] = [];
     const avgThroughput =
-      this.benchmarks.reduce((sum, b) => sum + b.throughput, 0) / this.benchmarks.length;
+      this.benchmarks.reduce((sum, b) => sum + b.throughput, 0) /
+      this.benchmarks.length;
     const avgErrorRate =
-      this.benchmarks.reduce((sum, b) => sum + b.errorRate, 0) / this.benchmarks.length;
+      this.benchmarks.reduce((sum, b) => sum + b.errorRate, 0) /
+      this.benchmarks.length;
     const avgMemory =
-      this.benchmarks.reduce((sum, b) => sum + b.memoryUsage, 0) / this.benchmarks.length;
+      this.benchmarks.reduce((sum, b) => sum + b.memoryUsage, 0) /
+      this.benchmarks.length;
     const avgCacheEfficiency =
-      this.benchmarks.reduce((sum, b) => sum + b.cacheEfficiency, 0) / this.benchmarks.length;
+      this.benchmarks.reduce((sum, b) => sum + b.cacheEfficiency, 0) /
+      this.benchmarks.length;
 
     if (avgErrorRate > 0.05) {
       recommendations.push(
         `- High average error rate (${(avgErrorRate * 100).toFixed(2)}%) across benchmarks. Focus on improving AI generation reliability and error handling.`,
       );
     }
-    if (avgCacheEfficiency < 0.7 && this.benchmarks.some((b) => b.cacheEfficiency > 0)) {
+    if (
+      avgCacheEfficiency < 0.7 &&
+      this.benchmarks.some((b) => b.cacheEfficiency > 0)
+    ) {
       recommendations.push(
         `- Low average cache hit rate (${(avgCacheEfficiency * 100).toFixed(1)}%). Ensure caching is effectively used to reduce API calls.`,
       );
@@ -329,10 +356,10 @@ ${b.details?.error ? `- **Error Details**: ${b.details.error}` : ''}
 
     if (recommendations.length === 0) {
       recommendations.push(
-        '- All benchmarks show healthy performance metrics. Continue monitoring!',
+        "- All benchmarks show healthy performance metrics. Continue monitoring!",
       );
     }
 
-    return recommendations.join('\n');
+    return recommendations.join("\n");
   }
 }

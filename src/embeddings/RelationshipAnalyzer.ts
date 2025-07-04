@@ -1,16 +1,16 @@
-import { Project, SourceFile, JSDocableNode, Node } from 'ts-morph';
+import { Project, SourceFile, JSDocableNode, Node } from "ts-morph";
 import {
   GeneratorConfig,
   WorkspacePackage,
   ProcessingStats,
   RelatedSymbol,
   NodeContext,
-} from '../types';
-import { logger } from '../utils/logger';
-import { EmbeddingGenerator } from './EmbeddingGenerator';
-import { InMemoryVectorStore } from './InMemoryVectorStore';
-import { EmbeddingError } from '../utils/errorHandling';
-import { NodeContextExtractor } from '../generator/NodeContextExtractor';
+} from "../types";
+import { logger } from "../utils/logger";
+import { EmbeddingGenerator } from "./EmbeddingGenerator";
+import { InMemoryVectorStore } from "./InMemoryVectorStore";
+import { EmbeddingError } from "../utils/errorHandling";
+import { NodeContextExtractor } from "../generator/NodeContextExtractor";
 
 /**
  * Analyzes relationships between code symbols using embeddings.
@@ -65,16 +65,19 @@ export class RelationshipAnalyzer {
    * @param allSourceFiles All source files from the ts-morph project.
    * @param stats The processing statistics object to update.
    */
-  async initialize(allSourceFiles: SourceFile[], stats: ProcessingStats): Promise<void> {
+  async initialize(
+    allSourceFiles: SourceFile[],
+    stats: ProcessingStats,
+  ): Promise<void> {
     if (!this.isEmbeddingEnabled()) {
       logger.info(
-        '🧠 Embedding-based relationship analysis is disabled by configuration or CLI flag. Skipping embedding generation.',
+        "🧠 Embedding-based relationship analysis is disabled by configuration or CLI flag. Skipping embedding generation.",
       );
       this.isInitializedSuccessfully = false;
       return;
     }
 
-    logger.info('🧠 Initializing embedding-based relationship analysis...');
+    logger.info("🧠 Initializing embedding-based relationship analysis...");
     this.collectJSDocableNodes(allSourceFiles);
     logger.info(
       `Found ${this.allJSDocableNodesForEmbeddings.length} JSDocable nodes across the project for embedding.`,
@@ -94,7 +97,9 @@ export class RelationshipAnalyzer {
    * @returns True if embeddings are enabled, false otherwise.
    */
   private isEmbeddingEnabled(): boolean {
-    return this.config.embeddingConfig.enabled && !this.config.disableEmbeddings;
+    return (
+      this.config.embeddingConfig.enabled && !this.config.disableEmbeddings
+    );
   }
 
   /**
@@ -105,7 +110,8 @@ export class RelationshipAnalyzer {
     for (const sourceFile of allSourceFiles) {
       this.sourceFileMap.set(sourceFile.getFilePath(), sourceFile);
       // Use the injected nodeContextExtractor to collect nodes, ensuring consistency
-      const nodesInFile = this.nodeContextExtractor.collectJSDocableNodes(sourceFile);
+      const nodesInFile =
+        this.nodeContextExtractor.collectJSDocableNodes(sourceFile);
       // Type assertion to resolve compatibility issue with JSDocableNode from ts-morph vs our defined type
       this.allJSDocableNodesForEmbeddings.push(...(nodesInFile as any[]));
     }
@@ -116,7 +122,9 @@ export class RelationshipAnalyzer {
    * Also updates the `NodeContextExtractor` with these embeddings.
    * @param stats The processing statistics object to update.
    */
-  private async generateAndStoreEmbeddings(stats: ProcessingStats): Promise<void> {
+  private async generateAndStoreEmbeddings(
+    stats: ProcessingStats,
+  ): Promise<void> {
     const embeddedNodes = await this.embeddingGenerator.generateEmbeddings(
       this.allJSDocableNodesForEmbeddings as any[],
       this.sourceFileMap,
@@ -126,7 +134,8 @@ export class RelationshipAnalyzer {
       new Map(embeddedNodes.map((node) => [node.id, node])),
     );
     stats.embeddingSuccesses += embeddedNodes.length;
-    stats.embeddingFailures += this.allJSDocableNodesForEmbeddings.length - embeddedNodes.length;
+    stats.embeddingFailures +=
+      this.allJSDocableNodesForEmbeddings.length - embeddedNodes.length;
     logger.success(
       `🧠 Embedding initialization complete. ${embeddedNodes.length} embeddings stored.`,
     );
@@ -154,7 +163,10 @@ export class RelationshipAnalyzer {
    * @param stats The processing statistics object to update.
    * @returns An array of RelatedSymbol objects.
    */
-  findRelatedSymbolsForNode(node: JSDocableNode, stats: ProcessingStats): RelatedSymbol[] {
+  findRelatedSymbolsForNode(
+    node: JSDocableNode,
+    stats: ProcessingStats,
+  ): RelatedSymbol[] {
     if (!this.isInitializedSuccessfully || !this.isEmbeddingEnabled()) {
       return [];
     }
@@ -167,7 +179,10 @@ export class RelationshipAnalyzer {
       return [];
     }
 
-    const nodeContext = this.nodeContextExtractor.getEnhancedNodeContext(node as any, sourceFile);
+    const nodeContext = this.nodeContextExtractor.getEnhancedNodeContext(
+      node as any,
+      sourceFile,
+    );
 
     if (!this.hasValidEmbedding(nodeContext)) {
       this.logNoEmbeddingWarning(node, nodeContext.id);
@@ -198,7 +213,9 @@ export class RelationshipAnalyzer {
    * @returns True if a valid embedding is present, false otherwise.
    */
   private hasValidEmbedding(nodeContext: NodeContext): boolean {
-    return Array.isArray(nodeContext.embedding) && nodeContext.embedding.length > 0;
+    return (
+      Array.isArray(nodeContext.embedding) && nodeContext.embedding.length > 0
+    );
   }
 
   /**
@@ -230,7 +247,11 @@ export class RelationshipAnalyzer {
    * @param id The node's ID.
    * @param error The error object.
    */
-  private logRelatedSymbolsError(node: JSDocableNode, id: string, error: unknown): void {
+  private logRelatedSymbolsError(
+    node: JSDocableNode,
+    id: string,
+    error: unknown,
+  ): void {
     const nodeName = this.getNodeNameForLogging(node as any);
     logger.error(
       `  ❌ Error finding related symbols for ${nodeName} (${id}): ${
@@ -251,7 +272,8 @@ export class RelationshipAnalyzer {
     }
     if (
       Node.hasName(node) &&
-      typeof (node as { getName?: () => string | undefined }).getName === 'function'
+      typeof (node as { getName?: () => string | undefined }).getName ===
+        "function"
     ) {
       const name = (node as { getName: () => string | undefined }).getName();
       return name || node.getKindName();

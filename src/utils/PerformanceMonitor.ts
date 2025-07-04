@@ -1,4 +1,4 @@
-import { logger } from './logger';
+import { logger } from "./logger";
 
 /**
  * Interface for a metric entry, storing a value and its timestamp.
@@ -48,7 +48,9 @@ export class PerformanceMonitor {
     this.metrics.get(label)!.push(duration); // Store the duration
 
     if (duration > this.WARNING_THRESHOLD_MS) {
-      logger.warn(`⚠️ Slow operation detected: '${label}' took ${(duration / 1000).toFixed(2)}s`);
+      logger.warn(
+        `⚠️ Slow operation detected: '${label}' took ${(duration / 1000).toFixed(2)}s`,
+      );
     }
 
     this.startTimes.delete(label); // Clean up the start time
@@ -69,13 +71,15 @@ export class PerformanceMonitor {
 
     // Specific check for memory usage
     if (
-      metricName === 'memory_usage' &&
-      typeof value === 'number' &&
+      metricName === "memory_usage" &&
+      typeof value === "number" &&
       value > this.MEMORY_WARNING_THRESHOLD_MB * 1024 * 1024 // Convert MB to bytes
     ) {
-      logger.warn(`🚨 High memory usage: ${(value / 1024 / 1024).toFixed(2)}MB`);
+      logger.warn(
+        `🚨 High memory usage: ${(value / 1024 / 1024).toFixed(2)}MB`,
+      );
       // Also record a specific event for memory spikes
-      this.record('memory_spike', {
+      this.record("memory_spike", {
         timestamp: new Date().toISOString(),
         heapUsedBytes: value,
         // Add other relevant memory stats if desired
@@ -127,7 +131,7 @@ export class PerformanceMonitor {
     // Aggregate custom metrics (avg, min, max, count, latest for numeric; count, latest, sample for others)
     for (const [name, values] of this.customMetrics) {
       if (values.length === 0) continue;
-      if (typeof values[0] === 'number') {
+      if (typeof values[0] === "number") {
         const numericValues = values as number[];
         result.custom[name] = {
           avg: numericValues.reduce((a, b) => a + b, 0) / numericValues.length,
@@ -195,7 +199,7 @@ export class PerformanceMonitor {
       logger.warn(
         `🚨 High memory usage detected: ${heapUsedMB.toFixed(2)}MB (threshold: ${this.MEMORY_WARNING_THRESHOLD_MB}MB)`,
       );
-      this.record('memory_spike', {
+      this.record("memory_spike", {
         timestamp: new Date().toISOString(),
         heapUsedMB,
         heapTotalMB: memUsage.heapTotal / 1024 / 1024,
@@ -210,11 +214,11 @@ export class PerformanceMonitor {
    */
   generateReport(): string {
     const metrics = this.getMetrics();
-    const report: string[] = ['📊 Performance Report', '===================='];
+    const report: string[] = ["📊 Performance Report", "===================="];
 
     // Timers section
     if (Object.keys(metrics.timers).length > 0) {
-      report.push('\n⏱️ Timer Metrics:');
+      report.push("\n⏱️ Timer Metrics:");
       for (const [name, stats] of Object.entries(metrics.timers)) {
         const timerStats = stats as {
           avg: number;
@@ -241,7 +245,7 @@ export class PerformanceMonitor {
 
     // Custom metrics section
     if (Object.keys(metrics.custom).length > 0) {
-      report.push('\n📈 Custom Metrics:');
+      report.push("\n📈 Custom Metrics:");
       for (const [name, stats] of Object.entries(metrics.custom)) {
         report.push(`  ${name}: ${JSON.stringify(stats, null, 2)}`);
       }
@@ -249,12 +253,12 @@ export class PerformanceMonitor {
 
     // Memory usage section
     const memoryMetrics = metrics.memory as any; // Corrected `any`
-    report.push('\n💾 Memory Usage:');
+    report.push("\n💾 Memory Usage:");
     report.push(`  - Heap Used: ${memoryMetrics.heapUsed}MB`);
     report.push(`  - Heap Total: ${memoryMetrics.heapTotal}MB`);
     report.push(`  - RSS: ${memoryMetrics.rss}MB`);
 
-    return report.join('\n');
+    return report.join("\n");
   }
 
   /**

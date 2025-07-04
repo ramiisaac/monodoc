@@ -1,8 +1,8 @@
-import { GeneratorConfig, NodeContext, AIResponse } from '../types';
-import { logger } from '../utils/logger';
-import { AIClient } from './AIClient';
-import { SmartPromptBuilder } from './SmartPromptBuilder';
-import { SmartDocumentationEngine } from '../features/SmartDocumentationEngine';
+import { GeneratorConfig, NodeContext, AIResponse } from "../types";
+import { logger } from "../utils/logger";
+import { AIClient } from "./AIClient";
+import { SmartPromptBuilder } from "./SmartPromptBuilder";
+import { SmartDocumentationEngine } from "../features/SmartDocumentationEngine";
 
 /**
  * Orchestrates the generation of JSDoc content for a single TypeScript node.
@@ -14,11 +14,14 @@ export class DocumentationGenerator {
   private promptBuilder: SmartPromptBuilder;
   private smartDocumentationEngine: SmartDocumentationEngine;
 
-  constructor(aiClient: AIClient, smartDocumentationEngine: SmartDocumentationEngine) {
+  constructor(
+    aiClient: AIClient,
+    smartDocumentationEngine: SmartDocumentationEngine,
+  ) {
     this.aiClient = aiClient;
     this.promptBuilder = new SmartPromptBuilder();
     this.smartDocumentationEngine = smartDocumentationEngine;
-    logger.debug('DocumentationGenerator initialized.');
+    logger.debug("DocumentationGenerator initialized.");
   }
 
   /**
@@ -29,24 +32,36 @@ export class DocumentationGenerator {
    * @param config The generator configuration.
    * @returns An AIResponse object with generated JSDoc content or status.
    */
-  async generate(nodeContext: NodeContext, config: GeneratorConfig): Promise<AIResponse> {
+  async generate(
+    nodeContext: NodeContext,
+    config: GeneratorConfig,
+  ): Promise<AIResponse> {
     // 1. Get the template and template data based on smart documentation engine
-    const generatedTemplateContent = await this.smartDocumentationEngine.generateDocumentation(
-      nodeContext,
-      config,
-    );
+    const generatedTemplateContent =
+      await this.smartDocumentationEngine.generateDocumentation(
+        nodeContext,
+        config,
+      );
 
-    if (!generatedTemplateContent || generatedTemplateContent.trim() === 'SKIP') {
+    if (
+      !generatedTemplateContent ||
+      generatedTemplateContent.trim() === "SKIP"
+    ) {
       return {
         jsdocContent: null,
-        status: 'skip',
-        reason: 'SmartDocumentationEngine returned empty or explicit SKIP from template.',
+        status: "skip",
+        reason:
+          "SmartDocumentationEngine returned empty or explicit SKIP from template.",
       };
     }
 
     // 2. Build the full prompt using the SmartPromptBuilder, incorporating the template
     // The prompt builder needs to know about the template content to embed it correctly.
-    const prompt = this.promptBuilder.buildPrompt(nodeContext, config, generatedTemplateContent);
+    const prompt = this.promptBuilder.buildPrompt(
+      nodeContext,
+      config,
+      generatedTemplateContent,
+    );
 
     // 3. Call the AI Client to generate the JSDoc
     try {
@@ -57,10 +72,10 @@ export class DocumentationGenerator {
       } as NodeContext); // Cast to allow aiPrompt/aiSystemPrompt fields if needed for AIClient internal use
 
       // Check for explicit "SKIP" signal from the AI response
-      if (result.jsdocContent?.trim().toLowerCase() === 'skip') {
+      if (result.jsdocContent?.trim().toLowerCase() === "skip") {
         return {
           jsdocContent: null,
-          status: 'skip',
+          status: "skip",
           reason: 'AI model explicitly returned "SKIP".',
         };
       }
@@ -73,7 +88,7 @@ export class DocumentationGenerator {
       );
       return {
         jsdocContent: null,
-        status: 'error',
+        status: "error",
         reason: error instanceof Error ? error.message : String(error),
       };
     }

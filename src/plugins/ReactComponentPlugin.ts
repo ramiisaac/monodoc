@@ -1,5 +1,5 @@
-import { Plugin, NodeContext } from '../types';
-import { BasePlugin } from './BasePlugin'; // Import BasePlugin
+import { Plugin, NodeContext } from "../types";
+import { BasePlugin } from "./BasePlugin"; // Import BasePlugin
 // import { logger } from '../utils/logger';
 
 /**
@@ -8,9 +8,9 @@ import { BasePlugin } from './BasePlugin'; // Import BasePlugin
  * which can then be used by the `SmartDocumentationEngine` or `afterProcessing` hook.
  */
 export class ReactComponentPlugin extends BasePlugin implements Plugin {
-  name = 'ReactComponentPlugin';
-  version = '1.0.0';
-  description = 'Enhances JSDoc generation for React components';
+  name = "ReactComponentPlugin";
+  version = "1.0.0";
+  description = "Enhances JSDoc generation for React components";
 
   /**
    * Gets the name of the plugin.
@@ -53,7 +53,10 @@ export class ReactComponentPlugin extends BasePlugin implements Plugin {
    * @param result The generated JSDoc content.
    * @returns Enhanced JSDoc content with React documentation.
    */
-  async afterProcessing(nodeContext: NodeContext, result: string): Promise<string> {
+  async afterProcessing(
+    nodeContext: NodeContext,
+    result: string,
+  ): Promise<string> {
     if (nodeContext.customData?.isReactComponent) {
       return this.addReactSections(result, nodeContext);
     }
@@ -68,13 +71,15 @@ export class ReactComponentPlugin extends BasePlugin implements Plugin {
    */
   private isReactComponent(context: NodeContext): boolean {
     return (
-      context.codeSnippet.includes('JSX.Element') ||
-      context.codeSnippet.includes('React.FC') ||
+      context.codeSnippet.includes("JSX.Element") ||
+      context.codeSnippet.includes("React.FC") ||
       /return\s*<[A-Za-z]/.test(context.codeSnippet) || // Detects `return <Div...`
-      (context.nodeKind === 'FunctionDeclaration' && !!context.nodeName.match(/^[A-Z]/)) || // Capitalized function components
-      (context.nodeKind === 'VariableDeclaration' &&
+      (context.nodeKind === "FunctionDeclaration" &&
+        !!context.nodeName.match(/^[A-Z]/)) || // Capitalized function components
+      (context.nodeKind === "VariableDeclaration" &&
         !!context.nodeName.match(/^[A-Z]/) &&
-        (context.codeSnippet.includes('React.memo') || context.codeSnippet.includes('forwardRef'))) // Memoized/forwardRef components
+        (context.codeSnippet.includes("React.memo") ||
+          context.codeSnippet.includes("forwardRef"))) // Memoized/forwardRef components
     );
   }
 
@@ -88,7 +93,9 @@ export class ReactComponentPlugin extends BasePlugin implements Plugin {
     const propNames: string[] = [];
 
     // 1. From interface or type alias `XProps`
-    const interfaceMatch = code.match(/(interface|type)\s+(\w+Props)\s*\{([^}]+)\}/s); // `s` for dotall
+    const interfaceMatch = code.match(
+      /(interface|type)\s+(\w+Props)\s*\{([^}]+)\}/s,
+    ); // `s` for dotall
     if (interfaceMatch && interfaceMatch[3]) {
       const propDefinitions = interfaceMatch[3];
       // Regex to find `propName: type;` or `propName?: type;`
@@ -100,11 +107,13 @@ export class ReactComponentPlugin extends BasePlugin implements Plugin {
     }
 
     // 2. From direct destructuring in function parameters (e.g., `({ prop1, prop2 })`)
-    const destructuringMatch = code.match(/function\s+\w+\s*\((?:\{\s*([^}]+)\s*\})?\s*\)/);
+    const destructuringMatch = code.match(
+      /function\s+\w+\s*\((?:\{\s*([^}]+)\s*\})?\s*\)/,
+    );
     if (destructuringMatch && destructuringMatch[1]) {
       const destructuredProps = destructuringMatch[1]
-        .split(',')
-        .map((p) => p.trim().split(':')[0].trim())
+        .split(",")
+        .map((p) => p.trim().split(":")[0].trim())
         .filter(Boolean);
       propNames.push(...destructuredProps);
     }
@@ -119,30 +128,34 @@ export class ReactComponentPlugin extends BasePlugin implements Plugin {
    */
   private analyzeHookUsage(code: string): string[] {
     const hooks = [
-      'useState',
-      'useEffect',
-      'useContext',
-      'useReducer',
-      'useCallback',
-      'useMemo',
-      'useRef',
-      'useImperativeHandle',
-      'useLayoutEffect',
-      'useDebugValue',
-      'useDeferredValue',
-      'useTransition',
-      'useId',
-      'useSyncExternalStore',
-      'useInsertionEffect',
-      'useFormStatus',
-      'useFormState',
-      'useActionState',
+      "useState",
+      "useEffect",
+      "useContext",
+      "useReducer",
+      "useCallback",
+      "useMemo",
+      "useRef",
+      "useImperativeHandle",
+      "useLayoutEffect",
+      "useDebugValue",
+      "useDeferredValue",
+      "useTransition",
+      "useId",
+      "useSyncExternalStore",
+      "useInsertionEffect",
+      "useFormStatus",
+      "useFormState",
+      "useActionState",
     ];
     const usedHooks: string[] = [];
     hooks.forEach((hook) => {
       // Regex to match `useHook(...)` or `React.useHook(...)`
       // Removed unnecessary escape character
-      if (new RegExp(`(?:^|\\s|\\.|\\b)(?:React\\.)?${hook}\\s*\\(`, 'g').test(code)) {
+      if (
+        new RegExp(`(?:^|\\s|\\.|\\b)(?:React\\.)?${hook}\\s*\\(`, "g").test(
+          code,
+        )
+      ) {
         usedHooks.push(hook);
       }
     });
@@ -155,10 +168,11 @@ export class ReactComponentPlugin extends BasePlugin implements Plugin {
    * @returns A string describing the component type (e.g., 'functional', 'class', 'memoized functional').
    */
   private getComponentType(code: string): string {
-    if (code.includes('React.memo') || code.includes('memo(')) return 'memoized functional';
-    if (code.includes('forwardRef')) return 'forwarded-ref functional';
-    if (code.includes('class') && code.includes('extends')) return 'class';
-    return 'functional';
+    if (code.includes("React.memo") || code.includes("memo("))
+      return "memoized functional";
+    if (code.includes("forwardRef")) return "forwarded-ref functional";
+    if (code.includes("class") && code.includes("extends")) return "class";
+    return "functional";
   }
 
   /**
@@ -178,14 +192,14 @@ export class ReactComponentPlugin extends BasePlugin implements Plugin {
     // Add @props if not already present or if prop details are desired
     if (Array.isArray(reactProps) && reactProps.length > 0) {
       // A simple check to avoid adding a generic `@props` if AI already detailed them
-      if (!enhanced.includes('@param props') && !enhanced.includes('@prop')) {
-        enhanced += `\n@props Available props: ${reactProps.join(', ')}`;
+      if (!enhanced.includes("@param props") && !enhanced.includes("@prop")) {
+        enhanced += `\n@props Available props: ${reactProps.join(", ")}`;
       }
     }
 
     if (Array.isArray(hooksUsed) && hooksUsed.length > 0) {
-      if (!enhanced.includes('@hooks')) {
-        enhanced += `\n@hooks Uses React hooks: ${hooksUsed.join(', ')}`;
+      if (!enhanced.includes("@hooks")) {
+        enhanced += `\n@hooks Uses React hooks: ${hooksUsed.join(", ")}`;
       }
     }
 

@@ -1,5 +1,5 @@
-import { EmbeddedNode, RelatedSymbol } from '../types';
-import { logger } from '../utils/logger';
+import { EmbeddedNode, RelatedSymbol } from "../types";
+import { logger } from "../utils/logger";
 
 /**
  * Computes the cosine similarity between two vectors.
@@ -53,7 +53,7 @@ export class InMemoryVectorStore {
    */
   addNodes(nodes: EmbeddedNode[]): void {
     if (!nodes || nodes.length === 0) {
-      logger.debug('Attempted to add empty list of nodes to vector store.');
+      logger.debug("Attempted to add empty list of nodes to vector store.");
       return;
     }
     this.embeddedNodes.push(...nodes);
@@ -81,9 +81,13 @@ export class InMemoryVectorStore {
     const relationships: RelatedSymbol[] = [];
 
     // Basic validation for query embedding and store content
-    if (!queryEmbedding || queryEmbedding.length === 0 || this.embeddedNodes.length === 0) {
+    if (
+      !queryEmbedding ||
+      queryEmbedding.length === 0 ||
+      this.embeddedNodes.length === 0
+    ) {
       logger.trace(
-        'Skipping related symbol search: query embedding is empty or no nodes in store.',
+        "Skipping related symbol search: query embedding is empty or no nodes in store.",
       );
       return relationships;
     }
@@ -96,7 +100,9 @@ export class InMemoryVectorStore {
 
       // Ensure the node has a valid embedding
       if (!node.embedding || node.embedding.length === 0) {
-        logger.debug(`Skipping node ${node.id} for similarity search: its embedding is empty.`);
+        logger.debug(
+          `Skipping node ${node.id} for similarity search: its embedding is empty.`,
+        );
         continue;
       }
 

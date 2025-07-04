@@ -1,5 +1,5 @@
-import { NodeContext, GeneratorConfig } from '../types';
-import { logger } from '../utils/logger'; // Added logger for debug/trace
+import { NodeContext, GeneratorConfig } from "../types";
+import { logger } from "../utils/logger"; // Added logger for debug/trace
 
 /**
  * Defines a strategy for building AI prompts.
@@ -20,7 +20,7 @@ export interface PromptStrategy {
  * This strategy aims for a balanced approach to documentation generation.
  */
 export class StandardPromptStrategy implements PromptStrategy {
-  name = 'standard';
+  name = "standard";
 
   protected buildSymbolReferencesSection(
     nodeContext: NodeContext,
@@ -31,20 +31,23 @@ export class StandardPromptStrategy implements PromptStrategy {
       nodeContext.symbolUsages.length > 0 &&
       config.jsdocConfig.includeSymbolReferences
     ) {
-      return `\n**DIRECT SYMBOL REFERENCES (where this symbol is used):**\n${nodeContext.symbolUsages.map((u) => `- \`{@link ${u.filePath}:${u.line}}\` (Snippet: \`...${u.snippet || nodeContext.nodeName}...\`)`).join('\n')}\n`;
+      return `\n**DIRECT SYMBOL REFERENCES (where this symbol is used):**\n${nodeContext.symbolUsages.map((u) => `- \`{@link ${u.filePath}:${u.line}}\` (Snippet: \`...${u.snippet || nodeContext.nodeName}...\`)`).join("\n")}\n`;
     }
-    return '';
+    return "";
   }
 
-  protected buildRelatedSymbolsSection(nodeContext: NodeContext, config: GeneratorConfig): string {
+  protected buildRelatedSymbolsSection(
+    nodeContext: NodeContext,
+    config: GeneratorConfig,
+  ): string {
     if (
       nodeContext.relatedSymbols &&
       nodeContext.relatedSymbols.length > 0 &&
       config.jsdocConfig.includeRelatedSymbols
     ) {
-      return `\n**SEMANTICALLY RELATED SYMBOLS (via embeddings):**\n${nodeContext.relatedSymbols.map((s) => `- \`{@link ${s.relativeFilePath}}\` - \`${s.name}\` (${s.kind}) - Score: ${s.relationshipScore.toFixed(2)}`).join('\n')}\n`;
+      return `\n**SEMANTICALLY RELATED SYMBOLS (via embeddings):**\n${nodeContext.relatedSymbols.map((s) => `- \`{@link ${s.relativeFilePath}}\` - \`${s.name}\` (${s.kind}) - Score: ${s.relationshipScore.toFixed(2)}`).join("\n")}\n`;
     }
-    return '';
+    return "";
   }
 
   buildPrompt(
@@ -72,7 +75,7 @@ Always use proper JSDoc tags and maintain consistency in formatting.
 When generating examples, ensure they are realistic and demonstrate actual usage patterns.
 If the code is truly trivial or purely a type definition that explicitly doesn't need behavioral documentation, respond with a single word "SKIP".`;
 
-    const userPrompt = `Generate a JSDoc comment for the following TypeScript ${nodeContext.nodeKind} named '${nodeContext.nodeName || 'Unnamed'}'.
+    const userPrompt = `Generate a JSDoc comment for the following TypeScript ${nodeContext.nodeKind} named '${nodeContext.nodeName || "Unnamed"}'.
 Follow these guidelines:
 - Adhere strictly to the provided JSDoc template structure.
 - Fill in all sections accurately based on the code and context.
@@ -84,10 +87,10 @@ Follow these guidelines:
 **CONTEXT:**
 - File: ${nodeContext.fileContext}
 - Package: ${nodeContext.packageContext}
-${nodeContext.signatureDetails ? `- Signature: \`${nodeContext.signatureDetails}\`\n` : ''}
+${nodeContext.signatureDetails ? `- Signature: \`${nodeContext.signatureDetails}\`\n` : ""}
 
-${nodeContext.surroundingContext ? `\n**SURROUNDING CONTEXT (e.g., parent class/interface/module):**\n\`\`\`typescript\n${nodeContext.surroundingContext}\n\`\`\`\n` : ''}
-${nodeContext.relevantImports && nodeContext.relevantImports.length > 0 ? `\n**RELEVANT IMPORTS:**\n\`\`\`typescript\n${nodeContext.relevantImports.join('\n')}\n\`\`\`\n` : ''}
+${nodeContext.surroundingContext ? `\n**SURROUNDING CONTEXT (e.g., parent class/interface/module):**\n\`\`\`typescript\n${nodeContext.surroundingContext}\n\`\`\`\n` : ""}
+${nodeContext.relevantImports && nodeContext.relevantImports.length > 0 ? `\n**RELEVANT IMPORTS:**\n\`\`\`typescript\n${nodeContext.relevantImports.join("\n")}\n\`\`\`\n` : ""}
 ${this.buildSymbolReferencesSection(nodeContext, config)}
 ${this.buildRelatedSymbolsSection(nodeContext, config)}
 
@@ -112,7 +115,7 @@ Generate ONLY the JSDoc comment content. Do NOT include markdown code fences (\`
  * This strategy aims for concise JSDoc comments, suitable for basic documentation.
  */
 export class MinimalPromptStrategy implements PromptStrategy {
-  name = 'minimal';
+  name = "minimal";
   buildPrompt(
     nodeContext: NodeContext,
     config: GeneratorConfig,
@@ -123,7 +126,7 @@ Your goal is to generate short, essential JSDoc comments.
 Focus only on @summary, essential @param/@returns, and a simple @example if strictly necessary.
 If the code is self-explanatory, respond with "SKIP".`;
 
-    const userPrompt = `Generate a very concise JSDoc comment for the following TypeScript ${nodeContext.nodeKind} named '${nodeContext.nodeName || 'Unnamed'}'.
+    const userPrompt = `Generate a very concise JSDoc comment for the following TypeScript ${nodeContext.nodeKind} named '${nodeContext.nodeName || "Unnamed"}'.
 Use the provided JSDoc template.
 Prioritize brevity and essential information.
 Do not include @see, @remarks, or overly detailed descriptions.
@@ -148,8 +151,11 @@ Generate ONLY the JSDoc comment content. Do NOT include markdown code fences (\`
  * Implements a detailed prompt strategy.
  * This strategy aims for comprehensive JSDoc comments, including deep context and references.
  */
-export class DetailedPromptStrategy extends StandardPromptStrategy implements PromptStrategy {
-  name = 'detailed';
+export class DetailedPromptStrategy
+  extends StandardPromptStrategy
+  implements PromptStrategy
+{
+  name = "detailed";
   buildPrompt(
     nodeContext: NodeContext,
     config: GeneratorConfig,
@@ -176,7 +182,10 @@ You are operating as an expert TypeScript architect. Provide extensive detail on
 - Include @throws for all possible errors with conditions.
 - Use @remarks for implementation details, design rationale, or future considerations.`;
 
-    return { systemPrompt: detailedSystemPrompt, userPrompt: detailedUserPrompt };
+    return {
+      systemPrompt: detailedSystemPrompt,
+      userPrompt: detailedUserPrompt,
+    };
   }
 }
 
@@ -215,7 +224,9 @@ export class SmartPromptBuilder {
     templateContent: string,
   ): { systemPrompt: string; userPrompt: string } {
     const strategy = this.selectStrategy(nodeContext, config);
-    return this.strategies.get(strategy)!.buildPrompt(nodeContext, config, templateContent);
+    return this.strategies
+      .get(strategy)!
+      .buildPrompt(nodeContext, config, templateContent);
   }
 
   /**
@@ -226,10 +237,14 @@ export class SmartPromptBuilder {
    * @param config The generator configuration.
    * @returns The name of the selected prompt strategy.
    */
-  private selectStrategy(nodeContext: NodeContext, config: GeneratorConfig): string {
+  private selectStrategy(
+    nodeContext: NodeContext,
+    config: GeneratorConfig,
+  ): string {
     const codeLength = nodeContext.codeSnippet.length;
     const hasRelatedSymbols = (nodeContext.relatedSymbols?.length || 0) > 0;
-    const isExportedOrPublic = nodeContext.isExported || nodeContext.accessModifier === 'public';
+    const isExportedOrPublic =
+      nodeContext.isExported || nodeContext.accessModifier === "public";
 
     // Heuristics for strategy selection:
     // 1. Detailed for complex, important, or highly interconnected code.
@@ -238,23 +253,27 @@ export class SmartPromptBuilder {
 
     if (
       isExportedOrPublic &&
-      (codeLength > 500 || hasRelatedSymbols || config.jsdocConfig.generateExamples)
+      (codeLength > 500 ||
+        hasRelatedSymbols ||
+        config.jsdocConfig.generateExamples)
     ) {
       logger.trace(
         `Prompt Strategy: Detailed for ${nodeContext.nodeName} (exported/public, complex/related/examples)`,
       );
-      return 'detailed';
+      return "detailed";
     } else if (
       codeLength < 100 &&
       !nodeContext.surroundingContext &&
       !hasRelatedSymbols &&
       !config.jsdocConfig.generateExamples
     ) {
-      logger.trace(`Prompt Strategy: Minimal for ${nodeContext.nodeName} (simple)`);
-      return 'minimal';
+      logger.trace(
+        `Prompt Strategy: Minimal for ${nodeContext.nodeName} (simple)`,
+      );
+      return "minimal";
     } else {
       logger.trace(`Prompt Strategy: Standard for ${nodeContext.nodeName}`);
-      return 'standard';
+      return "standard";
     }
   }
 }

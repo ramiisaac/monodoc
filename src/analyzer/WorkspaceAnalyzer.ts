@@ -1,11 +1,16 @@
-import { Project } from 'ts-morph';
-import path from 'path';
-import { WorkspacePackage, FileBatch, GeneratorConfig, DetailedSymbolInfo } from '../types';
-import { PackageDetector } from './PackageDetector';
-import { FileBatcher } from './FileBatcher';
-import { SymbolReferenceAnalyzer } from './SymbolReferenceAnalyzer';
-import { logger } from '../utils/logger';
-import { AnalysisError } from '../utils/errorHandling';
+import { Project } from "ts-morph";
+import path from "path";
+import {
+  WorkspacePackage,
+  FileBatch,
+  GeneratorConfig,
+  DetailedSymbolInfo,
+} from "../types";
+import { PackageDetector } from "./PackageDetector";
+import { FileBatcher } from "./FileBatcher";
+import { SymbolReferenceAnalyzer } from "./SymbolReferenceAnalyzer";
+import { logger } from "../utils/logger";
+import { AnalysisError } from "../utils/errorHandling";
 
 // No direct globby or path import needed here, they are used in sub-components
 
@@ -25,7 +30,10 @@ export class WorkspaceAnalyzer {
     this.packageDetector = new PackageDetector();
     this.fileBatcher = new FileBatcher();
     // SymbolReferenceAnalyzer needs the project instance and base directory
-    this.symbolReferenceAnalyzer = new SymbolReferenceAnalyzer(this.project, process.cwd());
+    this.symbolReferenceAnalyzer = new SymbolReferenceAnalyzer(
+      this.project,
+      process.cwd(),
+    );
   }
 
   /**
@@ -59,7 +67,7 @@ export class WorkspaceAnalyzer {
     // or just assume `project.addSourceFilesByPaths` with globs and `ignoreFilePatterns` (if available).
 
     // Corrected way to add files that are relevant:
-    const filesToConsider = await this.fileBatcher['collectFiles'](
+    const filesToConsider = await this.fileBatcher["collectFiles"](
       [pkg],
       {
         includePatterns: includePatterns,
@@ -110,10 +118,12 @@ export class WorkspaceAnalyzer {
    * @throws AnalysisError if program building fails.
    */
   private async buildProject(): Promise<void> {
-    logger.info('⏳ Building ts-morph program for comprehensive type and symbol resolution...');
+    logger.info(
+      "⏳ Building ts-morph program for comprehensive type and symbol resolution...",
+    );
     try {
       this.project.resolveSourceFileDependencies(); // This resolves all dependencies and types
-      logger.success('✅ ts-morph program built successfully.');
+      logger.success("✅ ts-morph program built successfully.");
     } catch (e) {
       throw new AnalysisError(
         `Failed to build ts-morph program. This might indicate issues with your tsconfig files or circular dependencies: ${e instanceof Error ? e.message : String(e)}`,
@@ -138,16 +148,21 @@ export class WorkspaceAnalyzer {
     symbolMap: Map<string, DetailedSymbolInfo>;
   }> {
     // 1. Discover packages
-    const packages = await this.packageDetector.discoverPackages(config.workspaceDirs, baseDir);
+    const packages = await this.packageDetector.discoverPackages(
+      config.workspaceDirs,
+      baseDir,
+    );
     if (packages.length === 0) {
       logger.warn(
-        'No packages found to analyze in the configured workspace directories. Please check your `workspaceDirs` configuration.',
+        "No packages found to analyze in the configured workspace directories. Please check your `workspaceDirs` configuration.",
       );
       return { packages: [], batches: [], symbolMap: new Map() };
     }
 
     // 2. Add source files to ts-morph project
-    logger.info('🏗️  Adding source files to ts-morph project for full analysis...');
+    logger.info(
+      "🏗️  Adding source files to ts-morph project for full analysis...",
+    );
     let totalFilesAdded = 0;
     for (const pkg of packages) {
       totalFilesAdded += await this.addPackageSourceFiles(
@@ -157,14 +172,20 @@ export class WorkspaceAnalyzer {
         config.ignorePatterns,
       );
     }
-    logger.success(`✅ Added ${totalFilesAdded} source files to ts-morph project.`);
+    logger.success(
+      `✅ Added ${totalFilesAdded} source files to ts-morph project.`,
+    );
 
     // 3. Build the ts-morph program (resolve types, symbols)
     await this.buildProject();
 
     // 4. Create file batches (after files are added and sorted by priority)
     // Pass the actual project to FileBatcher so it can get up-to-date source files if needed.
-    const batches = await this.fileBatcher.createBatches(packages, config, baseDir);
+    const batches = await this.fileBatcher.createBatches(
+      packages,
+      config,
+      baseDir,
+    );
 
     // 5. Analyze symbol references across the entire project
     const symbolMap = await this.symbolReferenceAnalyzer.analyzeSymbols();

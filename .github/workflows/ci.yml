@@ -23,19 +23,14 @@ jobs:
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          cache: 'pnpm'
+          cache: 'npm'
           node-version: ${{ matrix.node-version }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Lint code
-        run: pnpm run lint
+        run: npm run lint
 
       - name: Run tests & Collect coverage
         env:
@@ -43,7 +38,7 @@ jobs:
           TEST_GOOGLE_API_KEY: ${{ secrets.TEST_GOOGLE_API_KEY }}
           TEST_ANTHROPIC_API_KEY: ${{ secrets.TEST_ANTHROPIC_API_KEY }}
           TEST_OLLAMA_HOST: http://localhost:11434 # Ollama usually runs on localhost for tests
-        run: pnpm run test -- --coverage --verbose
+        run: npm run test -- --coverage --verbose
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -52,10 +47,10 @@ jobs:
         if: matrix.node-version == 18 && matrix.os == 'ubuntu-latest' # Only upload once
 
       - name: Type check
-        run: pnpm run typecheck
+        run: npm run typecheck
 
       - name: Build project
-        run: pnpm run build
+        run: npm run build
 
       - name: Test CLI commands (on Linux)
         if: matrix.os == 'ubuntu-latest'
@@ -65,6 +60,6 @@ jobs:
           node dist/src/cli.js validate-config --help
 
       - name: Run security audit
-        run: pnpm audit --audit-level=moderate
+        run: npm audit --audit-level=moderate
         continue-on-error: true # Allow build to pass even with moderate issues for PRs
 

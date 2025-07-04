@@ -1,5 +1,5 @@
-import { GeneratorConfig } from '../types';
-import { logger } from './logger';
+import { GeneratorConfig } from "../types";
+import { logger } from "./logger";
 
 /**
  * Provides utilities for optimizing the generator's configuration for production
@@ -28,7 +28,10 @@ export class ProductionOptimizer {
       200,
     );
     // Reduce retries if API errors are frequent (fail faster)
-    optimized.aiClientConfig.maxRetries = Math.min(optimized.aiClientConfig.maxRetries, 3);
+    optimized.aiClientConfig.maxRetries = Math.min(
+      optimized.aiClientConfig.maxRetries,
+      3,
+    );
 
     // --- Embedding Optimization ---
     if (optimized.embeddingConfig.enabled) {
@@ -40,7 +43,7 @@ export class ProductionOptimizer {
     }
 
     // --- Output & JSDoc Generation Optimization ---
-    optimized.outputConfig.logLevel = 'info'; // Default to 'info' for less noise in production logs
+    optimized.outputConfig.logLevel = "info"; // Default to 'info' for less noise in production logs
     optimized.jsdocConfig.generateExamples = false; // Disable complex example generation to save tokens/cost
     optimized.jsdocConfig.minJsdocLength = 50; // Ensure minimum useful JSDoc length
 
@@ -80,7 +83,7 @@ export class ProductionOptimizer {
       };
     }
 
-    logger.info('⚙️ Configuration optimized for production.');
+    logger.info("⚙️ Configuration optimized for production.");
     return optimized;
   }
 
@@ -95,16 +98,22 @@ export class ProductionOptimizer {
 
     // --- Basic Configuration Checks ---
     if (!config.aiModels || config.aiModels.length === 0) {
-      issues.push('No AI models are configured. Production requires at least one.');
+      issues.push(
+        "No AI models are configured. Production requires at least one.",
+      );
     }
     if (!config.workspaceDirs || config.workspaceDirs.length === 0) {
-      issues.push('No workspace directories specified. Nothing to process.');
+      issues.push("No workspace directories specified. Nothing to process.");
     }
     if (!config.outputConfig.reportDir) {
-      issues.push('Report directory not configured. Important for production traceability.');
+      issues.push(
+        "Report directory not configured. Important for production traceability.",
+      );
     }
     if (!config.outputConfig.reportFileName) {
-      issues.push('Report file name not configured. Important for production traceability.');
+      issues.push(
+        "Report file name not configured. Important for production traceability.",
+      );
     }
 
     // --- AI Client & LLM Specific Checks ---
@@ -113,20 +122,22 @@ export class ProductionOptimizer {
       config.aiClientConfig.maxConcurrentRequests > 10
     ) {
       issues.push(
-        '`aiClientConfig.maxConcurrentRequests` should be a reasonable number (e.g., 1-10) for production stability.',
+        "`aiClientConfig.maxConcurrentRequests` should be a reasonable number (e.g., 1-10) for production stability.",
       );
     }
     if (config.aiClientConfig.maxRetries < 2) {
-      issues.push('`aiClientConfig.maxRetries` is too low for production (recommended >= 2).');
+      issues.push(
+        "`aiClientConfig.maxRetries` is too low for production (recommended >= 2).",
+      );
     }
     if (config.aiClientConfig.retryDelayMs < 500) {
       issues.push(
-        '`aiClientConfig.retryDelayMs` is too low for production (recommended >= 500ms).',
+        "`aiClientConfig.retryDelayMs` is too low for production (recommended >= 500ms).",
       );
     }
     if (config.aiClientConfig.maxTokensPerBatch < 2000) {
       issues.push(
-        '`aiClientConfig.maxTokensPerBatch` is very low for production, may lead to excessive API calls. (recommended >= 2000).',
+        "`aiClientConfig.maxTokensPerBatch` is very low for production, may lead to excessive API calls. (recommended >= 2000).",
       );
     }
 
@@ -136,40 +147,55 @@ export class ProductionOptimizer {
     );
     if (!hasApiKeyConfigured) {
       issues.push(
-        'No AI model has its `apiKeyEnvVar` set in the environment. Production deployment will fail without API access.',
+        "No AI model has its `apiKeyEnvVar` set in the environment. Production deployment will fail without API access.",
       );
     }
 
     // --- Performance & Stability Checks ---
     if (config.performance?.timeoutMs && config.performance.timeoutMs < 30000) {
       issues.push(
-        '`performance.timeoutMs` is too low for production use (recommended >= 30000ms).',
+        "`performance.timeoutMs` is too low for production use (recommended >= 30000ms).",
       );
     }
     if (!(config.performance?.enableCaching === true)) {
       issues.push(
-        'Caching is not explicitly enabled. Highly recommended for production to reduce cost and improve speed.',
+        "Caching is not explicitly enabled. Highly recommended for production to reduce cost and improve speed.",
       );
     }
-    if (config.performance?.maxConcurrentFiles && config.performance.maxConcurrentFiles < 1) {
-      issues.push('`performance.maxConcurrentFiles` should be at least 1 for any processing.');
+    if (
+      config.performance?.maxConcurrentFiles &&
+      config.performance.maxConcurrentFiles < 1
+    ) {
+      issues.push(
+        "`performance.maxConcurrentFiles` should be at least 1 for any processing.",
+      );
     }
 
     // --- Telemetry Check (Recommendation for Prod) ---
     if (!(config.telemetry?.enabled === true)) {
-      issues.push('Telemetry is not enabled. Recommended for production monitoring and debugging.');
-    } else if (!config.telemetry.endpoint && process.env.NODE_ENV !== 'development') {
-      issues.push('Telemetry is enabled but no `endpoint` is configured. Data will not be sent.');
-    }
-
-    // --- JSDoc Config Checks ---
-    if (!config.jsdocConfig.minJsdocLength || config.jsdocConfig.minJsdocLength < 30) {
       issues.push(
-        '`jsdocConfig.minJsdocLength` is very low, may result in trivial or unhelpful JSDocs in production.',
+        "Telemetry is not enabled. Recommended for production monitoring and debugging.",
+      );
+    } else if (
+      !config.telemetry.endpoint &&
+      process.env.NODE_ENV !== "development"
+    ) {
+      issues.push(
+        "Telemetry is enabled but no `endpoint` is configured. Data will not be sent.",
       );
     }
 
-    logger.info('Completed production readiness validation.');
+    // --- JSDoc Config Checks ---
+    if (
+      !config.jsdocConfig.minJsdocLength ||
+      config.jsdocConfig.minJsdocLength < 30
+    ) {
+      issues.push(
+        "`jsdocConfig.minJsdocLength` is very low, may result in trivial or unhelpful JSDocs in production.",
+      );
+    }
+
+    logger.info("Completed production readiness validation.");
     return issues;
   }
 }

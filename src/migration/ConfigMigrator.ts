@@ -1,6 +1,6 @@
-import { GeneratorConfig } from '../types';
-import { logger } from '../utils/logger';
-import { deepMerge } from '../config'; // Using the deepMerge utility
+import { GeneratorConfig } from "../types";
+import { logger } from "../utils/logger";
+import { deepMerge } from "../config"; // Using the deepMerge utility
 
 /**
  * Type alias for a configuration object whose structure is not yet fully known.
@@ -26,10 +26,10 @@ export class ConfigMigrator {
   // Each rule specifies a transformation from one conceptual version to the next.
   private migrations: MigrationRule[] = [
     {
-      fromVersion: '1.0.0', // Original version with basic LLM and JSDoc config
-      toVersion: '1.1.0',
+      fromVersion: "1.0.0", // Original version with basic LLM and JSDoc config
+      toVersion: "1.1.0",
       description:
-        'Introduce `aiModels` and `aiClientConfig` for Vercel AI SDK integration, and remove `llmProviders`.',
+        "Introduce `aiModels` and `aiClientConfig` for Vercel AI SDK integration, and remove `llmProviders`.",
       migrate: (config: UnknownConfig) => {
         const oldConfig = config as any; // Corrected `any` usage
         const newConfig: any = { ...config };
@@ -37,8 +37,8 @@ export class ConfigMigrator {
         // New AI SDK related fields
         newConfig.aiModels = [];
         newConfig.aiClientConfig = {
-          defaultGenerationModelId: 'openai-gpt4o', // Set default from common model
-          defaultEmbeddingModelId: 'openai-embedding', // Set default embedding model
+          defaultGenerationModelId: "openai-gpt4o", // Set default from common model
+          defaultEmbeddingModelId: "openai-embedding", // Set default embedding model
           maxConcurrentRequests: oldConfig.aiConfig?.maxConcurrentRequests || 3,
           requestDelayMs: oldConfig.aiConfig?.requestDelayMs || 500,
           maxRetries: oldConfig.aiConfig?.maxRetries || 5,
@@ -59,16 +59,20 @@ export class ConfigMigrator {
             };
 
             if (provider.isEmbeddingModel) {
-              newModel.type = 'embedding';
+              newModel.type = "embedding";
               newModel.dimensions = provider.embeddingConfig?.dimensions;
             } else {
-              newModel.type = 'generation';
+              newModel.type = "generation";
               newModel.temperature = provider.generationConfig?.temperature;
               newModel.maxOutputTokens =
-                provider.generationConfig?.max_tokens || provider.generationConfig?.maxOutputTokens;
-              newModel.topP = provider.generationConfig?.top_p || provider.generationConfig?.topP;
+                provider.generationConfig?.max_tokens ||
+                provider.generationConfig?.maxOutputTokens;
+              newModel.topP =
+                provider.generationConfig?.top_p ||
+                provider.generationConfig?.topP;
               newModel.topK = provider.generationConfig?.topK;
-              newModel.responseFormat = provider.generationConfig?.response_format;
+              newModel.responseFormat =
+                provider.generationConfig?.response_format;
               newModel.stopSequences = provider.generationConfig?.stopSequences;
               newModel.enableSafetyFeatures = provider.enableSafetyFeatures;
             }
@@ -78,7 +82,10 @@ export class ConfigMigrator {
           if (oldConfig.defaultLLMProviderId) {
             (newConfig.aiClientConfig as any).defaultGenerationModelId =
               oldConfig.defaultLLMProviderId; // Corrected `any` usage
-            if (oldConfig.embeddingConfig?.enabled && oldConfig.embeddingConfig?.providerId) {
+            if (
+              oldConfig.embeddingConfig?.enabled &&
+              oldConfig.embeddingConfig?.providerId
+            ) {
               (newConfig.aiClientConfig as any).defaultEmbeddingModelId =
                 oldConfig.embeddingConfig.providerId; // Corrected `any` usage
             }
@@ -89,7 +96,10 @@ export class ConfigMigrator {
         delete newConfig.llmProviders;
         delete newConfig.defaultLLMProviderId;
         delete newConfig.aiConfig;
-        if (newConfig.embeddingConfig && typeof newConfig.embeddingConfig === 'object') {
+        if (
+          newConfig.embeddingConfig &&
+          typeof newConfig.embeddingConfig === "object"
+        ) {
           delete (newConfig.embeddingConfig as any).providerId; // Now uses modelId // Corrected `any` usage
         }
 
@@ -97,18 +107,25 @@ export class ConfigMigrator {
       },
     },
     {
-      fromVersion: '1.1.0',
-      toVersion: '1.2.0',
+      fromVersion: "1.1.0",
+      toVersion: "1.2.0",
       description:
-        'Refine embedding configuration to use `modelId` and ensure default performance/telemetry settings.',
+        "Refine embedding configuration to use `modelId` and ensure default performance/telemetry settings.",
       migrate: (config: UnknownConfig) => {
         const oldConfig = config as any; // Corrected `any` usage
         const newConfig: any = { ...config };
 
         // Ensure embeddingConfig uses `modelId` and is consistent
-        if (oldConfig.embeddingConfig && typeof oldConfig.embeddingConfig === 'object') {
-          if (oldConfig.embeddingConfig.providerId && !oldConfig.embeddingConfig.modelId) {
-            (newConfig.embeddingConfig as any).modelId = oldConfig.embeddingConfig.providerId; // Corrected `any` usage
+        if (
+          oldConfig.embeddingConfig &&
+          typeof oldConfig.embeddingConfig === "object"
+        ) {
+          if (
+            oldConfig.embeddingConfig.providerId &&
+            !oldConfig.embeddingConfig.modelId
+          ) {
+            (newConfig.embeddingConfig as any).modelId =
+              oldConfig.embeddingConfig.providerId; // Corrected `any` usage
           }
           delete (newConfig.embeddingConfig as any).providerId; // Corrected `any` usage
         }
@@ -134,7 +151,7 @@ export class ConfigMigrator {
         }
 
         // Ensure productionMode is explicitly defined
-        if (typeof newConfig.productionMode === 'undefined') {
+        if (typeof newConfig.productionMode === "undefined") {
           newConfig.productionMode = false;
         }
 
@@ -146,7 +163,7 @@ export class ConfigMigrator {
   ];
 
   // Add these properties
-  private latestVersion = '2.0.1';
+  private latestVersion = "2.0.1";
 
   /**
    * Migrates a configuration object from its current version to the latest supported version.
@@ -156,20 +173,30 @@ export class ConfigMigrator {
    *                    it attempts to read from `config.version` or defaults to '1.0.0'.
    * @returns A Promise resolving to the migrated `GeneratorConfig`.
    */
-  async migrateConfig(config: UnknownConfig, fromVersion?: string): Promise<GeneratorConfig> {
-    const initialConfigVersion = fromVersion || (config.version as string) || '1.0.0';
+  async migrateConfig(
+    config: UnknownConfig,
+    fromVersion?: string,
+  ): Promise<GeneratorConfig> {
+    const initialConfigVersion =
+      fromVersion || (config.version as string) || "1.0.0";
     let migratedConfig = deepMerge({}, config) as any; // Start with a deep copy to avoid modifying original
     let currentConfigVersion = initialConfigVersion;
 
-    logger.info(`🔄 Starting configuration migration from version ${initialConfigVersion}`);
+    logger.info(
+      `🔄 Starting configuration migration from version ${initialConfigVersion}`,
+    );
 
     for (const migration of this.migrations) {
       // Check if this migration rule should be applied
-      if (this.shouldApplyMigration(currentConfigVersion, migration.fromVersion)) {
-        logger.info(`  📝 Applying migration to v${migration.toVersion}: ${migration.description}`);
+      if (
+        this.shouldApplyMigration(currentConfigVersion, migration.fromVersion)
+      ) {
+        logger.info(
+          `  📝 Applying migration to v${migration.toVersion}: ${migration.description}`,
+        );
         try {
           if (!migratedConfig.version) {
-            migratedConfig.version = ''; // Initialize version if it doesn't exist
+            migratedConfig.version = ""; // Initialize version if it doesn't exist
           }
           migratedConfig = migration.migrate(migratedConfig);
           // Update the version of the config after successful migration step
@@ -180,15 +207,17 @@ export class ConfigMigrator {
             `❌ Failed to apply migration to v${migration.toVersion}: ${error instanceof Error ? error.message : String(error)}`,
           );
           // Decide whether to throw or continue with warnings. For critical config, throwing is safer.
-          throw new Error(`Configuration migration failed at version ${migration.toVersion}.`);
+          throw new Error(
+            `Configuration migration failed at version ${migration.toVersion}.`,
+          );
         }
       }
     }
 
     // Ensure the config object has the latest internal version marker
-    migratedConfig.version = process.env.npm_package_version || '2.0.1'; // Update to the actual latest app version
+    migratedConfig.version = process.env.npm_package_version || "2.0.1"; // Update to the actual latest app version
 
-    logger.success('✅ Configuration migration completed.');
+    logger.success("✅ Configuration migration completed.");
     return migratedConfig as GeneratorConfig;
   }
 
@@ -212,19 +241,24 @@ export class ConfigMigrator {
         break;
       }
 
-      logger.info(`Migrating configuration from v${currentVersion} to v${migration.toVersion}`);
+      logger.info(
+        `Migrating configuration from v${currentVersion} to v${migration.toVersion}`,
+      );
       try {
         migratedConfig = migration.migrate(migratedConfig);
         migratedConfig.version = migration.toVersion;
         currentVersion = migration.toVersion;
       } catch (error) {
-        logger.error(`Migration from v${currentVersion} to v${migration.toVersion} failed:`, error);
+        logger.error(
+          `Migration from v${currentVersion} to v${migration.toVersion} failed:`,
+          error,
+        );
         throw error;
       }
     }
 
     // Ensure the version is set to the latest
-    migratedConfig.version = process.env.npm_package_version || '2.0.1'; // Update to the actual latest app version
+    migratedConfig.version = process.env.npm_package_version || "2.0.1"; // Update to the actual latest app version
 
     return migratedConfig;
   }
@@ -235,22 +269,22 @@ export class ConfigMigrator {
    * @returns The detected version string.
    */
   private detectVersion(config: UnknownConfig): string {
-    if (config.version && typeof config.version === 'string') {
+    if (config.version && typeof config.version === "string") {
       return config.version;
     }
 
     // Legacy detection logic
-    if ('llmProviders' in config) {
-      return '1.0.0';
+    if ("llmProviders" in config) {
+      return "1.0.0";
     }
     if (
-      'aiModels' in config &&
-      !('embeddingConfig' in config && (config.embeddingConfig as any)?.modelId)
+      "aiModels" in config &&
+      !("embeddingConfig" in config && (config.embeddingConfig as any)?.modelId)
     ) {
-      return '1.1.0';
+      return "1.1.0";
     }
 
-    return '1.0.0'; // Default to oldest version
+    return "1.0.0"; // Default to oldest version
   }
 
   /**
@@ -258,7 +292,9 @@ export class ConfigMigrator {
    * @param fromVersion The version to migrate from.
    * @returns The migration rule or undefined if not found.
    */
-  private getMigrationForVersion(fromVersion: string): MigrationRule | undefined {
+  private getMigrationForVersion(
+    fromVersion: string,
+  ): MigrationRule | undefined {
     return this.migrations.find((m) => m.fromVersion === fromVersion);
   }
 
@@ -274,7 +310,9 @@ export class ConfigMigrator {
     currentConfigVersion: string,
     migrationFromVersion: string,
   ): boolean {
-    return this.compareVersions(currentConfigVersion, migrationFromVersion) >= 0;
+    return (
+      this.compareVersions(currentConfigVersion, migrationFromVersion) >= 0
+    );
   }
 
   /**
@@ -284,8 +322,8 @@ export class ConfigMigrator {
    * @returns -1 if v1 < v2, 0 if v1 == v2, 1 if v1 > v2.
    */
   private compareVersions(v1: string, v2: string): number {
-    const parts1 = v1.split('.').map(Number);
-    const parts2 = v2.split('.').map(Number);
+    const parts1 = v1.split(".").map(Number);
+    const parts2 = v2.split(".").map(Number);
 
     for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
       const p1 = parts1[i] || 0;
@@ -303,14 +341,14 @@ export class ConfigMigrator {
    */
   private mapOldProviderType(oldType: string): string {
     switch (oldType) {
-      case 'openai':
-        return 'openai';
-      case 'google-gemini':
-        return 'google';
-      case 'anthropic-claude':
-        return 'anthropic';
-      case 'ollama-local':
-        return 'ollama';
+      case "openai":
+        return "openai";
+      case "google-gemini":
+        return "google";
+      case "anthropic-claude":
+        return "anthropic";
+      case "ollama-local":
+        return "ollama";
       default:
         return oldType; // Keep as is if unknown, might be a custom provider
     }

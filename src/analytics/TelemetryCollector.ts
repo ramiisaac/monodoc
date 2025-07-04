@@ -1,6 +1,6 @@
-import { TelemetryData, ProcessingStats, GeneratorConfig } from '../types';
-import { logger } from '../utils/logger';
-import crypto from 'crypto';
+import { TelemetryData, ProcessingStats, GeneratorConfig } from "../types";
+import { logger } from "../utils/logger";
+import crypto from "crypto";
 
 /**
  * Collects various telemetry data points about the application's usage,
@@ -19,7 +19,7 @@ export class TelemetryCollector {
    * @param config The GeneratorConfig at the time of initialization.
    */
   private constructor(config: GeneratorConfig) {
-    this.sessionId = crypto.randomBytes(16).toString('hex');
+    this.sessionId = crypto.randomBytes(16).toString("hex");
     this.config = config;
   }
 
@@ -73,7 +73,7 @@ export class TelemetryCollector {
     const telemetryData: TelemetryData = {
       sessionId: this.sessionId, // Use the instance's session ID
       timestamp: new Date(),
-      version: process.env.npm_package_version || '2.0.1', // Current app version
+      version: process.env.npm_package_version || "2.0.1", // Current app version
       environment: {
         nodeVersion: process.version,
         platform: process.platform,
@@ -93,7 +93,8 @@ export class TelemetryCollector {
    */
   private getConfigurationData() {
     const aiModelsCount = this.config.aiModels?.length || 0;
-    const pluginsEnabledCount = this.config.plugins?.filter((p) => p.enabled).length || 0;
+    const pluginsEnabledCount =
+      this.config.plugins?.filter((p) => p.enabled).length || 0;
 
     return {
       aiModelsCount: aiModelsCount,
@@ -134,16 +135,23 @@ export class TelemetryCollector {
    */
   private getQualityData(stats: ProcessingStats) {
     const safeDivide = (a: number, b: number) => (b > 0 ? a / b : 0);
-    const successRate = safeDivide(stats.successfulJsdocs, Math.max(stats.totalNodesConsidered, 1));
+    const successRate = safeDivide(
+      stats.successfulJsdocs,
+      Math.max(stats.totalNodesConsidered, 1),
+    );
 
     // A simplified quality score calculation for telemetry
     const baseScore = successRate * 100;
     const errorPenalty =
-      safeDivide(stats.errors.length, Math.max(stats.totalNodesConsidered, 1)) * 10;
+      safeDivide(stats.errors.length, Math.max(stats.totalNodesConsidered, 1)) *
+      10;
     const embeddingBonus = this.config.embeddingConfig?.enabled ? 5 : 0;
 
     return {
-      averageScore: Math.max(0, Math.min(100, baseScore - errorPenalty + embeddingBonus)),
+      averageScore: Math.max(
+        0,
+        Math.min(100, baseScore - errorPenalty + embeddingBonus),
+      ),
       improvementSuggestions: stats.errors.length, // Number of errors can hint at needed improvements
       coveragePercentage: successRate * 100,
     };
@@ -182,15 +190,18 @@ export class TelemetryCollector {
    * @param data The TelemetryData to send.
    */
   async sendTelemetry(data: TelemetryData): Promise<void> {
-    if (!this.config.telemetry?.enabled || process.env.JSDOC_TELEMETRY_ENABLED !== 'true') {
-      logger.trace('Telemetry collection disabled - respecting user privacy');
+    if (
+      !this.config.telemetry?.enabled ||
+      process.env.JSDOC_TELEMETRY_ENABLED !== "true"
+    ) {
+      logger.trace("Telemetry collection disabled - respecting user privacy");
       return;
     }
 
     try {
-      logger.trace('Telemetry data collected and ready for transmission');
+      logger.trace("Telemetry data collected and ready for transmission");
 
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === "development") {
         await this.saveTelemetryLocally(data);
       } else if (this.config.telemetry.endpoint) {
         // Implement actual HTTP POST to this.config.telemetry.endpoint
@@ -201,9 +212,11 @@ export class TelemetryCollector {
         //   headers: { 'Content-Type': 'application/json' },
         //   body: JSON.stringify(data),
         // });
-        logger.info('📊 Telemetry data sent (mocked/development mode)'); // Change to success if actually sent
+        logger.info("📊 Telemetry data sent (mocked/development mode)"); // Change to success if actually sent
       } else {
-        logger.warn('Telemetry is enabled but no endpoint is configured for production.');
+        logger.warn(
+          "Telemetry is enabled but no endpoint is configured for production.",
+        );
       }
     } catch (error) {
       logger.warn(
@@ -217,12 +230,15 @@ export class TelemetryCollector {
    * @param data The TelemetryData to save.
    */
   private async saveTelemetryLocally(data: TelemetryData) {
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const telemetryDir = path.join(process.cwd(), '.jsdoc-telemetry');
+    const fs = await import("fs/promises");
+    const path = await import("path");
+    const telemetryDir = path.join(process.cwd(), ".jsdoc-telemetry");
     await fs.mkdir(telemetryDir, { recursive: true });
     const filename = `telemetry-${data.sessionId}-${Date.now()}.json`;
-    await fs.writeFile(path.join(telemetryDir, filename), JSON.stringify(data, null, 2));
+    await fs.writeFile(
+      path.join(telemetryDir, filename),
+      JSON.stringify(data, null, 2),
+    );
     logger.debug(`📊 Telemetry data saved locally: ${filename}`);
   }
 }

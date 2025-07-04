@@ -19,6 +19,7 @@
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "downlevelIteration": true,
+    "isolatedModules": true,
     "typeRoots": ["./node_modules/@types"]
   },
   "include": [

@@ -1,7 +1,7 @@
-import { ProcessingStats, TelemetryData } from '../types';
-import fs from 'fs/promises';
-import path from 'path';
-import { logger } from '../utils/logger';
+import { ProcessingStats, TelemetryData } from "../types";
+import fs from "fs/promises";
+import path from "path";
+import { logger } from "../utils/logger";
 
 /**
  * Represents historical data from a previous application run.
@@ -69,14 +69,14 @@ export interface UserEngagementMetrics {
  */
 export class AnalyticsDashboard {
   private analyticsDataDir: string;
-  private readonly HISTORY_FILE = 'history.json';
+  private readonly HISTORY_FILE = "history.json";
 
   /**
    * Creates an instance of AnalyticsDashboard.
    * @param baseDir The base directory of the project, where analytics data will be stored.
    */
   constructor(baseDir: string) {
-    this.analyticsDataDir = path.join(baseDir, '.jsdoc-analytics');
+    this.analyticsDataDir = path.join(baseDir, ".jsdoc-analytics");
   }
 
   /**
@@ -111,7 +111,9 @@ export class AnalyticsDashboard {
    * @param historicalData All historical run data.
    * @returns A Promise resolving to the DashboardMetrics.
    */
-  private async collectMetrics(historicalData: HistoricalRunData[]): Promise<DashboardMetrics> {
+  private async collectMetrics(
+    historicalData: HistoricalRunData[],
+  ): Promise<DashboardMetrics> {
     // Current telemetry data is already part of the last historical entry.
     // So we operate on the full historical data directly for aggregation.
     return {
@@ -144,8 +146,8 @@ Generated: ${new Date().toISOString()}
 \`\`\`
 Average Processing Time: ${metrics.performanceMetrics.averageProcessingTime.toFixed(2)}ms/file
 Cache Efficiency: ${(metrics.performanceMetrics.cacheHitRate * 100).toFixed(1)}%
-Memory Usage Trend: ${this.formatTrend(metrics.performanceMetrics.memoryUsagePattern, 'MB')}
-CPU Usage Trend: ${this.formatTrend(metrics.performanceMetrics.cpuUsagePattern, 'µs')}
+Memory Usage Trend: ${this.formatTrend(metrics.performanceMetrics.memoryUsagePattern, "MB")}
+CPU Usage Trend: ${this.formatTrend(metrics.performanceMetrics.cpuUsagePattern, "µs")}
 \`\`\`
 
 ## 📊 Processing Trends (Last 10 Runs)
@@ -154,7 +156,7 @@ ${metrics.processingTrends
     (trend: TimeSeriesData) =>
       `- ${new Date(trend.timestamp).toLocaleDateString()} ${new Date(trend.timestamp).toLocaleTimeString()}: ${trend.filesProcessed} files processed (${(trend.successRate * 100).toFixed(1)}% JSDoc success, avg time: ${trend.averageTime.toFixed(0)}ms/file)`,
   )
-  .join('\n')}
+  .join("\n")}
 
 ## ⚠️ Error Patterns
 ${metrics.errorPatterns
@@ -162,17 +164,17 @@ ${metrics.errorPatterns
     (pattern: ErrorPattern) =>
       `- **${pattern.errorType}**: ${pattern.frequency} occurrences\n  - Last seen: ${new Date(pattern.lastOccurrence).toLocaleDateString()}\n  - Suggested Fix: ${pattern.suggestedFix}`,
   )
-  .join('\n')}
+  .join("\n")}
 
 ## 🎯 Feature Usage
 ${Object.entries(metrics.userEngagement.featureUsage)
   .map(([feature, usage]) => `- \`${feature}\`: ${usage} uses`)
-  .join('\n')}
+  .join("\n")}
 
 ## 🔧 Configuration Patterns (Top Default LLM Providers)
 ${Object.entries(metrics.userEngagement.configurationPatterns)
   .map(([pattern, count]) => `- \`${pattern}\`: ${count} projects`)
-  .join('\n')}
+  .join("\n")}
 
 ---
 *This dashboard helps optimize JSDoc AI performance and user experience*
@@ -198,7 +200,9 @@ ${Object.entries(metrics.userEngagement.configurationPatterns)
    * @param historicalData All historical run data.
    * @returns An array of TimeSeriesData points.
    */
-  private analyzeProcessingTrends(historicalData: HistoricalRunData[]): TimeSeriesData[] {
+  private analyzeProcessingTrends(
+    historicalData: HistoricalRunData[],
+  ): TimeSeriesData[] {
     // Only keep the last 10 runs for trend analysis
     const recentHistory = historicalData.slice(-10);
     return recentHistory.map((item) => ({
@@ -216,25 +220,37 @@ ${Object.entries(metrics.userEngagement.configurationPatterns)
    * @param historicalData All historical run data.
    * @returns An array of ErrorPattern objects.
    */
-  private identifyErrorPatterns(historicalData: HistoricalRunData[]): ErrorPattern[] {
-    const allErrorsFromHistory = historicalData.flatMap((h) => h.stats.errors || []);
+  private identifyErrorPatterns(
+    historicalData: HistoricalRunData[],
+  ): ErrorPattern[] {
+    const allErrorsFromHistory = historicalData.flatMap(
+      (h) => h.stats.errors || [],
+    );
     const errorFrequency: Record<
       string,
       { count: number; lastOccurrence: Date; messages: Set<string> }
     > = {};
 
     allErrorsFromHistory.forEach((errEntry) => {
-      const errorType = errEntry.error?.split(':')[0]?.trim() || 'UnknownError';
+      const errorType = errEntry.error?.split(":")[0]?.trim() || "UnknownError";
       if (!errorFrequency[errorType]) {
-        errorFrequency[errorType] = { count: 0, lastOccurrence: new Date(0), messages: new Set() };
+        errorFrequency[errorType] = {
+          count: 0,
+          lastOccurrence: new Date(0),
+          messages: new Set(),
+        };
       }
       errorFrequency[errorType].count++;
-      const entryTimestamp = errEntry.timestamp ? new Date(errEntry.timestamp) : new Date();
+      const entryTimestamp = errEntry.timestamp
+        ? new Date(errEntry.timestamp)
+        : new Date();
       if (entryTimestamp > errorFrequency[errorType].lastOccurrence) {
         errorFrequency[errorType].lastOccurrence = entryTimestamp;
       }
       if (errEntry.error) {
-        errorFrequency[errorType].messages.add(errEntry.error.substring(0, 100)); // Store a snippet of unique messages
+        errorFrequency[errorType].messages.add(
+          errEntry.error.substring(0, 100),
+        ); // Store a snippet of unique messages
       }
     });
 
@@ -242,7 +258,7 @@ ${Object.entries(metrics.userEngagement.configurationPatterns)
       errorType: type,
       frequency: data.count,
       lastOccurrence: data.lastOccurrence,
-      suggestedFix: `Review logs for common messages. Example: '${Array.from(data.messages).join(' | ').substring(0, 75)}...'`,
+      suggestedFix: `Review logs for common messages. Example: '${Array.from(data.messages).join(" | ").substring(0, 75)}...'`,
     }));
   }
 
@@ -251,7 +267,9 @@ ${Object.entries(metrics.userEngagement.configurationPatterns)
    * @param historicalData All historical run data.
    * @returns The PerformanceMetrics object.
    */
-  private calculatePerformanceMetrics(historicalData: HistoricalRunData[]): PerformanceMetrics {
+  private calculatePerformanceMetrics(
+    historicalData: HistoricalRunData[],
+  ): PerformanceMetrics {
     const allProcessingTimes = historicalData
       .map((item) => item.telemetryData.performance.averageProcessingTime)
       .filter(Boolean) as number[];
@@ -267,7 +285,8 @@ ${Object.entries(metrics.userEngagement.configurationPatterns)
 
     const averageProcessingTime =
       allProcessingTimes.length > 0
-        ? allProcessingTimes.reduce((a, b) => a + b, 0) / allProcessingTimes.length
+        ? allProcessingTimes.reduce((a, b) => a + b, 0) /
+          allProcessingTimes.length
         : 0;
     const averageCacheHitRate =
       allCacheHitRates.length > 0
@@ -287,7 +306,9 @@ ${Object.entries(metrics.userEngagement.configurationPatterns)
    * @param historicalData All historical run data.
    * @returns The UserEngagementMetrics object.
    */
-  private analyzeUserEngagement(historicalData: HistoricalRunData[]): UserEngagementMetrics {
+  private analyzeUserEngagement(
+    historicalData: HistoricalRunData[],
+  ): UserEngagementMetrics {
     const recentSessions = new Set<string>();
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
 
@@ -303,14 +324,19 @@ ${Object.entries(metrics.userEngagement.configurationPatterns)
 
     historicalData.forEach((item) => {
       // Feature usage
-      for (const [feature, enabled] of Object.entries(item.telemetryData.usage?.features || {})) {
+      for (const [feature, enabled] of Object.entries(
+        item.telemetryData.usage?.features || {},
+      )) {
         if (enabled) {
           featureUsageCounts[feature] = (featureUsageCounts[feature] || 0) + 1;
         }
       }
       // Configuration patterns (e.g., primary LLM provider)
       const aiClientConfig =
-        (item.stats.configurationUsed?.aiClientConfig as Record<string, string>) || {};
+        (item.stats.configurationUsed?.aiClientConfig as Record<
+          string,
+          string
+        >) || {};
       const defaultGenerationModelId = aiClientConfig.defaultGenerationModelId;
       if (defaultGenerationModelId) {
         configPatternCounts[defaultGenerationModelId] =
@@ -342,14 +368,20 @@ ${Object.entries(metrics.userEngagement.configurationPatterns)
    */
   private async loadHistoricalData(): Promise<HistoricalRunData[]> {
     try {
-      const data = await fs.readFile(path.join(this.analyticsDataDir, this.HISTORY_FILE), 'utf-8');
+      const data = await fs.readFile(
+        path.join(this.analyticsDataDir, this.HISTORY_FILE),
+        "utf-8",
+      );
       const parsedData = JSON.parse(data) as HistoricalRunData[];
       // Ensure timestamps are Date objects
       return Array.isArray(parsedData)
-        ? parsedData.map((item) => ({ ...item, timestamp: new Date(item.timestamp) }))
+        ? parsedData.map((item) => ({
+            ...item,
+            timestamp: new Date(item.timestamp),
+          }))
         : [];
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         logger.debug(
           `Analytics history file not found at ${path.join(this.analyticsDataDir, this.HISTORY_FILE)}. Starting fresh.`,
         );
@@ -366,7 +398,9 @@ ${Object.entries(metrics.userEngagement.configurationPatterns)
    * Saves historical analytics data to the history file.
    * @param historicalData The array of HistoricalRunData to save.
    */
-  private async saveHistoricalData(historicalData: HistoricalRunData[]): Promise<void> {
+  private async saveHistoricalData(
+    historicalData: HistoricalRunData[],
+  ): Promise<void> {
     try {
       // Keep only the last 100 entries to prevent the file from growing too large
       const dataToSave = historicalData.slice(-100);
@@ -388,16 +422,16 @@ ${Object.entries(metrics.userEngagement.configurationPatterns)
    * @returns A formatted trend string.
    */
   private formatTrend(data: number[], unit: string): string {
-    if (!data || data.length < 2) return 'Insufficient data';
+    if (!data || data.length < 2) return "Insufficient data";
     const latest = data[data.length - 1];
     const initial = data[0];
-    let trend = '';
+    let trend = "";
     if (latest > initial) {
-      trend = '↗️ (Increasing)';
+      trend = "↗️ (Increasing)";
     } else if (latest < initial) {
-      trend = '↘️ (Decreasing)';
+      trend = "↘️ (Decreasing)";
     } else {
-      trend = '= (Stable)';
+      trend = "= (Stable)";
     }
     return `${trend} - Latest: ${latest.toFixed(1)}${unit}`;
   }

@@ -1,14 +1,20 @@
-import { CommandContext, CliOptions, ICommand, ProcessingStats, GeneratorConfig } from '../types';
-import { logger } from '../utils/logger';
-import { loadAndMergeConfig } from '../config';
-import { CacheManager } from '../utils/CacheManager';
-import { TelemetryCollector } from '../analytics/TelemetryCollector';
-import { PluginManager } from '../plugins/PluginManager';
-import { ReportGenerator } from '../reporting/ReportGenerator';
-import { Project } from 'ts-morph';
-import path from 'path';
-import { setLogLevel } from '../utils/logger';
-import { AIClient } from '../generator/AIClient';
+import {
+  CommandContext,
+  CliOptions,
+  ICommand,
+  ProcessingStats,
+  GeneratorConfig,
+} from "../types";
+import { logger } from "../utils/logger";
+import { loadAndMergeConfig } from "../config";
+import { CacheManager } from "../utils/CacheManager";
+import { TelemetryCollector } from "../analytics/TelemetryCollector";
+import { PluginManager } from "../plugins/PluginManager";
+import { ReportGenerator } from "../reporting/ReportGenerator";
+import { Project } from "ts-morph";
+import path from "path";
+import { setLogLevel } from "../utils/logger";
+import { AIClient } from "../generator/AIClient";
 
 /**
  * Manages the execution context and lifecycle of CLI commands.
@@ -46,7 +52,7 @@ export class CommandRunner {
         !this.project ||
         !this.reportGenerator
       ) {
-        throw new Error('CommandRunner context not fully initialized.');
+        throw new Error("CommandRunner context not fully initialized.");
       }
 
       // Create AIClient if not already present
@@ -67,7 +73,7 @@ export class CommandRunner {
       // Execute the command, passing the full context
       await command.execute(context);
 
-      logger.info('Command execution completed.');
+      logger.info("Command execution completed.");
     } catch (error) {
       logger.error(
         `Command execution failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -78,7 +84,9 @@ export class CommandRunner {
     } finally {
       // Ensure resources are cleaned up if necessary
       this.telemetry
-        ?.sendTelemetry(await this.telemetry.collectTelemetry({} as ProcessingStats))
+        ?.sendTelemetry(
+          await this.telemetry.collectTelemetry({} as ProcessingStats),
+        )
         .catch((err) => {
           logger.warn(`Failed to send final telemetry: ${err.message}`);
         });
@@ -91,7 +99,7 @@ export class CommandRunner {
    * This method ensures that all commands have access to a consistent set of tools and data.
    */
   private async initializeContext(): Promise<void> {
-    logger.debug('Initializing command context...');
+    logger.debug("Initializing command context...");
 
     // 1. Load and merge configuration
     this.config = await loadAndMergeConfig(this.cliOptions.configPath);
@@ -101,16 +109,18 @@ export class CommandRunner {
 
     // Set global log level based on resolved config (can be overridden by --verbose)
     if (this.cliOptions.verbose) {
-      this.config.outputConfig.logLevel = 'debug';
+      this.config.outputConfig.logLevel = "debug";
     }
     setLogLevel(this.config.outputConfig.logLevel);
 
     // 2. Initialize CacheManager
-    this.cacheManager = new CacheManager(path.join(this.baseDir, '.jsdoc-cache'));
+    this.cacheManager = new CacheManager(
+      path.join(this.baseDir, ".jsdoc-cache"),
+    );
     await this.cacheManager.initialize();
     if (this.cliOptions.cacheClear) {
       await this.cacheManager.clear();
-      logger.info('🗑️ Cache cleared as requested.');
+      logger.info("🗑️ Cache cleared as requested.");
     }
 
     // 3. Initialize TelemetryCollector
@@ -135,7 +145,7 @@ export class CommandRunner {
 
     // 5. Initialize ts-morph Project
     this.project = new Project({
-      tsConfigFilePath: path.join(this.baseDir, 'tsconfig.json'),
+      tsConfigFilePath: path.join(this.baseDir, "tsconfig.json"),
       skipAddingFilesFromTsConfig: true, // Files will be added explicitly by WorkspaceAnalyzer
       skipFileDependencyResolution: true, // Resolution will be done after all files added
       useInMemoryFileSystem: false,
@@ -144,7 +154,7 @@ export class CommandRunner {
     // 6. Initialize ReportGenerator
     this.reportGenerator = new ReportGenerator(this.baseDir);
 
-    logger.debug('Command context initialized successfully.');
+    logger.debug("Command context initialized successfully.");
   }
 
   /**
@@ -172,7 +182,10 @@ export class CommandRunner {
       newConfig.jsdocConfig.mergeExisting = false;
     }
     if (cliOptions.targetPaths && cliOptions.targetPaths.length > 0) {
-      newConfig.targetPaths = [...(newConfig.targetPaths || []), ...cliOptions.targetPaths];
+      newConfig.targetPaths = [
+        ...(newConfig.targetPaths || []),
+        ...cliOptions.targetPaths,
+      ];
     }
     if (cliOptions.noEmbed) {
       newConfig.disableEmbeddings = true;

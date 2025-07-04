@@ -1,7 +1,7 @@
-import { ICommand, CommandContext, ProcessingStats } from '../types';
-import { GenerateDocumentationOperation } from '../operations/GenerateDocumentationOperation';
-import { logger } from '../utils/logger';
-import { HelpSystem } from '../cli/HelpSystem';
+import { ICommand, CommandContext, ProcessingStats } from "../types";
+import { GenerateDocumentationOperation } from "../operations/GenerateDocumentationOperation";
+import { logger } from "../utils/logger";
+import { HelpSystem } from "../cli/HelpSystem";
 
 /**
  * Implements the 'generate' command logic.
@@ -9,7 +9,7 @@ import { HelpSystem } from '../cli/HelpSystem';
  */
 export class GenerateCommand implements ICommand {
   async execute(context: CommandContext): Promise<void> {
-    logger.info('Starting JSDoc generation process...');
+    logger.info("Starting JSDoc generation process...");
 
     const operation = new GenerateDocumentationOperation();
     let stats: ProcessingStats | void;
@@ -23,20 +23,27 @@ export class GenerateCommand implements ICommand {
     }
 
     // Show completion message
-    console.log('\n╔══════════════════════════════════════════════════════════════╗');
-    console.log('║                     🎉 Generation Complete!                ║');
-    console.log('╚══════════════════════════════════════════════════════════════╝\n');
+    console.log(
+      "\n╔══════════════════════════════════════════════════════════════╗",
+    );
+    console.log(
+      "║                     🎉 Generation Complete!                ║",
+    );
+    console.log(
+      "╚══════════════════════════════════════════════════════════════╝\n",
+    );
 
     // Ensure stats exists before accessing properties
     if (stats) {
-      console.log(`✅ Successfully processed ${stats.processedFiles || 0} files`);
+      console.log(
+        `✅ Successfully processed ${stats.processedFiles || 0} files`,
+      );
       console.log(`📝 Generated ${stats.successfulJsdocs || 0} JSDoc comments`);
-
     } else {
-      console.log('⚠️ No statistics available from the generation process.');
+      console.log("⚠️ No statistics available from the generation process.");
     }
 
-    console.log('\nReports saved to the configured output directory.');
+    console.log("\nReports saved to the configured output directory.");
 
     if (stats) {
       HelpSystem.showCompletion({
@@ -53,10 +60,12 @@ export class GenerateCommand implements ICommand {
           processedFiles: stats.processedFiles,
           generationTime: stats.durationSeconds!,
           apiCalls: telemetryData.performance.apiCalls, // Use actual API calls from telemetry
-          cacheHits: telemetryData.performance.cacheHitRate * telemetryData.performance.apiCalls, // Estimate cache hits from rate
+          cacheHits:
+            telemetryData.performance.cacheHitRate *
+            telemetryData.performance.apiCalls, // Estimate cache hits from rate
         });
       }
     }
-    logger.info('JSDoc generation process completed.');
+    logger.info("JSDoc generation process completed.");
   }
 }
