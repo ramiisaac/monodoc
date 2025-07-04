@@ -1,25 +1,25 @@
-import pLimit from 'p-limit'; // For concurrency control
-import { RelationshipAnalyzer } from '../embeddings/RelationshipAnalyzer';
-import { DynamicTemplateSystem } from '../features/DynamicTemplateSystem';
-import { SmartDocumentationEngine } from '../features/SmartDocumentationEngine';
-import { ReportGenerator } from '../reporting/ReportGenerator'; // Added import for ReportGenerator
+import pLimit from "p-limit"; // For concurrency control
+import { RelationshipAnalyzer } from "../embeddings/RelationshipAnalyzer";
+import { DynamicTemplateSystem } from "../features/DynamicTemplateSystem";
+import { SmartDocumentationEngine } from "../features/SmartDocumentationEngine";
+import { ReportGenerator } from "../reporting/ReportGenerator"; // Added import for ReportGenerator
 import {
   DetailedSymbolInfo,
   FileBatch,
   GeneratorConfig,
   ProcessingStats,
   WorkspacePackage,
-} from '../types';
-import { CacheManager } from '../utils/CacheManager';
-import { logger } from '../utils/logger';
-import { PerformanceMonitor } from '../utils/PerformanceMonitor';
-import { ProgressBar } from '../utils/progressBar'; // Corrected import
-import { AIClient } from './AIClient';
-import { DocumentationGenerator } from './DocumentationGenerator'; // New component
-import { FileProcessor } from './FileProcessor'; // New component
-import { JSDocManipulator } from './JSDocManipulator';
-import { NodeContextExtractor } from './NodeContextExtractor';
-import { Project } from 'ts-morph';
+} from "../types";
+import { CacheManager } from "../utils/CacheManager";
+import { logger } from "../utils/logger";
+import { PerformanceMonitor } from "../utils/PerformanceMonitor";
+import { ProgressBar } from "../utils/progressBar"; // Corrected import
+import { AIClient } from "./AIClient";
+import { DocumentationGenerator } from "./DocumentationGenerator"; // New component
+import { FileProcessor } from "./FileProcessor"; // New component
+import { JSDocManipulator } from "./JSDocManipulator";
+import { NodeContextExtractor } from "./NodeContextExtractor";
+import { Project } from "ts-morph";
 
 /**
  * `MonorepoJSDocGenerator` now acts as a high-level orchestrator or facade for the generation process.
@@ -134,11 +134,15 @@ export class MonorepoJSDocGenerator {
         this.dynamicTemplateSystem,
       );
     } else {
-      throw new Error('PluginManager is required for FileProcessor');
+      throw new Error("PluginManager is required for FileProcessor");
     }
 
-    this.concurrencyLimiter = pLimit(this.config.performance?.maxConcurrentFiles || 4); // Default to 4 concurrent files
-    logger.success(`🎯 MonorepoJSDocGenerator initialized with ${packages.length} packages.`);
+    this.concurrencyLimiter = pLimit(
+      this.config.performance?.maxConcurrentFiles || 4,
+    ); // Default to 4 concurrent files
+    logger.success(
+      `🎯 MonorepoJSDocGenerator initialized with ${packages.length} packages.`,
+    );
   }
 
   /**
@@ -147,14 +151,19 @@ export class MonorepoJSDocGenerator {
    * @param config The full GeneratorConfig.
    * @returns A sanitized plain object suitable for reports.
    */
-  private sanitizeConfigForReport(config: GeneratorConfig): Record<string, unknown> {
-    const sanitized = JSON.parse(JSON.stringify(config)) as Record<string, unknown>;
+  private sanitizeConfigForReport(
+    config: GeneratorConfig,
+  ): Record<string, unknown> {
+    const sanitized = JSON.parse(JSON.stringify(config)) as Record<
+      string,
+      unknown
+    >;
     // Remove API keys from the reportable config, if they somehow made it in
     if (sanitized.aiModels && Array.isArray(sanitized.aiModels)) {
       sanitized.aiModels.forEach((model: any) => {
         // Corrected `any` usage
         if (model.apiKeyEnvVar && process.env[model.apiKeyEnvVar]) {
-          model.apiKey = `***${(process.env[model.apiKeyEnvVar] || '').slice(-4)}`; // Mask most of the key
+          model.apiKey = `***${(process.env[model.apiKeyEnvVar] || "").slice(-4)}`; // Mask most of the key
         }
         delete model.apiKeyEnvVar; // Remove reference to env var name
         delete model.baseUrl; // Base URL might be sensitive in some setups
@@ -198,10 +207,13 @@ export class MonorepoJSDocGenerator {
       this.config.embeddingConfig.enabled &&
       !this.config.disableEmbeddings
     ) {
-      logger.info('Preparing for embedding-based relationship analysis...');
+      logger.info("Preparing for embedding-based relationship analysis...");
       try {
         // Pass all source files from the project for embedding
-        await this.relationshipAnalyzer.initialize(this.project.getSourceFiles(), this.stats);
+        await this.relationshipAnalyzer.initialize(
+          this.project.getSourceFiles(),
+          this.stats,
+        );
       } catch (e) {
         logger.error(
           `Failed to initialize embedding-based relationship analysis: ${
@@ -212,14 +224,16 @@ export class MonorepoJSDocGenerator {
         this.config.embeddingConfig.enabled = false;
         this.config.disableEmbeddings = true;
         this.stats.errors.push({
-          file: 'N/A', // Context is global
+          file: "N/A", // Context is global
           error: `Embedding initialization failed: ${e instanceof Error ? e.message : String(e)}`,
           stack: e instanceof Error ? e.stack : undefined,
           timestamp: Date.now(),
         });
       }
     } else {
-      logger.info('Skipping embedding setup as disabled by configuration, CLI flag, or dry run.');
+      logger.info(
+        "Skipping embedding setup as disabled by configuration, CLI flag, or dry run.",
+      );
       // Ensure config flags reflect actual state if skipping
       this.config.embeddingConfig.enabled = false;
       this.config.disableEmbeddings = true;
@@ -241,15 +255,21 @@ export class MonorepoJSDocGenerator {
     const fileProcessingPromises: Promise<void>[] = [];
     for (const fileInfo of batch.files) {
       fileProcessingPromises.push(
-        this.concurrencyLimiter(() => this.fileProcessor.processFile(fileInfo.path, this.stats)),
+        this.concurrencyLimiter(() =>
+          this.fileProcessor.processFile(fileInfo.path, this.stats),
+        ),
       );
     }
 
     await Promise.all(fileProcessingPromises); // Wait for all files in the batch to complete
 
     this.stats.processedBatches++;
-    const batchDuration = this.performanceMonitor.endTimer(`batch_processing_batch_${batchIndex}`);
-    logger.debug(`⏱️ Batch ${batchIndex + 1} completed in ${(batchDuration / 1000).toFixed(2)}s`);
+    const batchDuration = this.performanceMonitor.endTimer(
+      `batch_processing_batch_${batchIndex}`,
+    );
+    logger.debug(
+      `⏱️ Batch ${batchIndex + 1} completed in ${(batchDuration / 1000).toFixed(2)}s`,
+    );
 
     // Update the overall progress bar
     this.progressBar?.update(this.stats.processedFiles, `Processing files...`);

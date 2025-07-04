@@ -32,8 +32,8 @@
     "format:check": "prettier --check src/**/*.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist",
-    "prebuild": "pnpm run clean",
-    "prepublishOnly": "pnpm run build && pnpm run test -- src/utils/deepMerge.test.ts",
+    "prebuild": "npm run clean",
+    "prepublishOnly": "npm run build && npm run test -- src/utils/deepMerge.test.ts",
     "release": "semantic-release",
     "release:dry": "semantic-release --dry-run",
     "docs:generate": "typedoc src/index.ts --out docs/api --options config/typedoc.json",
@@ -45,14 +45,14 @@
     "quality": "node dist/src/cli.js quality-check",
     "incremental": "node dist/src/cli.js incremental",
     "migration:test": "node dist/migration-test.js",
-    "security:audit": "pnpm audit --audit-level=moderate",
-    "security:fix": "pnpm audit fix",
+    "security:audit": "npm audit --audit-level=moderate",
+    "security:fix": "npm audit fix",
     "size:check": "bundlephobia dist/index.js",
     "precommit": "lint-staged",
     "prepare": "husky install",
     "deploy:docker": "docker build -t monodoc:latest .",
-    "deploy:publish": "pnpm run prepublishOnly && pnpm publish --access public",
-    "deploy:beta": "pnpm run prepublishOnly && pnpm publish --tag beta --access public",
+    "deploy:publish": "npm run prepublishOnly && npm publish --access public",
+    "deploy:beta": "npm run prepublishOnly && npm publish --tag beta --access public",
     "markdown:lint": "markdownlint \"**/*.md\" --ignore node_modules --ignore dist --fix"
   },
   "keywords": [
@@ -67,7 +67,7 @@
     "gemini",
     "claude",
     "ollama",
-    "pnpm",
+    "npm",
     "workspace",
     "developer-tools",
     "automation",
@@ -91,7 +91,7 @@
   "homepage": "https://github.com/ramiisaac/monodoc#readme",
   "engines": {
     "node": ">=18.0.0",
-    "pnpm": ">=8.0.0"
+    "npm": ">=8.0.0"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "2.0.0-beta.3",

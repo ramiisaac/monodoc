@@ -1,7 +1,7 @@
-import { JSDocableNode, GeneratorConfig } from '../types';
-import { JSDocTagStructure, StructureKind } from 'ts-morph';
-import { JSDoc, JSDocTag, Node } from 'ts-morph';
-import { logger } from '../utils/logger';
+import { JSDocableNode, GeneratorConfig } from "../types";
+import { JSDocTagStructure, StructureKind } from "ts-morph";
+import { JSDoc, JSDocTag, Node } from "ts-morph";
+import { logger } from "../utils/logger";
 
 /**
  * Manages the application and manipulation of JSDoc comments on TypeScript nodes.
@@ -27,7 +27,9 @@ export class JSDocManipulator {
     const hasExistingJsDoc = existingJsDocs.length > 0;
 
     // Filter out very short or empty AI responses which might be "SKIP" signals or bad generations
-    if (newJsDocContent.trim().length < this.config.jsdocConfig.minJsdocLength) {
+    if (
+      newJsDocContent.trim().length < this.config.jsdocConfig.minJsdocLength
+    ) {
       logger.debug(
         `Skipping JSDoc for ${nodeNameForLog}: generated content is too short (${newJsDocContent.trim().length} chars).`,
       );
@@ -37,16 +39,22 @@ export class JSDocManipulator {
     if (hasExistingJsDoc) {
       // Check if the new content is substantially different from the existing one.
       // Normalize both for comparison (remove extra spaces, leading asterisks, etc.)
-      const normalizedExisting = this.normalizeJSDocContent(existingJsDocs[0].getText());
+      const normalizedExisting = this.normalizeJSDocContent(
+        existingJsDocs[0].getText(),
+      );
       const normalizedNew = this.normalizeJSDocContent(newJsDocContent);
 
       if (normalizedExisting === normalizedNew) {
-        logger.debug(`Skipping JSDoc for ${nodeNameForLog}: new content is identical to existing.`);
+        logger.debug(
+          `Skipping JSDoc for ${nodeNameForLog}: new content is identical to existing.`,
+        );
         return false;
       }
 
       if (this.shouldOverwrite()) {
-        this.logDebug(`Force overwriting existing JSDoc for node: ${nodeNameForLog}`);
+        this.logDebug(
+          `Force overwriting existing JSDoc for node: ${nodeNameForLog}`,
+        );
         this.removeExistingJsDocs(existingJsDocs);
         node.addJsDoc(newJsDocContent);
         return true;
@@ -110,7 +118,11 @@ export class JSDocManipulator {
    * @param newContent The new JSDoc content string.
    * @param existingJSDoc The existing JSDoc object to merge into.
    */
-  private mergeJSDoc(node: JSDocableNode, newContent: string, existingJSDoc: JSDoc): void {
+  private mergeJSDoc(
+    node: JSDocableNode,
+    newContent: string,
+    existingJSDoc: JSDoc,
+  ): void {
     const newDescription = this.extractDescriptionFromJSDocString(newContent);
     // Removed `tags` and `match` variable declarations as they were unused due to `extractTagsFromJSDocString` returning empty.
     // The `newTagMap` variable is also removed as it relied on `newTags`.
@@ -119,7 +131,9 @@ export class JSDocManipulator {
     if (
       newDescription &&
       newDescription.length > 0 &&
-      !mergedDescription.includes(newDescription.substring(0, Math.min(newDescription.length, 50)))
+      !mergedDescription.includes(
+        newDescription.substring(0, Math.min(newDescription.length, 50)),
+      )
     ) {
       mergedDescription = `${mergedDescription}\n\n${newDescription}`.trim();
     }
@@ -146,25 +160,30 @@ export class JSDocManipulator {
    * @returns The extracted description string.
    */
   private extractDescriptionFromJSDocString(jsdocString: string): string {
-    const lines = jsdocString.split('\n');
-    let description = '';
+    const lines = jsdocString.split("\n");
+    let description = "";
     let inDescriptionBlock = false; // Renamed to clarify its purpose
     for (const line of lines) {
       const trimmedLine = line.trim();
-      if (trimmedLine.startsWith('@')) {
+      if (trimmedLine.startsWith("@")) {
         if (inDescriptionBlock) break; // End of description section
-        if (trimmedLine.startsWith('@description')) {
+        if (trimmedLine.startsWith("@description")) {
           inDescriptionBlock = true;
-          description += trimmedLine.substring('@description'.length).trim() + '\n';
-        } else if (trimmedLine.startsWith('@summary')) {
+          description +=
+            trimmedLine.substring("@description".length).trim() + "\n";
+        } else if (trimmedLine.startsWith("@summary")) {
           // If no @description tag exists, the @summary text can be considered part of the main description.
-          if (!jsdocString.includes('@description')) {
-            description += trimmedLine.substring('@summary'.length).trim() + '\n';
+          if (!jsdocString.includes("@description")) {
+            description +=
+              trimmedLine.substring("@summary".length).trim() + "\n";
           }
         }
-      } else if (inDescriptionBlock || (description.length === 0 && !trimmedLine.startsWith('@'))) {
+      } else if (
+        inDescriptionBlock ||
+        (description.length === 0 && !trimmedLine.startsWith("@"))
+      ) {
         // Capture lines before any tags, or lines within a @description block
-        description += trimmedLine + '\n';
+        description += trimmedLine + "\n";
       }
     }
     return description.trim();
@@ -192,18 +211,21 @@ export class JSDocManipulator {
    * @param newTags The new JSDocTag objects (parsed from the AI response, currently empty).
    * @returns An array of JSDocTagStructure for the merged JSDoc.
    */
-  private mergeJSDocTags(existingTags: JSDocTag[], newTags: JSDocTag[]): JSDocTagStructure[] {
+  private mergeJSDocTags(
+    existingTags: JSDocTag[],
+    newTags: JSDocTag[],
+  ): JSDocTagStructure[] {
     const mergedTags: JSDocTagStructure[] = [];
 
     // Tags to always preserve from the existing JSDoc if not explicitly overridden by new.
     const keepOldTags = new Set([
-      'deprecated',
-      'ignore',
-      'internal',
-      'beta',
-      'alpha',
-      'todo',
-      'fixme',
+      "deprecated",
+      "ignore",
+      "internal",
+      "beta",
+      "alpha",
+      "todo",
+      "fixme",
     ]);
     const newTagNames = new Set(newTags.map((t) => t.getTagName())); // This relies on newTags being populated
 
@@ -236,16 +258,16 @@ export class JSDocManipulator {
    */
   private normalizeJSDocContent(content: string): string {
     return content
-      .split('\n')
+      .split("\n")
       .map((line) =>
         line
           .trim()
-          .replace(/^\*\s?/, '')
-          .replace(/^\s?\*\s?/, ''),
+          .replace(/^\*\s?/, "")
+          .replace(/^\s?\*\s?/, ""),
       ) // Remove leading '*' and whitespace
       .filter((line) => line.length > 0) // Remove empty lines
-      .join(' ') // Join lines with a single space
-      .replace(/\s+/g, ' ') // Collapse multiple spaces
+      .join(" ") // Join lines with a single space
+      .replace(/\s+/g, " ") // Collapse multiple spaces
       .trim();
   }
 
@@ -264,21 +286,26 @@ export class JSDocManipulator {
    */
   private getNodeNameForLogging(node: JSDocableNode): string {
     if (
-      'getName' in node &&
-      typeof (node as Node & { getName?: () => string | undefined }).getName === 'function'
+      "getName" in node &&
+      typeof (node as Node & { getName?: () => string | undefined }).getName ===
+        "function"
     ) {
       return (
-        (node as Node & { getName?: () => string | undefined }).getName?.() || node.getKindName()
+        (node as Node & { getName?: () => string | undefined }).getName?.() ||
+        node.getKindName()
       );
     }
     if (Node.isConstructorDeclaration(node)) {
       return `constructor of ${node.getParent()?.getKindName()}`;
     }
-    if (Node.isGetAccessorDeclaration(node) || Node.isSetAccessorDeclaration(node)) {
-      return `${node.getKindName()} ${(node as Node & { getName?: () => string | undefined }).getName?.() || 'unnamed'}`;
+    if (
+      Node.isGetAccessorDeclaration(node) ||
+      Node.isSetAccessorDeclaration(node)
+    ) {
+      return `${node.getKindName()} ${(node as Node & { getName?: () => string | undefined }).getName?.() || "unnamed"}`;
     }
     if (Node.isVariableDeclaration(node)) {
-      return `variable ${(node as Node & { getName?: () => string | undefined }).getName?.() || 'unnamed'}`;
+      return `variable ${(node as Node & { getName?: () => string | undefined }).getName?.() || "unnamed"}`;
     }
     return node.getKindName();
   }

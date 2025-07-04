@@ -1,8 +1,8 @@
-import { ICommand, CommandContext } from '../types';
-import { logger } from '../utils/logger';
-import { ConfigValidator } from '../config/ConfigValidator';
-import { HelpSystem } from '../cli/HelpSystem';
-import { loadAndMergeConfig } from '../config';
+import { ICommand, CommandContext } from "../types";
+import { logger } from "../utils/logger";
+import { ConfigValidator } from "../config/ConfigValidator";
+import { HelpSystem } from "../cli/HelpSystem";
+import { loadAndMergeConfig } from "../config";
 
 /**
  * Implements the 'validate-config' command logic.
@@ -11,7 +11,9 @@ import { loadAndMergeConfig } from '../config';
 export class ValidateConfigCommand implements ICommand {
   async execute(context: CommandContext): Promise<void> {
     const configPath = context.cliOptions.configPath;
-    logger.info(`🔍 Validating configuration${configPath ? ` from ${configPath}` : ''}...`);
+    logger.info(
+      `🔍 Validating configuration${configPath ? ` from ${configPath}` : ""}...`,
+    );
 
     try {
       // Load and merge configuration first
@@ -23,19 +25,24 @@ export class ValidateConfigCommand implements ICommand {
       );
 
       if (validationResult.error) {
-        HelpSystem.showConfigValidation([validationResult.error], validationResult.warnings || []);
-        logger.error('❌ Configuration validation failed.');
-        throw new Error('Configuration validation failed.'); // Propagate error
+        HelpSystem.showConfigValidation(
+          [validationResult.error],
+          validationResult.warnings || [],
+        );
+        logger.error("❌ Configuration validation failed.");
+        throw new Error("Configuration validation failed."); // Propagate error
       } else {
         HelpSystem.showConfigValidation([], validationResult.warnings || []);
-        logger.success('✅ Configuration is valid!');
-        logger.info('\n📋 Configuration summary:');
+        logger.success("✅ Configuration is valid!");
+        logger.info("\n📋 Configuration summary:");
         logger.info(`  • AI Models Configured: ${config.aiModels.length}`);
         logger.info(
           `  • Default Generation Model: ${config.aiClientConfig.defaultGenerationModelId}`,
         );
-        logger.info(`  • Workspace Dirs: ${config.workspaceDirs.join(', ')}`);
-        logger.info(`  • Embeddings: ${config.embeddingConfig.enabled ? 'Enabled' : 'Disabled'}`);
+        logger.info(`  • Workspace Dirs: ${config.workspaceDirs.join(", ")}`);
+        logger.info(
+          `  • Embeddings: ${config.embeddingConfig.enabled ? "Enabled" : "Disabled"}`,
+        );
       }
     } catch (error) {
       logger.error(

@@ -1,5 +1,5 @@
-import { Plugin, NodeContext } from '../types';
-import { BasePlugin } from './BasePlugin';
+import { Plugin, NodeContext } from "../types";
+import { BasePlugin } from "./BasePlugin";
 
 // Define ApiEndpoint interface locally
 interface ApiEndpoint {
@@ -15,9 +15,9 @@ interface ApiEndpoint {
  * It adds specific API-related JSDoc tags like `@route`, `@middleware`, `@apiSuccess`, `@apiError`.
  */
 export class ApiDocumentationPlugin extends BasePlugin implements Plugin {
-  name = 'ApiDocumentationPlugin';
-  version = '1.0.0';
-  description = 'Enhances documentation for API routes and endpoints';
+  name = "ApiDocumentationPlugin";
+  version = "1.0.0";
+  description = "Enhances documentation for API routes and endpoints";
 
   /**
    * Gets the name of the plugin.
@@ -63,7 +63,10 @@ export class ApiDocumentationPlugin extends BasePlugin implements Plugin {
    * @param result The generated JSDoc content.
    * @returns Enhanced JSDoc content with API documentation.
    */
-  async afterProcessing(nodeContext: NodeContext, result: string): Promise<string> {
+  async afterProcessing(
+    nodeContext: NodeContext,
+    result: string,
+  ): Promise<string> {
     if (nodeContext.customData?.isApiRoute) {
       return this.addApiDocumentation(result, nodeContext);
     }
@@ -80,7 +83,9 @@ export class ApiDocumentationPlugin extends BasePlugin implements Plugin {
     let enhanced = jsDoc;
 
     // Add endpoint information if available
-    const endpoints = context.customData?.apiEndpoints as ApiEndpoint[] | undefined;
+    const endpoints = context.customData?.apiEndpoints as
+      | ApiEndpoint[]
+      | undefined;
     if (endpoints && endpoints.length > 0) {
       const apiDoc = this.generateApiDocTemplate(endpoints);
       enhanced += apiDoc;
@@ -89,7 +94,7 @@ export class ApiDocumentationPlugin extends BasePlugin implements Plugin {
     // Add middleware information
     const middleware = context.customData?.middleware;
     if (middleware && Array.isArray(middleware) && middleware.length > 0) {
-      enhanced += `\n@middleware ${middleware.join(', ')}`;
+      enhanced += `\n@middleware ${middleware.join(", ")}`;
     }
 
     return enhanced;
@@ -103,18 +108,18 @@ export class ApiDocumentationPlugin extends BasePlugin implements Plugin {
   private isApiRoute(context: NodeContext): boolean {
     // Check for common API route patterns
     return (
-      context.fileContext.includes('/api/') ||
-      context.fileContext.includes('/routes/') ||
-      context.fileContext.includes('/controllers/') ||
-      context.nodeName.toLowerCase().includes('handler') ||
-      context.nodeName.toLowerCase().includes('controller') ||
-      context.nodeName.toLowerCase().includes('route') ||
-      context.codeSnippet.includes('express.') ||
-      context.codeSnippet.includes('router.') ||
-      context.codeSnippet.includes('app.get') ||
-      context.codeSnippet.includes('app.post') ||
-      context.codeSnippet.includes('app.put') ||
-      context.codeSnippet.includes('app.delete')
+      context.fileContext.includes("/api/") ||
+      context.fileContext.includes("/routes/") ||
+      context.fileContext.includes("/controllers/") ||
+      context.nodeName.toLowerCase().includes("handler") ||
+      context.nodeName.toLowerCase().includes("controller") ||
+      context.nodeName.toLowerCase().includes("route") ||
+      context.codeSnippet.includes("express.") ||
+      context.codeSnippet.includes("router.") ||
+      context.codeSnippet.includes("app.get") ||
+      context.codeSnippet.includes("app.post") ||
+      context.codeSnippet.includes("app.put") ||
+      context.codeSnippet.includes("app.delete")
     );
   }
 
@@ -124,8 +129,10 @@ export class ApiDocumentationPlugin extends BasePlugin implements Plugin {
    * @returns The HTTP method or 'GET' as default.
    */
   private extractHttpMethod(code: string): string {
-    const methodMatch = code.match(/\.(get|post|put|delete|patch|options|head)\s*\(/i);
-    return methodMatch ? methodMatch[1].toUpperCase() : 'GET';
+    const methodMatch = code.match(
+      /\.(get|post|put|delete|patch|options|head)\s*\(/i,
+    );
+    return methodMatch ? methodMatch[1].toUpperCase() : "GET";
   }
 
   /**
@@ -135,18 +142,18 @@ export class ApiDocumentationPlugin extends BasePlugin implements Plugin {
    */
   private extractRoutePath(filePath: string): string {
     // Infer route from file path (e.g., /api/users/index.ts -> /users)
-    const apiIndex = filePath.indexOf('/api/');
-    const routesIndex = filePath.indexOf('/routes/');
-    let route = '/';
+    const apiIndex = filePath.indexOf("/api/");
+    const routesIndex = filePath.indexOf("/routes/");
+    let route = "/";
     if (apiIndex !== -1) {
       route = filePath.substring(apiIndex + 4); // Get part after '/api/'
     } else if (routesIndex !== -1) {
       route = filePath.substring(routesIndex + 7); // Get part after '/routes/'
     }
     // Remove file extension and 'index' if present
-    route = route.replace(/\.(ts|js|tsx|jsx)$/, '').replace(/\/index$/, '');
+    route = route.replace(/\.(ts|js|tsx|jsx)$/, "").replace(/\/index$/, "");
     // Ensure route starts with /
-    if (!route.startsWith('/')) route = '/' + route;
+    if (!route.startsWith("/")) route = "/" + route;
     return route;
   }
 
@@ -157,14 +164,18 @@ export class ApiDocumentationPlugin extends BasePlugin implements Plugin {
    */
   private extractMiddleware(code: string): string[] {
     const middleware = [];
-    if (code.includes('authenticate') || code.includes('authMiddleware'))
-      middleware.push('authentication');
-    if (code.includes('authorize') || code.includes('permissionMiddleware'))
-      middleware.push('authorization');
-    if (code.includes('validate') || code.includes('schemaValidation') || code.includes('joi'))
-      middleware.push('validation');
-    if (code.includes('rateLimit')) middleware.push('rate-limiting');
-    if (code.includes('cors')) middleware.push('CORS');
+    if (code.includes("authenticate") || code.includes("authMiddleware"))
+      middleware.push("authentication");
+    if (code.includes("authorize") || code.includes("permissionMiddleware"))
+      middleware.push("authorization");
+    if (
+      code.includes("validate") ||
+      code.includes("schemaValidation") ||
+      code.includes("joi")
+    )
+      middleware.push("validation");
+    if (code.includes("rateLimit")) middleware.push("rate-limiting");
+    if (code.includes("cors")) middleware.push("CORS");
     return middleware;
   }
 
@@ -176,7 +187,8 @@ export class ApiDocumentationPlugin extends BasePlugin implements Plugin {
    */
   private extractRestEndpoints(code: string): ApiEndpoint[] {
     const endpoints: ApiEndpoint[] = [];
-    const routeRegex = /\.(get|post|put|delete|patch)\s*\(\s*['"`]([^'"`]+)['"`]/g;
+    const routeRegex =
+      /\.(get|post|put|delete|patch)\s*\(\s*['"`]([^'"`]+)['"`]/g;
     let match;
 
     while ((match = routeRegex.exec(code)) !== null) {
@@ -190,14 +202,14 @@ export class ApiDocumentationPlugin extends BasePlugin implements Plugin {
       const middlewareMatch = code.match(
         new RegExp(
           `\\.${match[1]}\\s*\\([^,]+,\\s*([^,]+(?:,\\s*[^,]+)*),\\s*(?:async\\s*)?(?:function|\\()`,
-          's',
+          "s",
         ),
       );
       const middleware = middlewareMatch
         ? middlewareMatch[1]
-            .split(',')
+            .split(",")
             .map((m) => m.trim())
-            .filter((m) => m && !m.includes('('))
+            .filter((m) => m && !m.includes("("))
         : [];
 
       endpoints.push({
@@ -233,9 +245,9 @@ export class ApiDocumentationPlugin extends BasePlugin implements Plugin {
    * @returns A formatted string for inclusion in JSDoc.
    */
   private generateApiDocTemplate(endpoints: ApiEndpoint[]): string {
-    if (endpoints.length === 0) return '';
+    if (endpoints.length === 0) return "";
 
-    let doc = '\n\n## API Endpoints\n';
+    let doc = "\n\n## API Endpoints\n";
     endpoints.forEach((endpoint) => {
       doc += `\n### ${endpoint.method} ${endpoint.path}\n`;
       if (endpoint.description) {
@@ -272,11 +284,16 @@ export class ApiDocumentationPlugin extends BasePlugin implements Plugin {
    * @param jsDoc The generated JSDoc content.
    * @returns Enhanced JSDoc content with API documentation.
    */
-  async afterGenerateJSDoc(nodeContext: NodeContext, jsDoc: string): Promise<string> {
+  async afterGenerateJSDoc(
+    nodeContext: NodeContext,
+    jsDoc: string,
+  ): Promise<string> {
     let enhanced = jsDoc;
 
     // Add endpoint information if available
-    const endpoints = nodeContext.customData?.apiEndpoints as ApiEndpoint[] | undefined;
+    const endpoints = nodeContext.customData?.apiEndpoints as
+      | ApiEndpoint[]
+      | undefined;
     if (endpoints && endpoints.length > 0) {
       const apiDoc = this.generateApiDocTemplate(endpoints);
       enhanced += apiDoc;
@@ -285,7 +302,7 @@ export class ApiDocumentationPlugin extends BasePlugin implements Plugin {
     // Add middleware information
     const middleware = nodeContext.customData?.middleware;
     if (middleware && Array.isArray(middleware) && middleware.length > 0) {
-      enhanced += `\n@middleware ${middleware.join(', ')}`;
+      enhanced += `\n@middleware ${middleware.join(", ")}`;
     }
 
     return enhanced;

@@ -1,7 +1,7 @@
-import { ICommand, CommandContext, ProcessingStats } from '../types';
-import { logger } from '../utils/logger';
-import { PerformQualityCheckOperation } from '../operations/PerformQualityCheckOperation';
-import { HelpSystem } from '../cli/HelpSystem'; // For performance metrics display
+import { ICommand, CommandContext, ProcessingStats } from "../types";
+import { logger } from "../utils/logger";
+import { PerformQualityCheckOperation } from "../operations/PerformQualityCheckOperation";
+import { HelpSystem } from "../cli/HelpSystem"; // For performance metrics display
 
 /**
  * Implements the 'quality-check' command logic.
@@ -9,7 +9,7 @@ import { HelpSystem } from '../cli/HelpSystem'; // For performance metrics displ
  */
 export class QualityCheckCommand implements ICommand {
   async execute(context: CommandContext): Promise<void> {
-    logger.info('🔍 Running documentation quality analysis...');
+    logger.info("🔍 Running documentation quality analysis...");
 
     const operation = new PerformQualityCheckOperation();
     let stats: ProcessingStats | void;
@@ -30,10 +30,12 @@ export class QualityCheckCommand implements ICommand {
         processedFiles: stats.processedFiles,
         generationTime: stats.durationSeconds!, // This is total analysis time now
         apiCalls: telemetryData.performance.apiCalls, // Should be 0 for pure quality check
-        cacheHits: telemetryData.performance.cacheHitRate * telemetryData.performance.apiCalls,
+        cacheHits:
+          telemetryData.performance.cacheHitRate *
+          telemetryData.performance.apiCalls,
       });
     }
 
-    logger.info('Documentation quality analysis completed.');
+    logger.info("Documentation quality analysis completed.");
   }
 }

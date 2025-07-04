@@ -6,11 +6,11 @@ This guide covers the complete deployment process for the monodoc Monorepo Gener
 
 ### Code Quality
 
-- [ ] All TypeScript compilation passes (`pnpm run build`)
-- [ ] All linting rules pass (`pnpm run lint`)
-- [ ] All unit tests pass (`pnpm test`)
-- [ ] Security audit acceptable (`pnpm audit`)
-- [ ] Package builds correctly (`pnpm pack`)
+- [ ] All TypeScript compilation passes (`npm run build`)
+- [ ] All linting rules pass (`npm run lint`)
+- [ ] All unit tests pass (`npm test`)
+- [ ] Security audit acceptable (`npm audit`)
+- [ ] Package builds correctly (`npm pack`)
 
 ### Configuration
 

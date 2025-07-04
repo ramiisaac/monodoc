@@ -1,16 +1,21 @@
-import { Project, SourceFile } from 'ts-morph';
-import path from 'path';
-import { logger } from '../utils/logger';
-import { GeneratorConfig, NodeContext, JSDocableNode, ProcessingStats } from '../types';
-import { NodeContextExtractor } from './NodeContextExtractor';
-import { JSDocManipulator } from './JSDocManipulator';
-import { DocumentationGenerator } from './DocumentationGenerator';
-import { RelationshipAnalyzer } from '../embeddings/RelationshipAnalyzer';
-import { TransformationError, LLMError } from '../utils/errorHandling';
-import { PluginManager } from '../plugins/PluginManager';
-import { AIClient } from './AIClient';
-import { PerformanceMonitor } from '../utils/PerformanceMonitor';
-import { DynamicTemplateSystem } from '../features/DynamicTemplateSystem';
+import { Project, SourceFile } from "ts-morph";
+import path from "path";
+import { logger } from "../utils/logger";
+import {
+  GeneratorConfig,
+  NodeContext,
+  JSDocableNode,
+  ProcessingStats,
+} from "../types";
+import { NodeContextExtractor } from "./NodeContextExtractor";
+import { JSDocManipulator } from "./JSDocManipulator";
+import { DocumentationGenerator } from "./DocumentationGenerator";
+import { RelationshipAnalyzer } from "../embeddings/RelationshipAnalyzer";
+import { TransformationError, LLMError } from "../utils/errorHandling";
+import { PluginManager } from "../plugins/PluginManager";
+import { AIClient } from "./AIClient";
+import { PerformanceMonitor } from "../utils/PerformanceMonitor";
+import { DynamicTemplateSystem } from "../features/DynamicTemplateSystem";
 
 /**
  * Responsible for processing a single source file within the monorepo.
@@ -75,7 +80,8 @@ export class FileProcessor {
     stats.totalNodesConsidered += nodes.length; // Count all nodes considered for docs in this file
 
     for (const node of nodes) {
-      const nodeNameForLog = this.nodeContextExtractor.getNodeNameForLogging(node);
+      const nodeNameForLog =
+        this.nodeContextExtractor.getNodeNameForLogging(node);
       logger.trace(
         `    Considering node: ${nodeNameForLog} (${node.getKindName()}) in ${relativePath}`,
       );
@@ -87,7 +93,10 @@ export class FileProcessor {
           this.hasExistingJSDoc(node) &&
           !this.config.forceOverwrite &&
           !this.config.jsdocConfig.overwriteExisting &&
-          !(this.config.jsdocConfig.mergeExisting && !this.config.noMergeExisting)
+          !(
+            this.config.jsdocConfig.mergeExisting &&
+            !this.config.noMergeExisting
+          )
         ) {
           stats.skippedJsdocs++;
           logger.debug(
@@ -97,7 +106,10 @@ export class FileProcessor {
         }
 
         // 1. Extract Node Context
-        nodeContext = this.nodeContextExtractor.getEnhancedNodeContext(node, sourceFile);
+        nodeContext = this.nodeContextExtractor.getEnhancedNodeContext(
+          node,
+          sourceFile,
+        );
 
         // 2. Run 'beforeProcessing' plugins
         nodeContext = await this.pluginManager.runBeforeProcessing(nodeContext);
@@ -108,7 +120,8 @@ export class FileProcessor {
           this.config.jsdocConfig.includeRelatedSymbols &&
           !this.config.disableEmbeddings
         ) {
-          const relatedSymbols = this.relationshipAnalyzer.findRelatedSymbolsForNode(node, stats);
+          const relatedSymbols =
+            this.relationshipAnalyzer.findRelatedSymbolsForNode(node, stats);
           if (relatedSymbols.length > 0) {
             nodeContext.relatedSymbols = relatedSymbols;
             logger.debug(
@@ -118,10 +131,13 @@ export class FileProcessor {
         }
 
         // 4. Generate JSDoc using the DocumentationGenerator
-        const aiResponse = await this.documentationGenerator.generate(nodeContext, this.config);
+        const aiResponse = await this.documentationGenerator.generate(
+          nodeContext,
+          this.config,
+        );
 
         // 5. Process AI Response and apply JSDoc
-        if (aiResponse.status === 'success' && aiResponse.jsdocContent) {
+        if (aiResponse.status === "success" && aiResponse.jsdocContent) {
           let finalJsdocContent = aiResponse.jsdocContent;
 
           // 6. Run 'afterProcessing' plugins
@@ -137,20 +153,20 @@ export class FileProcessor {
           } else {
             stats.skippedJsdocs++; // Skipped by manipulator (e.g., too short, identical)
           }
-        } else if (aiResponse.status === 'skip') {
+        } else if (aiResponse.status === "skip") {
           stats.skippedJsdocs++;
           logger.info(
-            `    ℹ️  JSDoc generation skipped by AI for ${nodeNameForLog} in ${relativePath}: ${aiResponse.reason || 'AI decided to skip'}`,
+            `    ℹ️  JSDoc generation skipped by AI for ${nodeNameForLog} in ${relativePath}: ${aiResponse.reason || "AI decided to skip"}`,
           );
         } else {
           stats.failedJsdocs++;
           logger.warn(
-            `    ⚠️  JSDoc generation failed for ${nodeNameForLog} in ${relativePath}: ${aiResponse.reason || 'Unknown AI reason'}`,
+            `    ⚠️  JSDoc generation failed for ${nodeNameForLog} in ${relativePath}: ${aiResponse.reason || "Unknown AI reason"}`,
           );
           stats.errors.push({
             file: relativePath,
             nodeName: nodeNameForLog,
-            error: `AI generation failed/skipped: ${aiResponse.reason || 'Unknown reason'}`,
+            error: `AI generation failed/skipped: ${aiResponse.reason || "Unknown reason"}`,
             timestamp: Date.now(),
           });
           // Notify plugins about the LLM error
@@ -158,15 +174,16 @@ export class FileProcessor {
             new LLMError(
               `AI generation failed`,
               undefined,
-              aiResponse.reason || 'UNKNOWN',
-              new Error(aiResponse.reason || 'AI generation failed'),
+              aiResponse.reason || "UNKNOWN",
+              new Error(aiResponse.reason || "AI generation failed"),
             ),
             nodeContext,
           );
         }
       } catch (error) {
         stats.failedJsdocs++;
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         logger.error(
           `    ❌ Unexpected error processing node ${nodeNameForLog} in ${relativePath}: ${errorMessage}`,
         );
@@ -204,7 +221,12 @@ export class FileProcessor {
             timestamp: Date.now(),
           });
           // Re-throw critical save errors to be caught at a higher level (GenerateDocumentationOperation)
-          throw new TransformationError(errMsg, relativePath, undefined, saveError);
+          throw new TransformationError(
+            errMsg,
+            relativePath,
+            undefined,
+            saveError,
+          );
         }
       } else {
         logger.info(
@@ -212,7 +234,9 @@ export class FileProcessor {
         );
       }
     } else {
-      logger.debug(`    No new/updated JSDoc comments applied in ${relativePath}`);
+      logger.debug(
+        `    No new/updated JSDoc comments applied in ${relativePath}`,
+      );
     }
   }
 

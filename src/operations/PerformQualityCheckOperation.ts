@@ -1,8 +1,16 @@
-import { IOperation, CommandContext, ProcessingStats, GeneratorConfig } from '../types';
-import { logger } from '../utils/logger';
-import { DocumentationQualityAnalyzer, QualityIssue } from '../analyzer/QualityAnalyzer';
-import { WorkspaceAnalyzer } from '../analyzer/WorkspaceAnalyzer';
-import path from 'path';
+import {
+  IOperation,
+  CommandContext,
+  ProcessingStats,
+  GeneratorConfig,
+} from "../types";
+import { logger } from "../utils/logger";
+import {
+  DocumentationQualityAnalyzer,
+  QualityIssue,
+} from "../analyzer/QualityAnalyzer";
+import { WorkspaceAnalyzer } from "../analyzer/WorkspaceAnalyzer";
+import path from "path";
 
 /**
  * Interface for a quality report item, detailing issues for a specific node.
@@ -24,7 +32,7 @@ export class PerformQualityCheckOperation implements IOperation {
   async execute(context: CommandContext): Promise<ProcessingStats> {
     const { config, baseDir, project, reportGenerator } = context;
 
-    logger.info('🔍 Starting documentation quality analysis...');
+    logger.info("🔍 Starting documentation quality analysis...");
 
     const workspaceAnalyzer = new WorkspaceAnalyzer(project);
     const qualityAnalyzer = new DocumentationQualityAnalyzer();
@@ -45,7 +53,7 @@ export class PerformQualityCheckOperation implements IOperation {
       // This ensures all relevant files are available for quality check.
       // Using config.includePatterns and ignorePatterns to accurately scope files.
       const filesToAdd = await context.project.addSourceFilesAtPaths(
-        path.join(pkg.path, '**/*.{ts,tsx,js,jsx}'), // Broad match
+        path.join(pkg.path, "**/*.{ts,tsx,js,jsx}"), // Broad match
       );
       // Ensure all source files from ts-config are considered if relevant
       project.resolveSourceFileDependencies();
@@ -69,12 +77,12 @@ export class PerformQualityCheckOperation implements IOperation {
           if (issue.score < (config.qualityThresholds?.minimumScore || 70)) {
             detailedQualityReport.push({
               file: path.relative(baseDir, sourceFile.getFilePath()),
-              node: issue.nodeKind + ' node',
+              node: issue.nodeKind + " node",
               nodeKind: issue.nodeKind,
               score: issue.score,
               issues: issue.issues.map((i: QualityIssue) => i.message),
               suggestions: issue.issues.map(
-                (i: QualityIssue) => i.suggestion || 'No specific suggestion.',
+                (i: QualityIssue) => i.suggestion || "No specific suggestion.",
               ),
             });
           }
@@ -93,25 +101,35 @@ export class PerformQualityCheckOperation implements IOperation {
         : 0;
 
     logger.info(`📊 Quality Analysis Results:`);
-    logger.info(`  • Total JSDocable nodes considered: ${totalNodesConsideredForDocs}`);
+    logger.info(
+      `  • Total JSDocable nodes considered: ${totalNodesConsideredForDocs}`,
+    );
     logger.info(`  • Nodes with existing JSDoc: ${totalNodesWithJSDoc}`);
     logger.info(`  • Coverage: ${completenessPercentage.toFixed(1)}%`);
     logger.info(
       `  • Average quality score (of documented nodes): ${averageQuality.toFixed(1)}/100`,
     );
-    logger.info(`  • Nodes needing improvement or missing JSDoc: ${detailedQualityReport.length}`);
+    logger.info(
+      `  • Nodes needing improvement or missing JSDoc: ${detailedQualityReport.length}`,
+    );
 
     if (detailedQualityReport.length > 0) {
-      logger.warn('\n🚨 Low quality documentation or missing JSDoc found (top 10):');
+      logger.warn(
+        "\n🚨 Low quality documentation or missing JSDoc found (top 10):",
+      );
       detailedQualityReport.slice(0, 10).forEach((item) => {
         logger.warn(`  ${item.file}: ${item.node} (${item.score}/100)`);
         item.issues.forEach((issue: string) => logger.warn(`    - ${issue}`));
       });
       if (detailedQualityReport.length > 10) {
-        logger.warn(`...and ${detailedQualityReport.length - 10} more. See detailed report.`);
+        logger.warn(
+          `...and ${detailedQualityReport.length - 10} more. See detailed report.`,
+        );
       }
     } else {
-      logger.success('✅ All documentation meets or exceeds quality thresholds!');
+      logger.success(
+        "✅ All documentation meets or exceeds quality thresholds!",
+      );
     }
 
     // Generate full quality report
@@ -127,7 +145,7 @@ export class PerformQualityCheckOperation implements IOperation {
         },
         recommendations: detailedQualityReport.map(
           (item) =>
-            `File: ${item.file}, Node: \`${item.node}\` (${item.score}/100) - Issues: ${item.issues.join('; ')}. Suggestions: ${item.suggestions.join('; ')}`,
+            `File: ${item.file}, Node: \`${item.node}\` (${item.score}/100) - Issues: ${item.issues.join("; ")}. Suggestions: ${item.suggestions.join("; ")}`,
         ),
         detailedReportItems: detailedQualityReport,
       },
@@ -141,7 +159,7 @@ export class PerformQualityCheckOperation implements IOperation {
     stats.errors = detailedQualityReport.map((item) => ({
       file: item.file,
       nodeName: item.node,
-      error: `Quality Issue: ${item.issues.join('; ')}`,
+      error: `Quality Issue: ${item.issues.join("; ")}`,
       timestamp: Date.now(),
     }));
     stats.durationSeconds = (performance.now() - stats.startTime) / 1000;

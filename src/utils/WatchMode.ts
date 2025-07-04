@@ -1,7 +1,7 @@
-import * as chokidar from 'chokidar';
-import path from 'path';
-import { logger } from './logger';
-import { GeneratorConfig } from '../types';
+import * as chokidar from "chokidar";
+import path from "path";
+import { logger } from "./logger";
+import { GeneratorConfig } from "../types";
 
 /**
  * Debounces a function call, ensuring it's only executed after a specified delay
@@ -63,23 +63,28 @@ export class WatchMode {
   start(): void {
     // Determine the paths to watch. Default to workspace directories if no specific patterns.
     const watchPaths =
-      this.config.watchMode?.includePatterns && this.config.watchMode.includePatterns.length > 0
-        ? this.config.watchMode.includePatterns.map((pattern) => path.join(this.baseDir, pattern))
-        : this.config.workspaceDirs.map((dir) => path.join(this.baseDir, dir, '**')); // Watch all files in workspace dirs by default
+      this.config.watchMode?.includePatterns &&
+      this.config.watchMode.includePatterns.length > 0
+        ? this.config.watchMode.includePatterns.map((pattern) =>
+            path.join(this.baseDir, pattern),
+          )
+        : this.config.workspaceDirs.map((dir) =>
+            path.join(this.baseDir, dir, "**"),
+          ); // Watch all files in workspace dirs by default
 
     // Combine global ignore patterns with watch-specific ignore patterns
     const ignorePatterns = [
       ...(this.config.ignorePatterns || []),
       ...(this.config.watchMode?.ignorePatterns || []),
-      '**/node_modules/**', // Always ignore node_modules
-      '**/dist/**', // Always ignore build output
-      '**/.git/**', // Always ignore .git
-      '**/.jsdoc-cache/**', // Ignore our own cache
-      '**/.jsdoc-telemetry/**', // Ignore telemetry logs
+      "**/node_modules/**", // Always ignore node_modules
+      "**/dist/**", // Always ignore build output
+      "**/.git/**", // Always ignore .git
+      "**/.jsdoc-cache/**", // Ignore our own cache
+      "**/.jsdoc-telemetry/**", // Ignore telemetry logs
     ];
 
-    logger.debug(`Watch paths: ${watchPaths.join(', ')}`);
-    logger.debug(`Watch ignore patterns: ${ignorePatterns.join(', ')}`);
+    logger.debug(`Watch paths: ${watchPaths.join(", ")}`);
+    logger.debug(`Watch ignore patterns: ${ignorePatterns.join(", ")}`);
 
     this.watcher = chokidar.watch(watchPaths, {
       ignored: ignorePatterns,
@@ -93,27 +98,27 @@ export class WatchMode {
     });
 
     this.watcher
-      .on('add', (filePath: string) => {
+      .on("add", (filePath: string) => {
         logger.trace(`File added: ${path.relative(this.baseDir, filePath)}`);
         this.changedFilesBuffer.add(filePath);
         this.debouncedHandler(this.changedFilesBuffer);
       })
-      .on('change', (filePath: string) => {
+      .on("change", (filePath: string) => {
         logger.trace(`File changed: ${path.relative(this.baseDir, filePath)}`);
         this.changedFilesBuffer.add(filePath);
         this.debouncedHandler(this.changedFilesBuffer);
       })
-      .on('unlink', (filePath: string) => {
+      .on("unlink", (filePath: string) => {
         logger.info(`File deleted: ${path.relative(this.baseDir, filePath)}`);
         // We typically don't regenerate docs for deleted files, but log for awareness.
         // If necessary, a cleanup operation could be triggered for deleted files.
       })
-      .on('error', (error) => {
+      .on("error", (error) => {
         logger.error(`Watcher error: ${error.message}`);
       })
-      .on('ready', () => {
-        logger.info('🔍 Watch mode started. Monitoring for file changes...');
-        logger.info('Press Ctrl+C to stop.');
+      .on("ready", () => {
+        logger.info("🔍 Watch mode started. Monitoring for file changes...");
+        logger.info("Press Ctrl+C to stop.");
       });
   }
 
@@ -127,7 +132,7 @@ export class WatchMode {
     this.changedFilesBuffer.clear(); // Clear buffer immediately to collect new changes
 
     if (filePaths.length === 0) {
-      logger.debug('No files to process in this debounce cycle.');
+      logger.debug("No files to process in this debounce cycle.");
       return;
     }
 
@@ -148,7 +153,7 @@ export class WatchMode {
     if (this.watcher) {
       this.watcher.close();
       this.watcher = null;
-      logger.info('👋 Watch mode stopped.');
+      logger.info("👋 Watch mode stopped.");
     }
   }
 }

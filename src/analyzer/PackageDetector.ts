@@ -1,9 +1,9 @@
-import path from 'path';
-import fs from 'fs/promises';
-import { logger } from '../utils/logger';
-import { WorkspacePackage } from '../types';
-import { AnalysisError } from '../utils/errorHandling';
-import { pathExists, readJsonFile } from '../utils/fileUtils';
+import path from "path";
+import fs from "fs/promises";
+import { logger } from "../utils/logger";
+import { WorkspacePackage } from "../types";
+import { AnalysisError } from "../utils/errorHandling";
+import { pathExists, readJsonFile } from "../utils/fileUtils";
 
 /**
  * Represents a simplified `package.json` structure for detection purposes.
@@ -33,25 +33,36 @@ export class PackageDetector {
    * @returns A Promise resolving to an array of discovered WorkspacePackage objects.
    * @throws AnalysisError if reading workspace directories fails.
    */
-  async discoverPackages(workspaceDirs: string[], baseDir: string): Promise<WorkspacePackage[]> {
-    logger.info('🔍 Discovering workspace packages...');
+  async discoverPackages(
+    workspaceDirs: string[],
+    baseDir: string,
+  ): Promise<WorkspacePackage[]> {
+    logger.info("🔍 Discovering workspace packages...");
     const packages: WorkspacePackage[] = [];
 
     // Check the base directory itself for a package.json (root package)
-    const rootPackageJsonPath = path.join(baseDir, 'package.json');
+    const rootPackageJsonPath = path.join(baseDir, "package.json");
     if (await pathExists(rootPackageJsonPath)) {
       try {
-        const rootPackageJson = (await readJsonFile(rootPackageJsonPath)) as PackageJson;
+        const rootPackageJson = (await readJsonFile(
+          rootPackageJsonPath,
+        )) as PackageJson;
         if (rootPackageJson?.name) {
-          const hasTsConfig = await pathExists(path.join(baseDir, 'tsconfig.json'));
+          const hasTsConfig = await pathExists(
+            path.join(baseDir, "tsconfig.json"),
+          );
           packages.push({
             name: rootPackageJson.name,
             path: baseDir,
-            type: 'root', // Custom type for the monorepo root
-            priority: this.calculatePackagePriority(rootPackageJson, 'root', hasTsConfig),
+            type: "root", // Custom type for the monorepo root
+            priority: this.calculatePackagePriority(
+              rootPackageJson,
+              "root",
+              hasTsConfig,
+            ),
           });
           logger.success(
-            `  ✓ Found: ${rootPackageJson.name} (Type: root${hasTsConfig ? ', TS' : ''}, Path: ${path.relative(baseDir, baseDir)})`,
+            `  ✓ Found: ${rootPackageJson.name} (Type: root${hasTsConfig ? ", TS" : ""}, Path: ${path.relative(baseDir, baseDir)})`,
           );
         }
       } catch (err) {
@@ -64,7 +75,9 @@ export class PackageDetector {
     for (const dir of workspaceDirs) {
       const dirPath = path.join(baseDir, dir);
       if (!(await pathExists(dirPath))) {
-        logger.debug(`  Workspace directory '${dir}' not found at ${dirPath}. Skipping.`);
+        logger.debug(
+          `  Workspace directory '${dir}' not found at ${dirPath}. Skipping.`,
+        );
         continue;
       }
 
@@ -73,16 +86,20 @@ export class PackageDetector {
         for (const subdir of subdirs) {
           if (subdir.isDirectory()) {
             const packagePath = path.join(dirPath, subdir.name);
-            const packageJsonPath = path.join(packagePath, 'package.json');
-            const tsConfigPath = path.join(packagePath, 'tsconfig.json');
+            const packageJsonPath = path.join(packagePath, "package.json");
+            const tsConfigPath = path.join(packagePath, "tsconfig.json");
 
             if (!(await pathExists(packageJsonPath))) {
-              logger.trace(`  Skipping ${path.join(dir, subdir.name)}: Missing package.json.`);
+              logger.trace(
+                `  Skipping ${path.join(dir, subdir.name)}: Missing package.json.`,
+              );
               continue;
             }
 
             try {
-              const packageJson = (await readJsonFile(packageJsonPath)) as PackageJson;
+              const packageJson = (await readJsonFile(
+                packageJsonPath,
+              )) as PackageJson;
               if (!packageJson) {
                 logger.warn(
                   `  Could not parse package.json for ${path.join(dir, subdir.name)}. Skipping.`,
@@ -95,11 +112,15 @@ export class PackageDetector {
                 name: packageJson.name || subdir.name, // Use package.json name or directory name as fallback
                 path: packagePath,
                 type: dir, // Type derived from the workspace directory name (e.g., 'packages', 'apps')
-                priority: this.calculatePackagePriority(packageJson, dir, hasTsConfig),
+                priority: this.calculatePackagePriority(
+                  packageJson,
+                  dir,
+                  hasTsConfig,
+                ),
               };
               packages.push(pkg);
               logger.success(
-                `  ✓ Found: ${packageJson.name || subdir.name} (Type: ${dir}${hasTsConfig ? ', TS' : ''}, Path: ${path.relative(baseDir, packagePath)})`,
+                `  ✓ Found: ${packageJson.name || subdir.name} (Type: ${dir}${hasTsConfig ? ", TS" : ""}, Path: ${path.relative(baseDir, packagePath)})`,
               );
             } catch (err) {
               logger.error(
@@ -139,22 +160,22 @@ export class PackageDetector {
 
     // Base priority based on package type/location
     switch (type.toLowerCase()) {
-      case 'root':
+      case "root":
         priority += 200; // Monorepo root is very important
         break;
-      case 'packages':
+      case "packages":
         priority += 100; // Common libraries, reusable components
         break;
-      case 'services':
+      case "services":
         priority += 80; // Backend services, APIs
         break;
-      case 'apps':
+      case "apps":
         priority += 60; // Frontend applications
         break;
-      case 'libs': // Could be interchangeable with 'packages'
+      case "libs": // Could be interchangeable with 'packages'
         priority += 90;
         break;
-      case 'tools':
+      case "tools":
         priority += 40; // Build tools, CLI utilities
         break;
       default:
@@ -165,10 +186,10 @@ export class PackageDetector {
     // Boost priority for packages with common "core" or "shared" names
     if (
       packageJson.name &&
-      (packageJson.name.includes('core') ||
-        packageJson.name.includes('shared') ||
-        packageJson.name.includes('common') ||
-        packageJson.name.includes('util'))
+      (packageJson.name.includes("core") ||
+        packageJson.name.includes("shared") ||
+        packageJson.name.includes("common") ||
+        packageJson.name.includes("util"))
     ) {
       priority += 50;
     }

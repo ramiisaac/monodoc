@@ -1,5 +1,5 @@
-import { logger } from './logger';
-import os from 'os'; // For CPU usage
+import { logger } from "./logger";
+import os from "os"; // For CPU usage
 
 /**
  * Interface for a metric entry, storing a value and its timestamp.
@@ -64,24 +64,44 @@ export class ProductionMonitor {
    */
   private checkAlerts(name: string, value: unknown): void {
     switch (name) {
-      case 'errorRate':
-        if (typeof value === 'number' && value > this.alertThresholds.errorRate) {
-          logger.warn(`🚨 Alert: High error rate detected: ${(value * 100).toFixed(1)}%`);
+      case "errorRate":
+        if (
+          typeof value === "number" &&
+          value > this.alertThresholds.errorRate
+        ) {
+          logger.warn(
+            `🚨 Alert: High error rate detected: ${(value * 100).toFixed(1)}%`,
+          );
         }
         break;
-      case 'memoryUsage': // Expecting value in bytes
-        if (typeof value === 'number' && value > this.alertThresholds.memoryUsage) {
-          logger.warn(`🚨 Alert: High memory usage: ${(value / 1024 / 1024).toFixed(2)}MB`);
+      case "memoryUsage": // Expecting value in bytes
+        if (
+          typeof value === "number" &&
+          value > this.alertThresholds.memoryUsage
+        ) {
+          logger.warn(
+            `🚨 Alert: High memory usage: ${(value / 1024 / 1024).toFixed(2)}MB`,
+          );
         }
         break;
-      case 'processingTime': // Expecting value in milliseconds
-        if (typeof value === 'number' && value > this.alertThresholds.processingTime) {
-          logger.warn(`🚨 Alert: Slow processing detected: ${(value / 1000).toFixed(2)}s`);
+      case "processingTime": // Expecting value in milliseconds
+        if (
+          typeof value === "number" &&
+          value > this.alertThresholds.processingTime
+        ) {
+          logger.warn(
+            `🚨 Alert: Slow processing detected: ${(value / 1000).toFixed(2)}s`,
+          );
         }
         break;
-      case 'cacheHitRate':
-        if (typeof value === 'number' && value < this.alertThresholds.cacheHitRate) {
-          logger.warn(`🚨 Alert: Low cache hit rate: ${(value * 100).toFixed(1)}%`);
+      case "cacheHitRate":
+        if (
+          typeof value === "number" &&
+          value < this.alertThresholds.cacheHitRate
+        ) {
+          logger.warn(
+            `🚨 Alert: Low cache hit rate: ${(value * 100).toFixed(1)}%`,
+          );
         }
         break;
       // Add more alerts for other critical metrics as needed
@@ -114,7 +134,7 @@ export class ProductionMonitor {
         rss: `${(memUsage.rss / 1024 / 1024).toFixed(2)}MB`, // Resident Set Size
         external: `${(memUsage.external / 1024 / 1024).toFixed(2)}MB`,
       },
-      cpuUsage: `Load Averages (1, 5, 15 min): ${cpuLoad.map((l) => l.toFixed(2)).join(', ')}`,
+      cpuUsage: `Load Averages (1, 5, 15 min): ${cpuLoad.map((l) => l.toFixed(2)).join(", ")}`,
       metrics: Object.fromEntries(this.metrics), // Convert Map to plain object
       status: this.getHealthStatus(),
     };
@@ -127,17 +147,20 @@ export class ProductionMonitor {
   private getHealthStatus(): string {
     const currentMemoryUsage = process.memoryUsage().heapUsed;
     if (currentMemoryUsage > this.alertThresholds.memoryUsage) {
-      return 'warning'; // Memory is a primary indicator
+      return "warning"; // Memory is a primary indicator
     }
 
-    const errorRateMetric = this.metrics.get('errorRate')?.value;
-    if (typeof errorRateMetric === 'number' && errorRateMetric > this.alertThresholds.errorRate) {
-      return 'warning';
+    const errorRateMetric = this.metrics.get("errorRate")?.value;
+    if (
+      typeof errorRateMetric === "number" &&
+      errorRateMetric > this.alertThresholds.errorRate
+    ) {
+      return "warning";
     }
 
     // Add more complex logic here for 'critical' status
     // For example, if multiple metrics are in warning, or a critical error count is high.
 
-    return 'healthy';
+    return "healthy";
   }
 }

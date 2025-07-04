@@ -1,9 +1,14 @@
-import path from 'path';
-import fs from 'fs/promises';
-import globby from 'globby';
-import { logger } from '../utils/logger';
-import { FileBatch, WorkspacePackage, GeneratorConfig, FileInfo } from '../types';
-import { AnalysisError } from '../utils/errorHandling';
+import path from "path";
+import fs from "fs/promises";
+import globby from "globby";
+import { logger } from "../utils/logger";
+import {
+  FileBatch,
+  WorkspacePackage,
+  GeneratorConfig,
+  FileInfo,
+} from "../types";
+import { AnalysisError } from "../utils/errorHandling";
 
 /**
  * Responsible for collecting relevant source files and organizing them into token-aware batches.
@@ -28,11 +33,13 @@ export class FileBatcher {
     config: GeneratorConfig,
     baseDir: string,
   ): Promise<FileBatch[]> {
-    logger.info('📊 Creating token-aware batches...');
+    logger.info("📊 Creating token-aware batches...");
     const allFiles = await this.collectFiles(packages, config, baseDir);
     this.sortByPriorityDescending(allFiles); // Sort files before batching
 
-    logger.success(`📄 Found ${allFiles.length} TypeScript/JavaScript files for processing`);
+    logger.success(
+      `📄 Found ${allFiles.length} TypeScript/JavaScript files for processing`,
+    );
 
     const batches = this.batchFilesByTokenLimit(
       allFiles,
@@ -63,7 +70,8 @@ export class FileBatcher {
     config: GeneratorConfig,
     baseDir: string,
   ): Promise<Array<{ path: string; size: number; priority: number }>> {
-    const filesList: Array<{ path: string; size: number; priority: number }> = [];
+    const filesList: Array<{ path: string; size: number; priority: number }> =
+      [];
     const includePatterns = this.getEffectiveIncludePatterns(config); // CLI --target-paths take precedence
     const ignorePatterns = config.ignorePatterns;
 
@@ -80,7 +88,9 @@ export class FileBatcher {
           try {
             const stats = await fs.stat(filePath);
             if (!stats.isFile()) {
-              logger.trace(`Skipping non-file path: ${path.relative(baseDir, filePath)}`);
+              logger.trace(
+                `Skipping non-file path: ${path.relative(baseDir, filePath)}`,
+              );
               continue;
             }
             filesList.push({
@@ -117,7 +127,7 @@ export class FileBatcher {
   private getEffectiveIncludePatterns(config: GeneratorConfig): string[] {
     if (config.targetPaths && config.targetPaths.length > 0) {
       logger.info(
-        `🎯 CLI-specified target paths will override general include patterns: ${config.targetPaths.join(', ')}`,
+        `🎯 CLI-specified target paths will override general include patterns: ${config.targetPaths.join(", ")}`,
       );
       // Ensure target paths are relative to package path if passed from CLI.
       // Globby's `cwd` option handles this for us if targetPaths are like "**/*.ts"
@@ -152,7 +162,11 @@ export class FileBatcher {
   ): FileBatch[] {
     const batches: FileBatch[] = [];
     let batchId = 0;
-    let currentBatch: { files: FileInfo[]; estimatedTokens: number; priority: number } = {
+    let currentBatch: {
+      files: FileInfo[];
+      estimatedTokens: number;
+      priority: number;
+    } = {
       files: [],
       estimatedTokens: 0,
       priority: 0,
@@ -219,29 +233,37 @@ export class FileBatcher {
    * @param packagePriority The priority of the package the file belongs to.
    * @returns The calculated priority score for the file.
    */
-  private calculateFilePriority(filePath: string, packagePriority: number): number {
+  private calculateFilePriority(
+    filePath: string,
+    packagePriority: number,
+  ): number {
     let priority = packagePriority; // Start with package's priority
 
-    const fileName = path.basename(filePath, path.extname(filePath)).toLowerCase();
+    const fileName = path
+      .basename(filePath, path.extname(filePath))
+      .toLowerCase();
     const dirName = path.basename(path.dirname(filePath)).toLowerCase();
 
     // Keywords in file names (e.g., index, api, service, types)
     const fileNameKeywords = [
-      { words: ['index', 'main', 'core'], points: 20 },
-      { words: ['api', 'service', 'client', 'gateway', 'repository'], points: 15 },
-      { words: ['type', 'interface', 'model', 'schema', 'types'], points: 15 },
-      { words: ['util', 'helper', 'utils', 'helpers'], points: 10 },
-      { words: ['config', 'configuration'], points: 10 },
-      { words: ['constant', 'enum'], points: 5 },
-      { words: ['hook', 'component', 'components'], points: 5 },
+      { words: ["index", "main", "core"], points: 20 },
+      {
+        words: ["api", "service", "client", "gateway", "repository"],
+        points: 15,
+      },
+      { words: ["type", "interface", "model", "schema", "types"], points: 15 },
+      { words: ["util", "helper", "utils", "helpers"], points: 10 },
+      { words: ["config", "configuration"], points: 10 },
+      { words: ["constant", "enum"], points: 5 },
+      { words: ["hook", "component", "components"], points: 5 },
     ];
 
     // Keywords in directory names (e.g., src, lib, services)
     const dirNameKeywords = [
-      { words: ['src', 'source', 'lib', 'library'], points: 10 },
-      { words: ['api', 'services', 'clients'], points: 15 },
-      { words: ['types', 'models', 'interfaces'], points: 15 },
-      { words: ['hooks', 'components', 'elements'], points: 5 },
+      { words: ["src", "source", "lib", "library"], points: 10 },
+      { words: ["api", "services", "clients"], points: 15 },
+      { words: ["types", "models", "interfaces"], points: 15 },
+      { words: ["hooks", "components", "elements"], points: 5 },
     ];
 
     for (const { words, points } of fileNameKeywords) {
@@ -257,7 +279,7 @@ export class FileBatcher {
     }
 
     // Penalize test-related files if they somehow slip through ignore patterns
-    if (fileName.includes('test') || fileName.includes('spec')) {
+    if (fileName.includes("test") || fileName.includes("spec")) {
       priority -= 50; // Large penalty
     }
 

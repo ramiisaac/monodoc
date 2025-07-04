@@ -1,4 +1,4 @@
-import { logger } from './logger';
+import { logger } from "./logger";
 
 /**
  * Base class for all custom errors in the generator.
@@ -9,7 +9,11 @@ export class BaseGeneratorError extends Error {
   public readonly context?: Record<string, unknown>;
   public readonly originalError?: Error | unknown;
 
-  constructor(message: string, originalError?: Error | unknown, context?: Record<string, unknown>) {
+  constructor(
+    message: string,
+    originalError?: Error | unknown,
+    context?: Record<string, unknown>,
+  ) {
     super(message);
     this.name = this.constructor.name;
     this.timestamp = new Date();
@@ -18,11 +22,17 @@ export class BaseGeneratorError extends Error {
 
     // Capture stack trace for better debugging
     if (
-      typeof (Error as { captureStackTrace?: (target: object, constructorOpt?: object) => void })
-        .captureStackTrace === 'function'
+      typeof (
+        Error as {
+          captureStackTrace?: (target: object, constructorOpt?: object) => void;
+        }
+      ).captureStackTrace === "function"
     ) {
-      (Error as { captureStackTrace?: (target: object, constructorOpt?: object) => void })
-        .captureStackTrace!(this, this.constructor);
+      (
+        Error as {
+          captureStackTrace?: (target: object, constructorOpt?: object) => void;
+        }
+      ).captureStackTrace!(this, this.constructor);
     } else {
       this.stack = new Error(message).stack;
     }
@@ -71,9 +81,13 @@ export class BaseGeneratorError extends Error {
  * Represents an error during the overall generation process.
  */
 export class GeneratorError extends BaseGeneratorError {
-  constructor(message: string, originalError?: Error | unknown, context?: Record<string, unknown>) {
+  constructor(
+    message: string,
+    originalError?: Error | unknown,
+    context?: Record<string, unknown>,
+  ) {
     super(message, originalError, context);
-    this.name = 'GeneratorError';
+    this.name = "GeneratorError";
   }
 }
 
@@ -81,9 +95,13 @@ export class GeneratorError extends BaseGeneratorError {
  * Represents an error during workspace analysis (e.g., file system issues, TS project loading).
  */
 export class AnalysisError extends BaseGeneratorError {
-  constructor(message: string, originalError?: Error | unknown, context?: Record<string, unknown>) {
+  constructor(
+    message: string,
+    originalError?: Error | unknown,
+    context?: Record<string, unknown>,
+  ) {
     super(`Analysis failed: ${message}`, originalError, context);
-    this.name = 'AnalysisError';
+    this.name = "AnalysisError";
   }
 }
 
@@ -102,7 +120,7 @@ export class LLMError extends BaseGeneratorError {
     context?: Record<string, unknown>,
   ) {
     super(`AI interaction failed: ${message}`, originalError, context);
-    this.name = 'LLMError';
+    this.name = "LLMError";
     this.statusCode = statusCode;
     this.errorCode = errorCode;
   }
@@ -120,9 +138,13 @@ export class LLMError extends BaseGeneratorError {
  * Represents an error during the embedding generation or similarity search process.
  */
 export class EmbeddingError extends BaseGeneratorError {
-  constructor(message: string, originalError?: Error | unknown, context?: Record<string, unknown>) {
+  constructor(
+    message: string,
+    originalError?: Error | unknown,
+    context?: Record<string, unknown>,
+  ) {
     super(`Embedding process failed: ${message}`, originalError, context);
-    this.name = 'EmbeddingError';
+    this.name = "EmbeddingError";
   }
 }
 
@@ -140,9 +162,9 @@ export class TransformationError extends BaseGeneratorError {
     originalError?: Error | unknown,
     context?: Record<string, unknown>,
   ) {
-    const fullMessage = `Transformation failed in ${filePath}${nodeName ? ` for node '${nodeName}'` : ''}: ${message}`;
+    const fullMessage = `Transformation failed in ${filePath}${nodeName ? ` for node '${nodeName}'` : ""}: ${message}`;
     super(fullMessage, originalError, context);
-    this.name = 'TransformationError';
+    this.name = "TransformationError";
     this.filePath = filePath;
     this.nodeName = nodeName;
   }
@@ -160,9 +182,13 @@ export class TransformationError extends BaseGeneratorError {
  * Represents an error related to configuration loading or validation.
  */
 export class ConfigurationError extends BaseGeneratorError {
-  constructor(message: string, originalError?: Error | unknown, context?: Record<string, unknown>) {
+  constructor(
+    message: string,
+    originalError?: Error | unknown,
+    context?: Record<string, unknown>,
+  ) {
     super(`Configuration error: ${message}`, originalError, context);
-    this.name = 'ConfigurationError';
+    this.name = "ConfigurationError";
   }
 }
 
@@ -174,10 +200,13 @@ export class ConfigurationError extends BaseGeneratorError {
  */
 export function handleCriticalError(
   error: unknown,
-  context: string | Record<string, unknown> = 'unknown operation',
+  context: string | Record<string, unknown> = "unknown operation",
 ): void {
-  const errorContext = typeof context === 'string' ? { operation: context } : context;
-  logger.fatal(`🚨 CRITICAL ERROR during ${errorContext.operation || 'general operation'}:`);
+  const errorContext =
+    typeof context === "string" ? { operation: context } : context;
+  logger.fatal(
+    `🚨 CRITICAL ERROR during ${errorContext.operation || "general operation"}:`,
+  );
 
   if (error instanceof BaseGeneratorError) {
     error.log(); // Use custom log for BaseGeneratorErrors
@@ -190,7 +219,9 @@ export function handleCriticalError(
     }
   } else {
     // Catch-all for non-Error objects
-    logger.fatal(`  An unexpected non-Error object was thrown: ${String(error)}`);
+    logger.fatal(
+      `  An unexpected non-Error object was thrown: ${String(error)}`,
+    );
     if (errorContext) {
       logger.error(`  Context: ${JSON.stringify(errorContext)}`);
     }

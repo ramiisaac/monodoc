@@ -1,8 +1,8 @@
-import chalk from 'chalk';
-import { LogLevel } from '../types';
+import chalk from "chalk";
+import { LogLevel } from "../types";
 
 // Default log level if not specified by environment variable
-const DEFAULT_LOG_LEVEL: LogLevel = 'info';
+const DEFAULT_LOG_LEVEL: LogLevel = "info";
 
 // Mapping of log level names to numerical values for comparison
 const logLevels: Record<LogLevel, number> = {
@@ -17,13 +17,13 @@ const logLevels: Record<LogLevel, number> = {
 
 // Console prefixes for different log levels, using chalk for colors
 const prefixes: Record<LogLevel, string> = {
-  trace: chalk.magenta('🟣 TRACE'),
-  debug: chalk.gray('🐛 DEBUG'),
-  info: chalk.blue('ℹ️  INFO'),
-  warn: chalk.yellow('⚠️  WARN'),
-  error: chalk.red('❌ ERROR'),
-  fatal: chalk.bgRed.white('💀 FATAL'),
-  silent: '', // No prefix for silent level
+  trace: chalk.magenta("🟣 TRACE"),
+  debug: chalk.gray("🐛 DEBUG"),
+  info: chalk.blue("ℹ️  INFO"),
+  warn: chalk.yellow("⚠️  WARN"),
+  error: chalk.red("❌ ERROR"),
+  fatal: chalk.bgRed.white("💀 FATAL"),
+  silent: "", // No prefix for silent level
 };
 
 // The current log level, initialized from environment or default
@@ -31,7 +31,7 @@ let currentLogLevel: LogLevel =
   (process.env.LOG_LEVEL?.toLowerCase() as LogLevel) || DEFAULT_LOG_LEVEL;
 
 // Check if DEBUG_JSDOC_GEN environment variable is set to 'true'
-const IS_DEBUG_ENV = process.env.DEBUG_JSDOC_GEN === 'true';
+const IS_DEBUG_ENV = process.env.DEBUG_JSDOC_GEN === "true";
 
 /**
  * Sets the global log level. Messages with a lower priority than the current level will not be displayed.
@@ -62,7 +62,7 @@ function isLogLevelEnabled(level: LogLevel): boolean {
   // If in debug environment, all levels up to debug are effectively enabled.
   // This means if currentLogLevel is INFO, and DEBUG_JSDOC_GEN is true,
   // debug messages will still show.
-  if (IS_DEBUG_ENV && logLevels[level] >= logLevels['debug']) {
+  if (IS_DEBUG_ENV && logLevels[level] >= logLevels["debug"]) {
     return true;
   }
   return logLevels[level] >= logLevels[currentLogLevel];
@@ -74,17 +74,17 @@ function isLogLevelEnabled(level: LogLevel): boolean {
  */
 export const logger = {
   trace: (message: string, ...args: unknown[]) => {
-    if (isLogLevelEnabled('trace')) {
+    if (isLogLevelEnabled("trace")) {
       console.log(`${prefixes.trace} ${chalk.dim(message)}`, ...args);
     }
   },
   debug: (message: string, ...args: unknown[]) => {
-    if (isLogLevelEnabled('debug')) {
+    if (isLogLevelEnabled("debug")) {
       console.log(`${prefixes.debug} ${chalk.gray(message)}`, ...args);
     }
   },
   info: (message: string, ...args: unknown[]) => {
-    if (isLogLevelEnabled('info')) {
+    if (isLogLevelEnabled("info")) {
       console.log(`${prefixes.info} ${message}`, ...args);
     }
   },
@@ -92,22 +92,22 @@ export const logger = {
    * Custom success log method, typically for important positive feedback.
    */
   success: (message: string, ...args: unknown[]) => {
-    if (isLogLevelEnabled('info')) {
-      console.log(`${chalk.green('✅ SUCCESS')} ${message}`, ...args);
+    if (isLogLevelEnabled("info")) {
+      console.log(`${chalk.green("✅ SUCCESS")} ${message}`, ...args);
     }
   },
   warn: (message: string, ...args: unknown[]) => {
-    if (isLogLevelEnabled('warn')) {
+    if (isLogLevelEnabled("warn")) {
       console.warn(`${prefixes.warn} ${message}`, ...args);
     }
   },
   error: (message: string, ...args: unknown[]) => {
-    if (isLogLevelEnabled('error')) {
+    if (isLogLevelEnabled("error")) {
       console.error(`${prefixes.error} ${message}`, ...args);
     }
   },
   fatal: (message: string, ...args: unknown[]) => {
-    if (isLogLevelEnabled('fatal')) {
+    if (isLogLevelEnabled("fatal")) {
       console.error(`${prefixes.fatal} ${message}`, ...args);
     }
   },

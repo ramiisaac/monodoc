@@ -1,7 +1,14 @@
-import { Project, Node, SourceFile, Symbol, SyntaxKind, ReferenceEntry } from 'ts-morph'; // Removed unused imports
-import path from 'path';
-import { logger } from '../utils/logger';
-import { DetailedSymbolInfo } from '../types'; // Removed SymbolUsage as it's part of DetailedSymbolInfo
+import {
+  Project,
+  Node,
+  SourceFile,
+  Symbol,
+  SyntaxKind,
+  ReferenceEntry,
+} from "ts-morph"; // Removed unused imports
+import path from "path";
+import { logger } from "../utils/logger";
+import { DetailedSymbolInfo } from "../types"; // Removed SymbolUsage as it's part of DetailedSymbolInfo
 
 /**
  * Analyzes and collects detailed information about symbols (classes, functions, types, variables)
@@ -24,7 +31,7 @@ export class SymbolReferenceAnalyzer {
    * @returns A Promise resolving to a Map where keys are unique symbol IDs and values are DetailedSymbolInfo objects.
    */
   async analyzeSymbols(): Promise<Map<string, DetailedSymbolInfo>> {
-    logger.info('🔗 Analyzing symbol references across the monorepo...');
+    logger.info("🔗 Analyzing symbol references across the monorepo...");
     this.symbolMap.clear(); // Clear any previous analysis
 
     const sourceFiles = this.project.getSourceFiles();
@@ -40,13 +47,17 @@ export class SymbolReferenceAnalyzer {
       this.collectSymbolsInFile(sourceFile);
     }
 
-    logger.info(`✨ Collected definitions for ${this.symbolMap.size} key symbols.`);
-    logger.info('🔍 Resolving all symbol usages...');
+    logger.info(
+      `✨ Collected definitions for ${this.symbolMap.size} key symbols.`,
+    );
+    logger.info("🔍 Resolving all symbol usages...");
 
     // Second pass: Find all usages for the collected symbols
     let usageCount = 0;
     for (const symbolInfo of this.symbolMap.values()) {
-      const definitionNode = this.getNodeFromDefinitionLocation(symbolInfo.definitionLocation);
+      const definitionNode = this.getNodeFromDefinitionLocation(
+        symbolInfo.definitionLocation,
+      );
       if (!definitionNode) {
         logger.warn(
           `Could not find definition node for symbol ID: ${symbolInfo.id}. Skipping usage analysis for this symbol.`,
@@ -86,8 +97,10 @@ export class SymbolReferenceAnalyzer {
         .filter(
           (usage) =>
             usage.filePath !==
-              path.relative(this.baseDir, symbolInfo.definitionLocation.filePath) ||
-            usage.line !== symbolInfo.definitionLocation.line,
+              path.relative(
+                this.baseDir,
+                symbolInfo.definitionLocation.filePath,
+              ) || usage.line !== symbolInfo.definitionLocation.line,
         ); // Exclude the definition itself
 
       usageCount += symbolInfo.usages.length;
@@ -155,7 +168,9 @@ export class SymbolReferenceAnalyzer {
             Node.isPropertyDeclaration(member) ||
             Node.isGetAccessorDeclaration(member) ||
             Node.isSetAccessorDeclaration(member)) &&
-          member.getModifiers().some((mod) => mod.getKind() === SyntaxKind.PrivateKeyword);
+          member
+            .getModifiers()
+            .some((mod) => mod.getKind() === SyntaxKind.PrivateKeyword);
 
         if (!isPrivate && member.getSymbol()) {
           this.processSymbolDefinition(member.getSymbolOrThrow(), member);
@@ -181,7 +196,8 @@ export class SymbolReferenceAnalyzer {
     const filePath = node.getSourceFile().getFilePath();
     // Use the name node's start for more precise location
     const nameNode =
-      (node as any).getNameNode && typeof (node as any).getNameNode === 'function'
+      (node as any).getNameNode &&
+      typeof (node as any).getNameNode === "function"
         ? (node as unknown as { getNameNode: () => Node }).getNameNode()
         : node;
     const line = nameNode.getStartLineNumber();
@@ -239,9 +255,9 @@ export class SymbolReferenceAnalyzer {
 
     let snippet = fullText.substring(start, end);
 
-    if (start > 0) snippet = '...' + snippet; // Indicate truncation at start
-    if (end < fullText.length) snippet = snippet + '...'; // Indicate truncation at end
+    if (start > 0) snippet = "..." + snippet; // Indicate truncation at start
+    if (end < fullText.length) snippet = snippet + "..."; // Indicate truncation at end
 
-    return snippet.replace(/\s+/g, ' ').trim(); // Normalize whitespace
+    return snippet.replace(/\s+/g, " ").trim(); // Normalize whitespace
   }
 }

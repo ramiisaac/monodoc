@@ -1,4 +1,4 @@
-import { Plugin, NodeContext, VercelAITool } from '../types';
+import { Plugin, NodeContext, VercelAITool } from "../types";
 
 /**
  * Base class for all generator plugins.
@@ -97,7 +97,10 @@ export abstract class BasePlugin implements Plugin {
    * @param _prompt The prompt to be sent to the AI.
    * @returns Modified prompt or original if unchanged.
    */
-  async beforeGenerateJSDoc(_nodeContext: NodeContext, _prompt: string): Promise<string> {
+  async beforeGenerateJSDoc(
+    _nodeContext: NodeContext,
+    _prompt: string,
+  ): Promise<string> {
     return _prompt; // Default: return unchanged
   }
 
@@ -107,7 +110,10 @@ export abstract class BasePlugin implements Plugin {
    * @param _jsDoc The generated JSDoc content.
    * @returns Enhanced or modified JSDoc content.
    */
-  async afterGenerateJSDoc(_nodeContext: NodeContext, _jsDoc: string): Promise<string> {
+  async afterGenerateJSDoc(
+    _nodeContext: NodeContext,
+    _jsDoc: string,
+  ): Promise<string> {
     return _jsDoc; // Default: return unchanged
   }
 

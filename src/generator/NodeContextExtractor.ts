@@ -11,9 +11,9 @@ import {
   ObjectLiteralExpression,
   FunctionDeclaration,
   MethodDeclaration,
-} from 'ts-morph';
-import path from 'path';
-import { logger } from '../utils/logger';
+} from "ts-morph";
+import path from "path";
+import { logger } from "../utils/logger";
 import {
   NodeContext,
   JSDocableNode,
@@ -22,7 +22,7 @@ import {
   DetailedSymbolInfo,
   SymbolUsage,
   EmbeddedNode,
-} from '../types';
+} from "../types";
 
 /**
  * Extracts comprehensive context information for a given TypeScript node,
@@ -69,7 +69,9 @@ export class NodeContextExtractor {
    */
   updateSymbolMap(newSymbolMap: Map<string, DetailedSymbolInfo>): void {
     this.symbolMap = newSymbolMap;
-    logger.debug(`NodeContextExtractor: Updated symbol map with ${newSymbolMap.size} entries.`);
+    logger.debug(
+      `NodeContextExtractor: Updated symbol map with ${newSymbolMap.size} entries.`,
+    );
   }
 
   /**
@@ -78,7 +80,9 @@ export class NodeContextExtractor {
    */
   updatePackages(newPackages: WorkspacePackage[]): void {
     this.packages = newPackages;
-    logger.debug(`NodeContextExtractor: Updated packages list with ${newPackages.length} entries.`);
+    logger.debug(
+      `NodeContextExtractor: Updated packages list with ${newPackages.length} entries.`,
+    );
   }
 
   /**
@@ -88,10 +92,10 @@ export class NodeContextExtractor {
    */
   isJSDocable(node: Node): node is JSDocableNode {
     return (
-      'getJsDocs' in node &&
-      typeof (node as JSDocableNode).getJsDocs === 'function' &&
-      'addJsDoc' in node &&
-      typeof (node as JSDocableNode).addJsDoc === 'function'
+      "getJsDocs" in node &&
+      typeof (node as JSDocableNode).getJsDocs === "function" &&
+      "addJsDoc" in node &&
+      typeof (node as JSDocableNode).addJsDoc === "function"
     );
   }
 
@@ -160,7 +164,11 @@ export class NodeContextExtractor {
           Node.isSetAccessorDeclaration(node) ||
           Node.isConstructorDeclaration(node)
         ) {
-          if (node.getModifiers().some((mod) => mod.getKind() === SyntaxKind.PrivateKeyword)) {
+          if (
+            node
+              .getModifiers()
+              .some((mod) => mod.getKind() === SyntaxKind.PrivateKeyword)
+          ) {
             logger.trace(
               `    [Node Filter] Skipping private member: ${this.getNodeNameForLogging(node)}`,
             );
@@ -178,7 +186,8 @@ export class NodeContextExtractor {
         if (
           parent &&
           this.isJSDocable(parent) &&
-          (jsdocableKinds.size === 0 || jsdocableKinds.has(parent.getKindName()))
+          (jsdocableKinds.size === 0 ||
+            jsdocableKinds.has(parent.getKindName()))
         ) {
           logger.trace(
             `    [Node Filter] Skipping interface/type member (parent likely to be documented): ${this.getNodeNameForLogging(node)}`,
@@ -234,8 +243,10 @@ export class NodeContextExtractor {
     // Filter for unique nodes to avoid duplicates from various traversal paths
     const uniqueNodes = nodes.filter(
       (node, index, arr) =>
-        arr.findIndex((n) => n.getStart() === node.getStart() && n.getEnd() === node.getEnd()) ===
-        index,
+        arr.findIndex(
+          (n) =>
+            n.getStart() === node.getStart() && n.getEnd() === node.getEnd(),
+        ) === index,
     );
 
     logger.debug(
@@ -251,8 +262,14 @@ export class NodeContextExtractor {
    * @param sourceFile The SourceFile containing the node.
    * @returns A comprehensive NodeContext object.
    */
-  getEnhancedNodeContext(node: JSDocableNode, sourceFile: SourceFile): NodeContext {
-    const relativeFilePath = path.relative(this.baseDir, sourceFile.getFilePath());
+  getEnhancedNodeContext(
+    node: JSDocableNode,
+    sourceFile: SourceFile,
+  ): NodeContext {
+    const relativeFilePath = path.relative(
+      this.baseDir,
+      sourceFile.getFilePath(),
+    );
     const nodeId = `${relativeFilePath}:${node.getStartLineNumber()}:${node.getStart()}`;
 
     let codeSnippet = node.getText();
@@ -260,17 +277,18 @@ export class NodeContextExtractor {
       // Truncate long snippets to avoid exceeding LLM context limits
       codeSnippet =
         codeSnippet.substring(0, this.config.jsdocConfig.maxSnippetLength) +
-        '\n// ... (snippet truncated)';
+        "\n// ... (snippet truncated)";
     }
 
     const nodeKind = node.getKindName();
     let nodeName = this.getNodeNameForLogging(node); // Consistent naming
 
-    let signatureDetails = '';
-    let parameters: Array<{ name: string; type: string; optional: boolean }> = [];
+    let signatureDetails = "";
+    let parameters: Array<{ name: string; type: string; optional: boolean }> =
+      [];
     let returnType: string | undefined;
     let isAsync = false;
-    let accessModifier: 'public' | 'private' | 'protected' | undefined;
+    let accessModifier: "public" | "private" | "protected" | undefined;
     let isExported = false;
 
     try {
@@ -284,17 +302,25 @@ export class NodeContextExtractor {
         const funcNode = Node.isFunctionLikeDeclaration(node)
           ? node
           : (node.getInitializer() as FunctionExpression | ArrowFunction);
-        parameters = funcNode.getParameters().map((p: ParameterDeclaration) => ({
-          name: p.getName(),
-          type: p.getType().getText(),
-          optional: p.isOptional(),
-        }));
+        parameters = funcNode
+          .getParameters()
+          .map((p: ParameterDeclaration) => ({
+            name: p.getName(),
+            type: p.getType().getText(),
+            optional: p.isOptional(),
+          }));
         returnType = funcNode.getReturnType().getText();
-        signatureDetails = `${nodeName}(${parameters.map((p) => p.name).join(', ')})${returnType ? `: ${returnType}` : ''}`;
+        signatureDetails = `${nodeName}(${parameters.map((p) => p.name).join(", ")})${returnType ? `: ${returnType}` : ""}`;
         // Check for async functions using a type guard approach
-        if (Node.isFunctionDeclaration(funcNode) || Node.isMethodDeclaration(funcNode)) {
+        if (
+          Node.isFunctionDeclaration(funcNode) ||
+          Node.isMethodDeclaration(funcNode)
+        ) {
           isAsync = funcNode.isAsync();
-        } else if ('isAsync' in funcNode && typeof funcNode.isAsync === 'function') {
+        } else if (
+          "isAsync" in funcNode &&
+          typeof funcNode.isAsync === "function"
+        ) {
           // For FunctionExpression and ArrowFunction
           isAsync = (funcNode as { isAsync(): boolean }).isAsync();
         }
@@ -309,10 +335,10 @@ export class NodeContextExtractor {
         const members = node
           .getMembers()
           .map((m) => m.getName())
-          .join(', ');
+          .join(", ");
         signatureDetails = `enum ${nodeName} { ${members} }`;
       } else if (Node.isTypeAliasDeclaration(node)) {
-        signatureDetails = `type ${nodeName} = ${node.getTypeNode()?.getText() || '(complex type)'}`;
+        signatureDetails = `type ${nodeName} = ${node.getTypeNode()?.getText() || "(complex type)"}`;
       } else if (Node.isInterfaceDeclaration(node)) {
         const members = node
           .getMembers()
@@ -324,7 +350,7 @@ export class NodeContextExtractor {
             }
             return m.getKindName();
           })
-          .join('; ');
+          .join("; ");
         signatureDetails = `interface ${nodeName} { ${members} }`;
       }
 
@@ -336,13 +362,13 @@ export class NodeContextExtractor {
         Node.isSetAccessorDeclaration(node)
       ) {
         const mods = node.getModifiers().map((m) => m.getText());
-        if (mods.includes('private')) accessModifier = 'private';
-        else if (mods.includes('protected')) accessModifier = 'protected';
-        else accessModifier = 'public'; // Default to public if no explicit modifier
+        if (mods.includes("private")) accessModifier = "private";
+        else if (mods.includes("protected")) accessModifier = "protected";
+        else accessModifier = "public"; // Default to public if no explicit modifier
       }
 
       // Check if exported - not all nodes have an isExported method
-      if ('isExported' in node && typeof node.isExported === 'function') {
+      if ("isExported" in node && typeof node.isExported === "function") {
         isExported = (node as { isExported(): boolean }).isExported();
       } else {
         // Try to determine if exported by checking parent node or other properties
@@ -360,7 +386,7 @@ export class NodeContextExtractor {
         }`,
       );
       // Fallback to minimal details if error occurs during extraction
-      signatureDetails = `(Error extracting signature details: ${error instanceof Error ? error.message : 'unknown'})`;
+      signatureDetails = `(Error extracting signature details: ${error instanceof Error ? error.message : "unknown"})`;
     }
 
     const packageContext = this.getPackageContext(sourceFile.getFilePath());
@@ -371,7 +397,7 @@ export class NodeContextExtractor {
         const moduleSpecifier = imp.getModuleSpecifierValue();
         // Include external library imports and internal project imports from other packages
         return (
-          !moduleSpecifier.startsWith('.') || // External imports
+          !moduleSpecifier.startsWith(".") || // External imports
           this.packages.some(
             (pkg) =>
               moduleSpecifier.startsWith(pkg.name) &&
@@ -395,11 +421,15 @@ export class NodeContextExtractor {
         Node.isVariableDeclaration(parent)) // For function/class expressions as variable declarations
     ) {
       surroundingContext = parent.getText();
-      if (surroundingContext.length > this.config.jsdocConfig.maxSnippetLength) {
+      if (
+        surroundingContext.length > this.config.jsdocConfig.maxSnippetLength
+      ) {
         // Limit context length
         surroundingContext =
-          surroundingContext.substring(0, this.config.jsdocConfig.maxSnippetLength) +
-          '\n// ... (surrounding context truncated)';
+          surroundingContext.substring(
+            0,
+            this.config.jsdocConfig.maxSnippetLength,
+          ) + "\n// ... (surrounding context truncated)";
       }
     }
 
@@ -409,7 +439,9 @@ export class NodeContextExtractor {
     if (symbolInfo) {
       // Filter out self-references from usages
       symbolUsages = symbolInfo.usages.filter(
-        (usage) => usage.filePath !== relativeFilePath || usage.line !== node.getStartLineNumber(),
+        (usage) =>
+          usage.filePath !== relativeFilePath ||
+          usage.line !== node.getStartLineNumber(),
       );
       if (symbolUsages.length === 0) symbolUsages = undefined; // No usages found
     }
@@ -484,7 +516,7 @@ export class NodeContextExtractor {
           const memberName = this.getNodeNameForLogging(member);
           return memberName;
         })
-        .join(', ');
+        .join(", ");
 
       context.customData.classMembers = members;
       context.customData.isClass = true;
@@ -497,11 +529,11 @@ export class NodeContextExtractor {
         .getProperties()
         .map((prop) => {
           if (Node.isPropertyAssignment(prop)) {
-            return `${prop.getName()}: ${prop.getInitializer()?.getKindName() || 'unknown'}`;
+            return `${prop.getName()}: ${prop.getInitializer()?.getKindName() || "unknown"}`;
           }
           return prop.getKindName();
         })
-        .join(', ');
+        .join(", ");
 
       context.customData.objectProperties = properties;
       context.customData.isObject = true;
@@ -527,7 +559,9 @@ export class NodeContextExtractor {
    * @returns A descriptive string of the package context.
    */
   private getPackageContext(filePath: string): string {
-    const foundPackage = this.packages.find((pkg) => filePath.startsWith(pkg.path));
+    const foundPackage = this.packages.find((pkg) =>
+      filePath.startsWith(pkg.path),
+    );
     if (foundPackage) {
       return `Part of ${foundPackage.type} workspace, ${foundPackage.name} package`;
     }
@@ -536,7 +570,7 @@ export class NodeContextExtractor {
     if (pathParts.length >= 2) {
       return `Possibly in ${pathParts} workspace, ${pathParts} directory`;
     }
-    return 'Unknown package context';
+    return "Unknown package context";
   }
 
   /**
@@ -549,13 +583,17 @@ export class NodeContextExtractor {
     if (symbol) return symbol.getName();
     if (Node.isIdentifier(node)) return node.getText();
     if (Node.isConstructorDeclaration(node))
-      return `constructor of ${node.getParent()?.getKindName() || 'unnamed class'}`;
+      return `constructor of ${node.getParent()?.getKindName() || "unnamed class"}`;
     // Corrected `any` usage
     if (
       Node.hasName(node) &&
-      typeof (node as { getName?: () => string | undefined }).getName === 'function'
+      typeof (node as { getName?: () => string | undefined }).getName ===
+        "function"
     )
-      return (node as { getName: () => string | undefined }).getName() || node.getKindName();
+      return (
+        (node as { getName: () => string | undefined }).getName() ||
+        node.getKindName()
+      );
     return node.getKindName();
   }
 }

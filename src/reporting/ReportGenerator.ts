@@ -1,8 +1,8 @@
-import * as path from 'path';
-import { promises as fs } from 'fs';
-import { logger } from '../utils/logger';
-import { ProcessingStats, FileBatch, WorkspacePackage } from '../types';
-import { PluginManager } from '../plugins/PluginManager';
+import * as path from "path";
+import { promises as fs } from "fs";
+import { logger } from "../utils/logger";
+import { ProcessingStats, FileBatch, WorkspacePackage } from "../types";
+import { PluginManager } from "../plugins/PluginManager";
 
 /**
  * Interface for performance metrics that the ReportGenerator can display.
@@ -41,7 +41,7 @@ export class ReportGenerator {
 
   constructor(pluginManager?: PluginManager | string, baseDir?: string) {
     // Handle overloaded constructor
-    if (typeof pluginManager === 'string') {
+    if (typeof pluginManager === "string") {
       // Called with just baseDir
       this.baseDir = pluginManager;
       this.pluginManager = undefined;
@@ -59,7 +59,7 @@ export class ReportGenerator {
    */
   public async writeFile(filePath: string, content: string): Promise<void> {
     await fs.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, content, 'utf-8');
+    await fs.writeFile(filePath, content, "utf-8");
   }
 
   /**
@@ -68,7 +68,10 @@ export class ReportGenerator {
    * @param reportDir The directory to write the report to.
    * @returns The path of the generated report.
    */
-  public async generateJSONReport(stats: ProcessingStats, reportDir: string): Promise<string> {
+  public async generateJSONReport(
+    stats: ProcessingStats,
+    reportDir: string,
+  ): Promise<string> {
     const absoluteReportDir = path.resolve(this.baseDir, reportDir);
     await fs.mkdir(absoluteReportDir, { recursive: true });
 
@@ -79,14 +82,15 @@ export class ReportGenerator {
         processedFiles: stats.processedFiles,
         totalNodes: stats.totalNodes || stats.totalNodesConsidered,
         nodesWithJSDoc: stats.nodesWithJSDoc || stats.successfulJsdocs,
-        generatedJSDocCount: stats.generatedJSDocCount || stats.successfulJsdocs,
+        generatedJSDocCount:
+          stats.generatedJSDocCount || stats.successfulJsdocs,
         errors: stats.errors?.length || 0,
       },
       // Process the 'fileBatches' Map into serializable format
       batches: stats.fileBatches
         ? Array.from(stats.fileBatches.entries()).map(([key, batch]) => ({
             key,
-            packageName: batch.packageName || 'unknown',
+            packageName: batch.packageName || "unknown",
             batchIndex: batch.batchIndex || 0,
             files: batch.files,
             totalTokens: batch.totalTokens || batch.estimatedTokens,
@@ -97,12 +101,15 @@ export class ReportGenerator {
       packages: stats.packages?.map((pkg: WorkspacePackage) => ({
         name: pkg.name,
         path: pkg.path,
-        version: pkg.version || 'unknown',
+        version: pkg.version || "unknown",
         private: pkg.private || false,
       })),
     };
 
-    const reportPath = path.join(absoluteReportDir, 'jsdoc-generation-report.json');
+    const reportPath = path.join(
+      absoluteReportDir,
+      "jsdoc-generation-report.json",
+    );
     await this.writeFile(reportPath, JSON.stringify(reportData, null, 2));
     logger.info(
       `📈 JSON report generated successfully at: ${path.relative(this.baseDir, reportPath)}`,
@@ -115,13 +122,18 @@ export class ReportGenerator {
    * @param report The quality report data.
    * @param reportDir The directory to write the report to.
    */
-  public async generateQualityReport(report: any, reportDir: string): Promise<void> {
+  public async generateQualityReport(
+    report: any,
+    reportDir: string,
+  ): Promise<void> {
     const absoluteReportDir = path.resolve(this.baseDir, reportDir);
     await fs.mkdir(absoluteReportDir, { recursive: true });
 
-    const filePath = path.join(absoluteReportDir, 'quality-report.json');
+    const filePath = path.join(absoluteReportDir, "quality-report.json");
     await this.writeFile(filePath, JSON.stringify(report, null, 2));
-    logger.info(`Quality report written to ${path.relative(this.baseDir, filePath)}`);
+    logger.info(
+      `Quality report written to ${path.relative(this.baseDir, filePath)}`,
+    );
   }
 
   /**
@@ -130,7 +142,10 @@ export class ReportGenerator {
    * @param reportDir The directory to write the report to.
    * @returns The path of the generated report.
    */
-  public async generateMarkdownSummary(stats: ProcessingStats, reportDir: string): Promise<string> {
+  public async generateMarkdownSummary(
+    stats: ProcessingStats,
+    reportDir: string,
+  ): Promise<string> {
     const absoluteReportDir = path.resolve(this.baseDir, reportDir);
     await fs.mkdir(absoluteReportDir, { recursive: true });
 
@@ -149,7 +164,7 @@ export class ReportGenerator {
       markdown += `| Package | Version | Path | Private |\n`;
       markdown += `|---------|---------|------|--------|\n`;
       stats.packages.forEach((pkg: WorkspacePackage) => {
-        markdown += `| ${pkg.name} | ${pkg.version || 'N/A'} | ${pkg.path} | ${pkg.private ? 'Yes' : 'No'} |\n`;
+        markdown += `| ${pkg.name} | ${pkg.version || "N/A"} | ${pkg.path} | ${pkg.private ? "Yes" : "No"} |\n`;
       });
       markdown += `\n`;
     }
@@ -158,7 +173,7 @@ export class ReportGenerator {
       markdown += `## Processing Details\n\n`;
       for (const [batchKey, batch] of stats.fileBatches.entries()) {
         markdown += `### Batch: ${batchKey}\n`;
-        markdown += `- Package: ${batch.packageName || 'unknown'}\n`;
+        markdown += `- Package: ${batch.packageName || "unknown"}\n`;
         markdown += `- Files: ${batch.files.length}\n`;
         markdown += `- Total Tokens: ${batch.totalTokens || batch.estimatedTokens}\n`;
         markdown += `- Processing Time: ${batch.processingTimeMs || 0}ms\n`;
@@ -169,9 +184,14 @@ export class ReportGenerator {
       }
     }
 
-    const reportPath = path.join(absoluteReportDir, 'jsdoc-generation-summary.md');
+    const reportPath = path.join(
+      absoluteReportDir,
+      "jsdoc-generation-summary.md",
+    );
     await this.writeFile(reportPath, markdown);
-    logger.info(`✨ Markdown summary generated at: ${path.relative(this.baseDir, reportPath)}`);
+    logger.info(
+      `✨ Markdown summary generated at: ${path.relative(this.baseDir, reportPath)}`,
+    );
     return reportPath;
   }
 
@@ -188,10 +208,12 @@ export class ReportGenerator {
     const absoluteOutputDir = path.resolve(this.baseDir, outputDir);
     await fs.mkdir(absoluteOutputDir, { recursive: true });
 
-    const reportPath = path.join(absoluteOutputDir, 'performance-report.json');
+    const reportPath = path.join(absoluteOutputDir, "performance-report.json");
     await this.writeFile(reportPath, JSON.stringify(metrics, null, 2));
 
-    logger.info(`📈 Performance JSON report generated: ${path.relative(this.baseDir, reportPath)}`);
+    logger.info(
+      `📈 Performance JSON report generated: ${path.relative(this.baseDir, reportPath)}`,
+    );
     return reportPath;
   }
 
@@ -208,7 +230,11 @@ export class ReportGenerator {
     const timers = metrics.timers || {};
     const counters = metrics.counters || {};
     const gauges = metrics.gauges || {};
-    const metadata = metrics.metadata || { startTime: 0, endTime: 0, duration: 0 };
+    const metadata = metrics.metadata || {
+      startTime: 0,
+      endTime: 0,
+      duration: 0,
+    };
 
     let markdown = `# Performance Report\n\n`;
     markdown += `Generated on: ${new Date().toISOString()}\n\n`;
@@ -223,7 +249,7 @@ export class ReportGenerator {
       markdown += `|-----------|-------|------------|----------|----------|----------|----------|----------|\n`;
 
       for (const [name, timer] of Object.entries(timers)) {
-        markdown += `| ${name} | ${timer.count} | ${timer.total.toFixed(2)} | ${timer.avg.toFixed(2)} | ${timer.min.toFixed(2)} | ${timer.max.toFixed(2)} | ${timer.p95?.toFixed(2) || 'N/A'} | ${timer.p99?.toFixed(2) || 'N/A'} |\n`;
+        markdown += `| ${name} | ${timer.count} | ${timer.total.toFixed(2)} | ${timer.avg.toFixed(2)} | ${timer.min.toFixed(2)} | ${timer.max.toFixed(2)} | ${timer.p95?.toFixed(2) || "N/A"} | ${timer.p99?.toFixed(2) || "N/A"} |\n`;
       }
       markdown += `\n`;
     }
@@ -262,7 +288,7 @@ export class ReportGenerator {
       }
     }
 
-    const reportPath = path.join(outputDir, 'performance-report.md');
+    const reportPath = path.join(outputDir, "performance-report.md");
     await this.writeFile(reportPath, markdown);
 
     logger.info(

@@ -1,8 +1,8 @@
-import { IOperation, CommandContext, ProcessingStats } from '../types';
-import { logger } from '../utils/logger';
-import { Benchmarker } from '../utils/Benchmarker';
-import { GenerateDocumentationOperation } from './GenerateDocumentationOperation';
-import { Project } from 'ts-morph';
+import { IOperation, CommandContext, ProcessingStats } from "../types";
+import { logger } from "../utils/logger";
+import { Benchmarker } from "../utils/Benchmarker";
+import { GenerateDocumentationOperation } from "./GenerateDocumentationOperation";
+import { Project } from "ts-morph";
 
 /**
  * Operation to run performance benchmarks for the JSDoc generation process.
@@ -10,13 +10,13 @@ import { Project } from 'ts-morph';
  */
 export class RunBenchmarkOperation implements IOperation {
   async execute(context: CommandContext): Promise<void> {
-    logger.info('🏃‍♂️ Running benchmark suite...');
+    logger.info("🏃‍♂️ Running benchmark suite...");
     const benchmarker = new Benchmarker();
 
     // Define the function that simulates a single run of the JSDoc generation process.
     // This function will be passed to the Benchmarker.
     const benchmarkedFunction = async (): Promise<ProcessingStats> => {
-      logger.debug('Starting a single benchmark iteration...');
+      logger.debug("Starting a single benchmark iteration...");
       // To get real-world performance, we need to execute the core generation logic.
       // This means creating a new instance of GenerateDocumentationOperation
       // and running its execute method with a cloned context/config to ensure isolation
@@ -40,7 +40,9 @@ export class RunBenchmarkOperation implements IOperation {
       // cleans up or re-initializes its internal components appropriately per run.
       // For more accurate isolation, one might create new Project/PluginManager instances.
       const compilerOptions = context.project.getCompilerOptions();
-      const configFilePath = compilerOptions.configFilePath as string | undefined;
+      const configFilePath = compilerOptions.configFilePath as
+        | string
+        | undefined;
 
       const tempProject = new Project({
         tsConfigFilePath: configFilePath,
@@ -59,23 +61,23 @@ export class RunBenchmarkOperation implements IOperation {
 
       const operation = new GenerateDocumentationOperation();
       const stats = await operation.execute(tempContext);
-      logger.debug('Single benchmark iteration completed.');
+      logger.debug("Single benchmark iteration completed.");
       return stats;
     };
 
     // Run the benchmark for a specified number of iterations (e.g., 3 for robustness)
     const iterations = 3;
     await benchmarker.runBenchmark(
-      'JSDoc Generation Full Workflow',
+      "JSDoc Generation Full Workflow",
       benchmarkedFunction,
       iterations,
     );
 
     // Generate and log the final benchmark report
     const report = benchmarker.generateBenchmarkReport();
-    logger.info('\n📊 Benchmark Results:');
+    logger.info("\n📊 Benchmark Results:");
     logger.log(report); // Use logger.log for multi-line formatted output
 
-    logger.success('Benchmark suite completed.');
+    logger.success("Benchmark suite completed.");
   }
 }

@@ -1,9 +1,9 @@
-import { afterEach } from '@jest/globals'; // Correctly import from @jest/globals
-import { setLogLevel } from './logger';
-import { jest } from '@jest/globals'; // Correctly import jest from @jest/globals
+import { afterEach } from "@jest/globals"; // Correctly import from @jest/globals
+import { setLogLevel } from "./logger";
+import { jest } from "@jest/globals"; // Correctly import jest from @jest/globals
 
 // Set log level to silent during tests to prevent excessive console output
-setLogLevel('silent');
+setLogLevel("silent");
 
 // Backup original console methods
 const originalConsoleLog = console.log;
@@ -47,8 +47,8 @@ expect.extend({
    */
   toBeValidJSDoc(received: string) {
     const pass =
-      typeof received === 'string' &&
-      received.includes('@') && // Must contain at least one JSDoc tag
+      typeof received === "string" &&
+      received.includes("@") && // Must contain at least one JSDoc tag
       received.trim().length > 10; // Must have some substantial content
 
     if (pass) {

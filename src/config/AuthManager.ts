@@ -1,8 +1,8 @@
-import fs from 'fs/promises';
-import path from 'path';
-import os from 'os';
-import { logger } from '../utils/logger';
-import { pathExists } from '../utils/fileUtils';
+import fs from "fs/promises";
+import path from "path";
+import os from "os";
+import { logger } from "../utils/logger";
+import { pathExists } from "../utils/fileUtils";
 
 /**
  * Represents saved API credentials for an AI provider.
@@ -28,12 +28,15 @@ interface LocalEnvEntry {
  * in either a global configuration file or a local `.env` file.
  */
 export class AuthManager {
-  private static readonly GLOBAL_CONFIG_DIR = path.join(os.homedir(), '.monodoc');
+  private static readonly GLOBAL_CONFIG_DIR = path.join(
+    os.homedir(),
+    ".monodoc",
+  );
   private static readonly GLOBAL_CREDENTIALS_FILE = path.join(
     AuthManager.GLOBAL_CONFIG_DIR,
-    'credentials.json',
+    "credentials.json",
   );
-  private static readonly LOCAL_ENV_FILE = '.env';
+  private static readonly LOCAL_ENV_FILE = ".env";
 
   /**
    * Saves an API key for a given provider.
@@ -45,10 +48,10 @@ export class AuthManager {
   static async saveApiKey(
     provider: string,
     apiKey: string,
-    location: 'global' | 'local',
+    location: "global" | "local",
     modelName?: string,
   ): Promise<void> {
-    if (location === 'global') {
+    if (location === "global") {
       await this.saveGlobalCredentials(provider, apiKey, modelName);
     } else {
       await this.saveLocalCredentials(provider, apiKey);
@@ -92,7 +95,10 @@ export class AuthManager {
       let credentials: Credentials = {};
 
       if (await pathExists(AuthManager.GLOBAL_CREDENTIALS_FILE)) {
-        const data = await fs.readFile(AuthManager.GLOBAL_CREDENTIALS_FILE, 'utf-8');
+        const data = await fs.readFile(
+          AuthManager.GLOBAL_CREDENTIALS_FILE,
+          "utf-8",
+        );
         credentials = JSON.parse(data);
       }
 
@@ -124,12 +130,17 @@ export class AuthManager {
    * @param provider The provider type.
    * @returns The API key string, or null if not found.
    */
-  private static async loadGlobalCredentials(provider: string): Promise<string | null> {
+  private static async loadGlobalCredentials(
+    provider: string,
+  ): Promise<string | null> {
     try {
       if (!(await pathExists(AuthManager.GLOBAL_CREDENTIALS_FILE))) {
         return null;
       }
-      const data = await fs.readFile(AuthManager.GLOBAL_CREDENTIALS_FILE, 'utf-8');
+      const data = await fs.readFile(
+        AuthManager.GLOBAL_CREDENTIALS_FILE,
+        "utf-8",
+      );
       const credentials: Credentials = JSON.parse(data);
       return credentials[provider]?.apiKey || null;
     } catch (error) {
@@ -145,25 +156,32 @@ export class AuthManager {
    * @param provider The provider type.
    * @param apiKey The API key.
    */
-  private static async saveLocalCredentials(provider: string, apiKey: string): Promise<void> {
+  private static async saveLocalCredentials(
+    provider: string,
+    apiKey: string,
+  ): Promise<void> {
     try {
       const envVarName = this.getEnvVarNameForProvider(provider);
       const envPath = path.resolve(process.cwd(), AuthManager.LOCAL_ENV_FILE);
       let envEntries: LocalEnvEntry[] = [];
 
       if (await pathExists(envPath)) {
-        const data = await fs.readFile(envPath, 'utf-8');
+        const data = await fs.readFile(envPath, "utf-8");
         envEntries = this.parseEnvFile(data);
       }
 
-      const existingIndex = envEntries.findIndex((entry) => entry.key === envVarName);
+      const existingIndex = envEntries.findIndex(
+        (entry) => entry.key === envVarName,
+      );
       if (existingIndex >= 0) {
         envEntries[existingIndex].value = apiKey; // Update existing entry
       } else {
         envEntries.push({ key: envVarName, value: apiKey }); // Add new entry
       }
 
-      const envContent = envEntries.map((entry) => `${entry.key}=${entry.value}`).join('\n') + '\n';
+      const envContent =
+        envEntries.map((entry) => `${entry.key}=${entry.value}`).join("\n") +
+        "\n";
       await fs.writeFile(envPath, envContent, { mode: 0o600 }); // Write with restrictive permissions
       logger.success(`🔑 API key for ${provider} saved locally to ${envPath}`);
     } catch (error) {
@@ -179,14 +197,16 @@ export class AuthManager {
    * @param provider The provider type.
    * @returns The API key string, or null if not found.
    */
-  private static async loadLocalCredentials(provider: string): Promise<string | null> {
+  private static async loadLocalCredentials(
+    provider: string,
+  ): Promise<string | null> {
     try {
       const envVarName = this.getEnvVarNameForProvider(provider);
       const envPath = path.resolve(process.cwd(), AuthManager.LOCAL_ENV_FILE);
       if (!(await pathExists(envPath))) {
         return null;
       }
-      const data = await fs.readFile(envPath, 'utf-8');
+      const data = await fs.readFile(envPath, "utf-8");
       const envEntries = this.parseEnvFile(data);
       const entry = envEntries.find((e) => e.key === envVarName);
       return entry?.value || null;
@@ -206,12 +226,15 @@ export class AuthManager {
    */
   private static getEnvVarNameForProvider(provider: string): string {
     const providerMap: Record<string, string> = {
-      openai: 'OPENAI_API_KEY',
-      google: 'GOOGLE_API_KEY', // Simplified from 'google-gemini'
-      anthropic: 'ANTHROPIC_API_KEY', // Simplified from 'anthropic-claude'
-      ollama: 'OLLAMA_HOST', // Ollama typically uses OLLAMA_HOST for base URL
+      openai: "OPENAI_API_KEY",
+      google: "GOOGLE_API_KEY", // Simplified from 'google-gemini'
+      anthropic: "ANTHROPIC_API_KEY", // Simplified from 'anthropic-claude'
+      ollama: "OLLAMA_HOST", // Ollama typically uses OLLAMA_HOST for base URL
     };
-    return providerMap[provider] || `${provider.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_API_KEY`;
+    return (
+      providerMap[provider] ||
+      `${provider.toUpperCase().replace(/[^A-Z0-9]/g, "_")}_API_KEY`
+    );
   }
 
   /**
@@ -222,11 +245,11 @@ export class AuthManager {
    */
   private static parseEnvFile(content: string): LocalEnvEntry[] {
     return content
-      .split('\n')
-      .filter((line) => line.trim() && !line.startsWith('#'))
+      .split("\n")
+      .filter((line) => line.trim() && !line.startsWith("#"))
       .map((line) => {
-        const [key, ...valueParts] = line.split('=');
-        return { key: key.trim(), value: valueParts.join('=').trim() };
+        const [key, ...valueParts] = line.split("=");
+        return { key: key.trim(), value: valueParts.join("=").trim() };
       });
   }
 
@@ -237,54 +260,59 @@ export class AuthManager {
   static async listCredentials(): Promise<
     { provider: string; location: string; lastUsed?: string }[]
   > {
-    const result: { provider: string; location: string; lastUsed?: string }[] = [];
+    const result: { provider: string; location: string; lastUsed?: string }[] =
+      [];
 
     // List global credentials
     try {
       if (await pathExists(AuthManager.GLOBAL_CREDENTIALS_FILE)) {
-        const data = await fs.readFile(AuthManager.GLOBAL_CREDENTIALS_FILE, 'utf-8');
+        const data = await fs.readFile(
+          AuthManager.GLOBAL_CREDENTIALS_FILE,
+          "utf-8",
+        );
         const credentials: Credentials = JSON.parse(data);
         for (const [provider, cred] of Object.entries(credentials)) {
           result.push({
             provider,
-            location: 'global',
+            location: "global",
             lastUsed: cred.lastUsed,
           });
         }
       }
     } catch {
-      logger.debug('Could not read global credentials'); // Fail silently for debug
+      logger.debug("Could not read global credentials"); // Fail silently for debug
     }
 
     // List local credentials from .env file
     try {
       const envPath = path.resolve(process.cwd(), AuthManager.LOCAL_ENV_FILE);
       if (await pathExists(envPath)) {
-        const data = await fs.readFile(envPath, 'utf-8');
+        const data = await fs.readFile(envPath, "utf-8");
         const envEntries = this.parseEnvFile(data);
         // Filter for common API key patterns
         const apiKeyEntries = envEntries.filter(
-          (entry) => entry.key.endsWith('_API_KEY') || entry.key.includes('OLLAMA_HOST'),
+          (entry) =>
+            entry.key.endsWith("_API_KEY") || entry.key.includes("OLLAMA_HOST"),
         );
 
         for (const entry of apiKeyEntries) {
           // Attempt to map env var name back to a common provider name
           const providerName =
             Object.entries({
-              OPENAI_API_KEY: 'openai',
-              GOOGLE_API_KEY: 'google',
-              ANTHROPIC_API_KEY: 'anthropic',
-              OLLAMA_HOST: 'ollama',
+              OPENAI_API_KEY: "openai",
+              GOOGLE_API_KEY: "google",
+              ANTHROPIC_API_KEY: "anthropic",
+              OLLAMA_HOST: "ollama",
             }).find(([envVar]) => envVar === entry.key)?.[1] ||
-            entry.key.toLowerCase().replace(/_api_key$/, ''); // Fallback for custom
+            entry.key.toLowerCase().replace(/_api_key$/, ""); // Fallback for custom
           result.push({
             provider: providerName,
-            location: 'local',
+            location: "local",
           });
         }
       }
     } catch {
-      logger.debug('Could not read local .env file'); // Fail silently for debug
+      logger.debug("Could not read local .env file"); // Fail silently for debug
     }
     return result;
   }
@@ -296,12 +324,12 @@ export class AuthManager {
    */
   static async removeCredentials(
     provider: string,
-    location: 'global' | 'local' | 'both',
+    location: "global" | "local" | "both",
   ): Promise<void> {
-    if (location === 'global' || location === 'both') {
+    if (location === "global" || location === "both") {
       await this.removeGlobalCredentials(provider);
     }
-    if (location === 'local' || location === 'both') {
+    if (location === "local" || location === "both") {
       await this.removeLocalCredentials(provider);
     }
   }
@@ -310,12 +338,17 @@ export class AuthManager {
    * Removes credentials from the global JSON file.
    * @param provider The provider type.
    */
-  private static async removeGlobalCredentials(provider: string): Promise<void> {
+  private static async removeGlobalCredentials(
+    provider: string,
+  ): Promise<void> {
     try {
       if (!(await pathExists(AuthManager.GLOBAL_CREDENTIALS_FILE))) {
         return;
       }
-      const data = await fs.readFile(AuthManager.GLOBAL_CREDENTIALS_FILE, 'utf-8');
+      const data = await fs.readFile(
+        AuthManager.GLOBAL_CREDENTIALS_FILE,
+        "utf-8",
+      );
       const credentials: Credentials = JSON.parse(data);
       if (credentials[provider]) {
         delete credentials[provider];
@@ -344,14 +377,18 @@ export class AuthManager {
       if (!(await pathExists(envPath))) {
         return;
       }
-      const data = await fs.readFile(envPath, 'utf-8');
+      const data = await fs.readFile(envPath, "utf-8");
       const envEntries = this.parseEnvFile(data);
-      const filteredEntries = envEntries.filter((entry) => entry.key !== envVarName);
+      const filteredEntries = envEntries.filter(
+        (entry) => entry.key !== envVarName,
+      );
 
       if (filteredEntries.length !== envEntries.length) {
         // Only write if a change was actually made
         const envContent =
-          filteredEntries.map((entry) => `${entry.key}=${entry.value}`).join('\n') + '\n';
+          filteredEntries
+            .map((entry) => `${entry.key}=${entry.value}`)
+            .join("\n") + "\n";
         await fs.writeFile(envPath, envContent, { mode: 0o600 });
         logger.success(`🗑️ Removed local credentials for ${provider}`);
       }

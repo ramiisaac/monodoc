@@ -1,6 +1,6 @@
-import { GeneratorConfig, AIResponse, NodeContext } from '../types';
-import { CacheManager } from '../utils/CacheManager';
-import { logger } from '../utils/logger';
+import { GeneratorConfig, AIResponse, NodeContext } from "../types";
+import { CacheManager } from "../utils/CacheManager";
+import { logger } from "../utils/logger";
 
 // Define internal types for AI model
 interface AIModel {
@@ -62,7 +62,8 @@ export class AIClient {
     try {
       // Check cache first if not forcing fresh generation
       if (!forceFresh && this.cacheManager) {
-        const cachedResponse = await this.cacheManager.get<AIResponse>(cacheKey);
+        const cachedResponse =
+          await this.cacheManager.get<AIResponse>(cacheKey);
         if (cachedResponse) {
           logger.debug(`Using cached JSDoc for ${nodeContext.nodeName}`);
           return cachedResponse;
@@ -83,12 +84,12 @@ export class AIClient {
       // Prepare response
       const response: AIResponse = {
         jsdocContent: jsdocContent,
-        status: jsdocContent ? 'success' : 'skip',
-        reason: jsdocContent ? undefined : 'AI returned empty content',
+        status: jsdocContent ? "success" : "skip",
+        reason: jsdocContent ? undefined : "AI returned empty content",
       };
 
       // Cache successful responses
-      if (response.status === 'success' && this.cacheManager) {
+      if (response.status === "success" && this.cacheManager) {
         await this.cacheManager.set(cacheKey, response);
       }
 
@@ -102,8 +103,11 @@ export class AIClient {
 
       return {
         jsdocContent: null,
-        status: 'error',
-        reason: error instanceof Error ? error.message : 'Unknown error during JSDoc generation',
+        status: "error",
+        reason:
+          error instanceof Error
+            ? error.message
+            : "Unknown error during JSDoc generation",
       };
     }
   }
@@ -136,10 +140,15 @@ export class AIClient {
       const embeddingDimension = 1536;
       return texts.map(() => {
         // Create a random embedding vector of the specified dimension
-        const embedding = Array.from({ length: embeddingDimension }, () => Math.random() * 2 - 1);
+        const embedding = Array.from(
+          { length: embeddingDimension },
+          () => Math.random() * 2 - 1,
+        );
 
         // Normalize the vector (important for cosine similarity)
-        const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
+        const magnitude = Math.sqrt(
+          embedding.reduce((sum, val) => sum + val * val, 0),
+        );
         return embedding.map((val) => val / magnitude);
       });
     } catch (error) {

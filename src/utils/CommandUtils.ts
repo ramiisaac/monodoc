@@ -1,7 +1,7 @@
-import { logger } from './logger';
-import { CliOptions, GeneratorConfig } from '../types'; // Removed unused AuthManager type
-import { AuthManager } from '../config/AuthManager'; // Import AuthManager explicitly
-import chalk from 'chalk';
+import { logger } from "./logger";
+import { CliOptions, GeneratorConfig } from "../types"; // Removed unused AuthManager type
+import { AuthManager } from "../config/AuthManager"; // Import AuthManager explicitly
+import chalk from "chalk";
 
 // This file is intended for general utility functions that might be used across multiple commands.
 // It contains functions for applying CLI overrides to config, and handling API key saving/model detection.
@@ -34,10 +34,10 @@ export async function applyCliModelAndKeyOverrides(
       if (!modelConfig) {
         // If a model with this ID doesn't exist, create a new AIModelConfig
         modelConfig = {
-          id: `${providerType}-${cliOptions.model.replace(/[^a-zA-Z0-9-]/g, '-')}`,
+          id: `${providerType}-${cliOptions.model.replace(/[^a-zA-Z0-9-]/g, "-")}`,
           provider: providerType,
           model: cliOptions.model,
-          type: 'generation', // Assume generation for CLI model override, can be refined
+          type: "generation", // Assume generation for CLI model override, can be refined
           apiKeyEnvVar: getDefaultApiKeyEnvVar(providerType),
         };
         updatedConfig.aiModels.push(modelConfig);
@@ -63,9 +63,10 @@ export async function applyCliModelAndKeyOverrides(
       ? detectProviderTypeFromModel(cliOptions.model)
       : updatedConfig.aiClientConfig.defaultGenerationModelId
         ? updatedConfig.aiModels.find(
-            (m) => m.id === updatedConfig.aiClientConfig.defaultGenerationModelId,
+            (m) =>
+              m.id === updatedConfig.aiClientConfig.defaultGenerationModelId,
           )?.provider
-        : 'openai'; // Fallback to openai
+        : "openai"; // Fallback to openai
 
     if (providerTypeForApiKey) {
       const envVarName = getDefaultApiKeyEnvVar(providerTypeForApiKey);
@@ -73,7 +74,7 @@ export async function applyCliModelAndKeyOverrides(
 
       if (cliOptions.saveApiKey) {
         logger.info(
-          `🔑 Saving API key for ${providerTypeForApiKey} ${cliOptions.saveApiKey === 'global' ? 'globally' : 'locally'}...`,
+          `🔑 Saving API key for ${providerTypeForApiKey} ${cliOptions.saveApiKey === "global" ? "globally" : "locally"}...`,
         );
         // Assuming AuthManager.saveApiKey handles the modelName if relevant
         await AuthManager.saveApiKey(
@@ -86,7 +87,7 @@ export async function applyCliModelAndKeyOverrides(
       }
     } else {
       logger.warn(
-        '⚠️ Could not determine AI provider for API key. Please specify a --model or ensure a default model is configured.',
+        "⚠️ Could not determine AI provider for API key. Please specify a --model or ensure a default model is configured.",
       );
     }
   }
@@ -102,20 +103,21 @@ export async function applyCliModelAndKeyOverrides(
  */
 export function detectProviderTypeFromModel(
   model: string,
-): 'openai' | 'google' | 'anthropic' | 'ollama' | null {
-  const modelMap: Record<string, 'openai' | 'google' | 'anthropic' | 'ollama'> = {
-    gpt: 'openai',
-    'text-embedding': 'openai', // OpenAI embedding models
-    gemini: 'google',
-    claude: 'anthropic',
-    llama: 'ollama',
-    mistral: 'ollama',
-    codellama: 'ollama',
-    phi: 'ollama',
-    qwen: 'ollama',
-    gemma: 'ollama',
-    nomic: 'ollama', // For Ollama's nomic-embed-text
-  };
+): "openai" | "google" | "anthropic" | "ollama" | null {
+  const modelMap: Record<string, "openai" | "google" | "anthropic" | "ollama"> =
+    {
+      gpt: "openai",
+      "text-embedding": "openai", // OpenAI embedding models
+      gemini: "google",
+      claude: "anthropic",
+      llama: "ollama",
+      mistral: "ollama",
+      codellama: "ollama",
+      phi: "ollama",
+      qwen: "ollama",
+      gemma: "ollama",
+      nomic: "ollama", // For Ollama's nomic-embed-text
+    };
 
   for (const [key, provider] of Object.entries(modelMap)) {
     if (model.toLowerCase().includes(key)) {
@@ -132,10 +134,10 @@ export function detectProviderTypeFromModel(
  */
 export function getDefaultApiKeyEnvVar(provider: string): string {
   const envVarMap: Record<string, string> = {
-    openai: 'OPENAI_API_KEY',
-    google: 'GOOGLE_API_KEY',
-    anthropic: 'ANTHROPIC_API_KEY',
-    ollama: 'OLLAMA_HOST', // Ollama typically uses OLLAMA_HOST for base URL
+    openai: "OPENAI_API_KEY",
+    google: "GOOGLE_API_KEY",
+    anthropic: "ANTHROPIC_API_KEY",
+    ollama: "OLLAMA_HOST", // Ollama typically uses OLLAMA_HOST for base URL
   };
   return envVarMap[provider] || `${provider.toUpperCase()}_API_KEY`;
 }
@@ -145,19 +147,22 @@ export function getDefaultApiKeyEnvVar(provider: string): string {
  * This function is used by the `InfoCommand`.
  * @param aiModels The array of AI models from the configuration.
  */
-export function printAvailableModels(aiModels: GeneratorConfig['aiModels']): void {
-  logger.log(chalk.bold.blue('\n🤖 Available AI Models\n'));
+export function printAvailableModels(
+  aiModels: GeneratorConfig["aiModels"],
+): void {
+  logger.log(chalk.bold.blue("\n🤖 Available AI Models\n"));
 
-  const modelsByProvider: { [provider: string]: { generation: string[]; embedding: string[] } } =
-    {};
+  const modelsByProvider: {
+    [provider: string]: { generation: string[]; embedding: string[] };
+  } = {};
 
   aiModels.forEach((model) => {
     if (!modelsByProvider[model.provider]) {
       modelsByProvider[model.provider] = { generation: [], embedding: [] };
     }
-    if (model.type === 'generation') {
+    if (model.type === "generation") {
       modelsByProvider[model.provider].generation.push(model.model);
-    } else if (model.type === 'embedding') {
+    } else if (model.type === "embedding") {
       modelsByProvider[model.provider].embedding.push(model.model);
     }
   });
@@ -165,20 +170,22 @@ export function printAvailableModels(aiModels: GeneratorConfig['aiModels']): voi
   for (const [provider, modelTypes] of Object.entries(modelsByProvider)) {
     logger.log(chalk.bold.yellow(`${provider.toUpperCase()}:`));
     if (modelTypes.generation.length > 0) {
-      logger.log(chalk.cyan('  Text Generation:'));
+      logger.log(chalk.cyan("  Text Generation:"));
       modelTypes.generation.forEach((model) => {
-        logger.log(`    ${chalk.green('•')} ${model}`);
+        logger.log(`    ${chalk.green("•")} ${model}`);
       });
     }
     if (modelTypes.embedding.length > 0) {
-      logger.log(chalk.cyan('  Embeddings:'));
+      logger.log(chalk.cyan("  Embeddings:"));
       modelTypes.embedding.forEach((model) => {
-        logger.log(`    ${chalk.green('•')} ${model}`);
+        logger.log(`    ${chalk.green("•")} ${model}`);
       });
     }
     logger.log();
   }
   logger.log(
-    chalk.gray('Use `monodoc generate --model <name>` to specify a model for generation.\n'),
+    chalk.gray(
+      "Use `monodoc generate --model <name>` to specify a model for generation.\n",
+    ),
   );
 }

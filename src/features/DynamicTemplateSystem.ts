@@ -1,6 +1,6 @@
-import { TemplateSystem } from './TemplateSystem';
-import { logger } from '../utils/logger';
-import { NodeContext, GeneratorConfig } from '../types';
+import { TemplateSystem } from "./TemplateSystem";
+import { logger } from "../utils/logger";
+import { NodeContext, GeneratorConfig } from "../types";
 
 /**
  * Extends the base `TemplateSystem` to provide dynamic loading and management
@@ -20,7 +20,7 @@ export class DynamicTemplateSystem extends TemplateSystem {
   private initializeAdvancedTemplates(): void {
     const templatesData = [
       {
-        name: 'react-component',
+        name: "react-component",
         content: `
 /**
  * @summary React functional component: {{nodeName}}
@@ -53,7 +53,7 @@ export class DynamicTemplateSystem extends TemplateSystem {
 `, // Example template content with customData access
       },
       {
-        name: 'api-endpoint',
+        name: "api-endpoint",
         content: `
 /**
  * @summary API endpoint handler: {{customData.httpMethod}} {{customData.routePath}}
@@ -88,7 +88,7 @@ export class DynamicTemplateSystem extends TemplateSystem {
 `,
       },
       {
-        name: 'utility-function',
+        name: "utility-function",
         content: `
 /**
  * @summary Utility function: {{nodeName}}
@@ -127,11 +127,11 @@ export class DynamicTemplateSystem extends TemplateSystem {
       this.registerTemplate({
         name: name,
         description: `Advanced template for ${name}`,
-        pattern: new RegExp(''), // Placeholder, actual pattern matching is done by SmartDocEngine
+        pattern: new RegExp(""), // Placeholder, actual pattern matching is done by SmartDocEngine
         generate: (_context: unknown, _config: unknown) => content, // Returns raw content for SmartDocumentationEngine to compile
       });
     });
-    logger.info('📝 Advanced templates initialized for DynamicTemplateSystem.');
+    logger.info("📝 Advanced templates initialized for DynamicTemplateSystem.");
   }
 
   /**
@@ -143,13 +143,18 @@ export class DynamicTemplateSystem extends TemplateSystem {
   async getTemplate(name: string): Promise<string> {
     const template = this.getTemplateByName(name); // Use base class method
     if (!template) {
-      logger.warn(`Template '${name}' not found, falling back to generic template.`);
+      logger.warn(
+        `Template '${name}' not found, falling back to generic template.`,
+      );
       // Call generate on generic template instance to get its content
-      const genericTemplate = this.getTemplateByName('generic');
+      const genericTemplate = this.getTemplateByName("generic");
       if (genericTemplate) {
-        return genericTemplate.generate({} as NodeContext, {} as GeneratorConfig); // Pass dummy context/config
+        return genericTemplate.generate(
+          {} as NodeContext,
+          {} as GeneratorConfig,
+        ); // Pass dummy context/config
       }
-      return ''; // Fallback if even generic is missing
+      return ""; // Fallback if even generic is missing
     }
     // Return the raw content for SmartDocumentationEngine to process
     return template.generate({} as NodeContext, {} as GeneratorConfig); // Pass dummy context/config, as content is raw template
@@ -160,12 +165,16 @@ export class DynamicTemplateSystem extends TemplateSystem {
    * @param name The name for the custom template.
    * @param templateContent The string content of the template.
    */
-  async loadCustomTemplate(name: string, templateContent: string): Promise<void> {
+  async loadCustomTemplate(
+    name: string,
+    templateContent: string,
+  ): Promise<void> {
     this.registerTemplate({
       name: name,
       description: `User-defined custom template: ${name}`,
-      pattern: new RegExp(''), // Placeholder
-      generate: (_context: NodeContext, _config: GeneratorConfig) => templateContent, // Store raw content
+      pattern: new RegExp(""), // Placeholder
+      generate: (_context: NodeContext, _config: GeneratorConfig) =>
+        templateContent, // Store raw content
     });
     logger.info(`📝 Custom template '${name}' loaded.`);
   }
