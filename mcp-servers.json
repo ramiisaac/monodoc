@@ -5,7 +5,7 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "/home/runner/work/monodoc/monodoc"
+        "${WORKSPACE}/monodoc"
       ]
     },
     "git": {
