@@ -1,13 +1,6 @@
 import { logger } from "./logger";
+import { MetricEntry } from "../types";
 import os from "os"; // For CPU usage
-
-/**
- * Interface for a metric entry, storing a value and its timestamp.
- */
-export interface MetricEntry {
-  value: unknown;
-  timestamp: Date;
-}
 
 /**
  * Monitors key production metrics such as memory usage, uptime, and custom metrics.

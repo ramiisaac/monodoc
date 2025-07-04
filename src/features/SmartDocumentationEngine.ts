@@ -2,38 +2,39 @@ import { TemplateSystem } from "./TemplateSystem";
 import { logger } from "../utils/logger";
 import { NodeContext, GeneratorConfig } from "../types";
 import Handlebars from "handlebars";
+import { DynamicTemplateSystem } from "./DynamicTemplateSystem";
 
 /**
  * Extends the base `TemplateSystem` to provide dynamic loading and management
  * of Handlebars templates for different documentation strategies.
  */
-export class DynamicTemplateSystem extends TemplateSystem {
-  /**
-   * Loads a template by name, with caching and error handling.
-   * @param templateName The name of the template to load.
-   * @returns The template content as a string.
-   */
-  async getTemplate(templateName: string): Promise<string> {
-    // First, try to load from the base class (which may load from cache)
-    let templateContent = await super.getTemplate(templateName);
+// export class DynamicTemplateSystem extends TemplateSystem {
+//   /**
+//    * Loads a template by name, with caching and error handling.
+//    * @param templateName The name of the template to load.
+//    * @returns The template content as a string.
+//    */
+//   async getTemplate(templateName: string): Promise<string> {
+//     // First, try to load from the base class (which may load from cache)
+//     let templateContent = await super.getTemplate(templateName);
 
-    // If not found, attempt to load from a specific directory structure
-    if (!templateContent) {
-      const fallbackPath = `src/templates/docs/${templateName}.hbs`;
-      logger.info(
-        `Template not found in cache, loading from fallback path: ${fallbackPath}`,
-      );
-      templateContent = await super.getTemplate(fallbackPath);
-    }
+//     // If not found, attempt to load from a specific directory structure
+//     if (!templateContent) {
+//       const fallbackPath = `src/templates/docs/${templateName}.hbs`;
+//       logger.info(
+//         `Template not found in cache, loading from fallback path: ${fallbackPath}`,
+//       );
+//       templateContent = await super.getTemplate(fallbackPath);
+//     }
 
-    // If the template is still not found, throw an error
-    if (!templateContent) {
-      throw new Error(`Template '${templateName}' not found in system.`);
-    }
+//     // If the template is still not found, throw an error
+//     if (!templateContent) {
+//       throw new Error(`Template '${templateName}' not found in system.`);
+//     }
 
-    return templateContent;
-  }
-}
+//     return templateContent;
+//   }
+// }
 
 /**
  * Defines a documentation strategy, including its name, priority,
@@ -114,8 +115,8 @@ interface GenericTemplateData {
  */
 export class SmartDocumentationEngine {
   private strategies: DocumentationStrategy[] = [];
-  private templateSystem: DynamicTemplateSystem;
-  private compiledTemplates: Map<string, Handlebars.TemplateDelegate> =
+  private readonly templateSystem: DynamicTemplateSystem;
+  private readonly compiledTemplates: Map<string, Handlebars.TemplateDelegate> =
     new Map();
 
   constructor() {
@@ -188,7 +189,6 @@ export class SmartDocumentationEngine {
     Handlebars.registerHelper("eq", (a: unknown, b: unknown) => a === b);
     Handlebars.registerHelper("neq", (a: unknown, b: unknown) => a !== b);
     Handlebars.registerHelper("if_eq", function (this: unknown, a, b, options) {
-      // Corrected `any` usage
       if (a === b) {
         return options.fn(this);
       }
@@ -295,7 +295,6 @@ export class SmartDocumentationEngine {
       context.fileContext.includes("/api/") || // Conventional API route directory
       context.fileContext.includes("/routes/") || // Another common API route directory
       /export\s+(default\s+)?(async\s+)?function\s+(GET|POST|PUT|DELETE|PATCH)/.test(
-        // Removed unnecessary escape character
         context.codeSnippet,
       ) // Common HTTP method export patterns
     );
@@ -380,7 +379,7 @@ export class SmartDocumentationEngine {
   ): UtilityFunctionTemplateData {
     return {
       functionName: context.nodeName,
-      isAsync: context.isAsync || false,
+      isAsync: !!context.isAsync, // Use !! for explicit boolean conversion
       isGeneric:
         context.codeSnippet.includes("<T>") ||
         context.signatureDetails.includes("<T>"), // Check for generics
@@ -409,8 +408,8 @@ export class SmartDocumentationEngine {
       packageContext: context.packageContext,
       relevantImports: context.relevantImports,
       surroundingContext: context.surroundingContext,
-      symbolUsages: context.symbolUsages as unknown[], // Corrected `any` usage
-      relatedSymbols: context.relatedSymbols as unknown[], // Corrected `any` usage
+      symbolUsages: context.symbolUsages as unknown[],
+      relatedSymbols: context.relatedSymbols as unknown[],
       parameters: context.parameters,
       returnType: context.returnType,
       isAsync: !!context.isAsync,

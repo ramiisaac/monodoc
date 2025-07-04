@@ -8,9 +8,6 @@ import {
 } from "../types";
 import { logger } from "../utils/logger";
 
-// Re-export QualityIssue to fix imports elsewhere
-export { QualityIssue };
-
 /**
  * Defines metrics for documentation quality.
  */

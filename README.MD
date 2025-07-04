@@ -13,12 +13,14 @@ A production-ready, enterprise-grade tool for generating comprehensive JSDoc doc
 ## ✨ Key Features
 
 ### 🤖 ALL Major LLM Providers Supported
+
 - **Vercel AI SDK Integration**: Seamless integration with OpenAI GPT-4, Google Gemini, Anthropic Claude, and Ollama (local)
 - **Unified API**: Single interface for text generation and embeddings across all providers
 - **Intelligent Fallback**: Automatic provider switching and load balancing
 - **Cost Control**: Built-in spending limits and usage monitoring to prevent unexpected bills
 
 ### ⚡ Performance & Scale
+
 - **Intelligent Caching**: Reduces AI API costs by up to 70% with smart cache invalidation
 - **Concurrent Processing**: Multi-core optimization processes 50+ files per minute
 - **Memory Efficient**: Handles 10,000+ files using under 200MB memory
@@ -26,6 +28,7 @@ A production-ready, enterprise-grade tool for generating comprehensive JSDoc doc
 - **Gitignore Integration**: Automatically respects .gitignore patterns with override capabilities
 
 ### 🎯 Developer Experience
+
 - **Interactive Setup Wizard**: Get started in minutes with guided configuration
 - **Watch Mode**: Real-time documentation updates during development
 - **Quality Analysis**: Comprehensive quality scoring and actionable recommendations
@@ -33,6 +36,7 @@ A production-ready, enterprise-grade tool for generating comprehensive JSDoc doc
 - **IDE Integration**: VS Code tasks and npm scripts generation
 
 ### 🏢 Enterprise Ready
+
 - **Production Templates**: Battle-tested configurations for Next.js, Nx, Turborepo, React Native, Vue.js
 - **Plugin System**: Extensible architecture with React, API, Node.js backend, and TypeScript utility plugins
 - **CI/CD Examples**: GitHub Actions, pre-commit hooks, and pipeline integration guides
@@ -214,30 +218,35 @@ qualityThresholds:
 We provide battle-tested configurations for popular frameworks:
 
 #### Next.js Applications
+
 ```bash
 # Use the Next.js optimized configuration
 cp examples/community/nextjs-config.yaml jsdoc-config.yaml
 ```
 
 #### Nx Monorepos
+
 ```bash
 # Enterprise-grade Nx configuration
 cp examples/community/nx-monorepo.yaml jsdoc-config.yaml
 ```
 
 #### React Native Projects
+
 ```bash
 # Mobile-optimized configuration
 cp examples/community/react-native.yaml jsdoc-config.yaml
 ```
 
 #### Turborepo Workspaces
+
 ```bash
 # High-performance Turborepo setup
 cp examples/community/turborepo.yaml jsdoc-config.yaml
 ```
 
 #### Vue.js Applications
+
 ```bash
 # Vue 3 with Composition API support
 cp examples/community/vue.yaml jsdoc-config.yaml
@@ -268,6 +277,7 @@ Extend functionality with our comprehensive plugin examples:
 Integrate monodoc into your development workflow:
 
 #### CI/CD Integration (`examples/workflows/ci-integration.ts`)
+
 ```bash
 # GitHub Actions
 node examples/workflows/ci-integration.js github-actions
@@ -280,6 +290,7 @@ node examples/workflows/ci-integration.js pre-commit
 ```
 
 #### Development Workflows (`examples/workflows/development-workflows.ts`)
+
 ```bash
 # Interactive development mode
 node examples/workflows/development-workflows.js interactive
@@ -292,7 +303,9 @@ node examples/workflows/development-workflows.js vscode-tasks
 ```
 
 ### Complete Workflow Example (`examples/workflows/complete.ts`)
+
 Demonstrates end-to-end usage including:
+
 - Initial setup and analysis
 - Incremental updates
 - Quality checking
@@ -370,6 +383,7 @@ monodoc quality-check --min-score 85
 ```
 
 **Sample Output:**
+
 ```
 📊 Quality Analysis Report
 ═══════════════════════════════════════════════════════════════
@@ -595,6 +609,7 @@ monodoc generate-vscode-tasks
 ```
 
 This creates `.vscode/tasks.json` with:
+
 - Documentation generation
 - Watch mode
 - Quality checks
@@ -625,6 +640,7 @@ export MONODOC_CACHE_DIR="/tmp/monodoc-cache"
 ### Common Issues
 
 #### API Key Issues
+
 ```bash
 # Check saved credentials
 monodoc info --list-credentials
@@ -634,6 +650,7 @@ monodoc validate-config --test-apis
 ```
 
 #### Performance Issues
+
 ```bash
 # Clear cache and restart
 monodoc generate --cache-clear
@@ -646,6 +663,7 @@ monodoc generate --no-embed
 ```
 
 #### Quality Issues
+
 ```bash
 # Get detailed quality report
 monodoc quality-check --verbose --output-format json
@@ -750,6 +768,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
           git add .
           git diff --cached --exit-code || git commit -m "docs: auto-update JSDoc [skip ci]" # [skip ci] to prevent infinite loop
           git push
+
 ```
 
 ### GitLab CI

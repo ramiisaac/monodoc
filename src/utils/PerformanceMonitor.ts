@@ -1,14 +1,6 @@
 import { logger } from "./logger";
 
 /**
- * Interface for a metric entry, storing a value and its timestamp.
- */
-export interface MetricEntry {
-  value: unknown;
-  timestamp: Date;
-}
-
-/**
  * Manages performance metrics by recording durations, custom values, and system stats.
  */
 export class PerformanceMonitor {

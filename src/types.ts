@@ -415,37 +415,16 @@ export interface ICommand {
   execute(context: CommandContext, ...args: any[]): Promise<void>;
 }
 
-// --- Code Quality Analysis Types ---
-export interface QualityMetrics {
-  score: number; // 0-100 score based on various factors
-  missingJsdoc: boolean;
-  incompleteJsdoc: boolean;
-  outdatedJsdoc: boolean;
-  complexity: number; // 0-10 complexity score (higher = more complex)
-  issues: QualityIssue[]; // Detailed list of issues found
-  suggestions: string[]; // Suggestions for improvement
-  overallScore: number; // Overall weighted score
-  completenessScore: number; // Score for completeness of documentation
-  consistencyScore: number; // Score for consistency of documentation
-  exampleQuality: number; // Score for quality of examples
-}
-
-export interface QualityIssue {
-  type: QualityIssueType;
-  message: string;
-  severity: 'error' | 'warning' | 'info';
-  nodeName?: string;
-  lineNumber?: number;
-  columnNumber?: number;
-  suggestion?: string; // Added suggestion property
-  filePath?: string; // Added file path property
-}
-
 // --- Add JsDocConfig type ---
 export type JsDocConfig = GeneratorConfig['jsdocConfig'];
 
 // --- Re-export quality types ---
-export { NodeQualityMetrics, QualityIssueType } from './types/quality';
+export * from './types/quality';
 
-
-
+/**
+ * Interface for a metric entry, storing a value and its timestamp.
+ */
+export interface MetricEntry {
+  value: unknown;
+  timestamp: Date;
+}

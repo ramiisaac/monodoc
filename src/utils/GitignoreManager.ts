@@ -72,9 +72,9 @@ export class GitignoreManager {
       const content = await fs.readFile(filePath, "utf8");
       const lines = content
         .split("\n")
-        .map(line => line.trim())
-        .filter(line => line && !line.startsWith("#")) // Remove empty lines and comments
-        .map(line => this.normalizePattern(line));
+        .map((line) => line.trim())
+        .filter((line) => line && !line.startsWith("#")) // Remove empty lines and comments
+        .map((line) => this.normalizePattern(line));
 
       this.patterns.push(...lines);
       logger.debug(`Loaded ${lines.length} patterns from ${filePath}`);
@@ -91,9 +91,11 @@ export class GitignoreManager {
   private async getGlobalGitignorePath(): Promise<string | null> {
     try {
       const { execSync } = require("child_process");
-      const globalGitignore = execSync("git config --get core.excludesfile", { encoding: "utf8" }).trim();
-      
-      if (globalGitignore && await this.fileExists(globalGitignore)) {
+      const globalGitignore = execSync("git config --get core.excludesfile", {
+        encoding: "utf8",
+      }).trim();
+
+      if (globalGitignore && (await this.fileExists(globalGitignore))) {
         return globalGitignore;
       }
     } catch {
@@ -162,17 +164,17 @@ export class GitignoreManager {
       "build/**",
       "out/**",
       ".next/**",
-      
+
       // Dependencies
       "node_modules/**",
       "vendor/**",
-      
+
       // IDE and OS files
       ".vscode/**",
       ".idea/**",
       ".DS_Store",
       "Thumbs.db",
-      
+
       // Test files (unless specifically included)
       "**/*.test.ts",
       "**/*.test.tsx",
@@ -184,10 +186,10 @@ export class GitignoreManager {
       "**/*.spec.jsx",
       "__tests__/**",
       "**/__mocks__/**",
-      
+
       // Type definitions (usually don't need additional docs)
       "**/*.d.ts",
-      
+
       // Config files that typically don't need JSDoc
       "*.config.js",
       "*.config.ts",
@@ -197,7 +199,7 @@ export class GitignoreManager {
       "package-lock.json",
       "yarn.lock",
       "pnpm-lock.yaml",
-      
+
       // Documentation and assets
       "**/*.md",
       "**/*.mdx",
@@ -205,14 +207,14 @@ export class GitignoreManager {
       "README*",
       "CHANGELOG*",
       "LICENSE*",
-      
+
       // Cache and temporary files
       ".cache/**",
       ".tmp/**",
       "tmp/**",
       "temp/**",
       "coverage/**",
-      
+
       // Logs
       "**/*.log",
       "logs/**",
@@ -232,7 +234,9 @@ export class GitignoreManager {
     }
 
     // Normalize the file path
-    const normalizedPath = path.relative(this.basePath, filePath).replace(/\\/g, "/");
+    const normalizedPath = path
+      .relative(this.basePath, filePath)
+      .replace(/\\/g, "/");
 
     // Check against each pattern
     for (const pattern of this.patterns) {
@@ -276,12 +280,12 @@ export class GitignoreManager {
 
     // Check if file is in ignored directory
     const pathParts = filePath.split("/");
-    
+
     // Check if any part of the path matches the pattern
     if (pathParts.includes(pattern)) {
       return true;
     }
-    
+
     // Check if pattern is a file extension pattern
     if (pattern.startsWith("*.")) {
       const extension = pattern.slice(1); // Remove the *
@@ -301,8 +305,8 @@ export class GitignoreManager {
       return files;
     }
 
-    const filtered = files.filter(file => !this.shouldIgnore(file));
-    
+    const filtered = files.filter((file) => !this.shouldIgnore(file));
+
     const ignoredCount = files.length - filtered.length;
     if (ignoredCount > 0) {
       logger.debug(`Filtered out ${ignoredCount} ignored files`);
@@ -337,7 +341,7 @@ export class GitignoreManager {
    * Adds custom ignore patterns.
    */
   addCustomPatterns(patterns: string[]): void {
-    this.patterns.push(...patterns.map(p => this.normalizePattern(p)));
+    this.patterns.push(...patterns.map((p) => this.normalizePattern(p)));
     logger.debug(`Added ${patterns.length} custom ignore patterns`);
   }
 

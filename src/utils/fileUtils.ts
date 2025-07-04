@@ -119,7 +119,10 @@ export async function readFileAsync(filePath: string): Promise<string> {
  * @param content The content to write.
  * @returns A Promise that resolves when the file is written.
  */
-export async function writeFileAsync(filePath: string, content: string): Promise<void> {
+export async function writeFileAsync(
+  filePath: string,
+  content: string,
+): Promise<void> {
   return await fs.writeFile(filePath, content, "utf8");
 }
 

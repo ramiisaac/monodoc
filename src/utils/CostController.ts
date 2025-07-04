@@ -1,5 +1,5 @@
 import { logger } from "./logger";
-import { GeneratorConfig, AIModelConfig } from "../types";
+import { GeneratorConfig } from "../types";
 
 export interface CostLimits {
   maxDailySpend: number; // USD
@@ -79,17 +79,17 @@ export class CostController {
     try {
       const fs = require("fs");
       const path = require("path");
-      
+
       const trackerPath = path.join(process.cwd(), this.COST_DATA_FILE);
       if (fs.existsSync(trackerPath)) {
         const data = JSON.parse(fs.readFileSync(trackerPath, "utf8"));
         const today = new Date().toISOString().split("T")[0];
-        
+
         // Reset daily tracker if it's a new day
         if (data.date !== today) {
           return this.createNewDayTracker(today);
         }
-        
+
         return data;
       }
     } catch (error) {
@@ -120,7 +120,7 @@ export class CostController {
     try {
       const fs = require("fs");
       const path = require("path");
-      
+
       const trackerPath = path.join(process.cwd(), this.COST_DATA_FILE);
       fs.writeFileSync(trackerPath, JSON.stringify(this.tracker, null, 2));
     } catch (error) {
@@ -134,7 +134,10 @@ export class CostController {
    * @param modelId Model ID being used
    * @returns True if allowed, false if blocked
    */
-  async canMakeRequest(estimatedTokens: number, modelId: string): Promise<{ allowed: boolean; reason?: string; alerts?: SpendingAlert[] }> {
+  async canMakeRequest(
+    estimatedTokens: number,
+    modelId: string,
+  ): Promise<{ allowed: boolean; reason?: string; alerts?: SpendingAlert[] }> {
     const now = new Date();
     const currentHour = now.getHours().toString().padStart(2, "0");
     const today = now.toISOString().split("T")[0];
@@ -184,7 +187,8 @@ export class CostController {
     }
 
     // Check for warnings
-    const dailyPercentage = (potentialDailyCost / this.limits.maxDailySpend) * 100;
+    const dailyPercentage =
+      (potentialDailyCost / this.limits.maxDailySpend) * 100;
     if (dailyPercentage >= this.limits.warningThresholds.daily) {
       alerts.push({
         type: "warning",
@@ -198,7 +202,8 @@ export class CostController {
     // Check monthly limit (simplified - using 30x daily)
     const monthlyEstimate = potentialDailyCost * 30;
     if (monthlyEstimate > this.limits.maxMonthlySpend) {
-      const monthlyPercentage = (monthlyEstimate / this.limits.maxMonthlySpend) * 100;
+      const monthlyPercentage =
+        (monthlyEstimate / this.limits.maxMonthlySpend) * 100;
       if (monthlyPercentage >= this.limits.warningThresholds.monthly) {
         alerts.push({
           type: "warning",
@@ -219,19 +224,27 @@ export class CostController {
    * @param actualCost Actual cost incurred
    * @param modelId Model used
    */
-  async recordRequest(actualTokens: number, actualCost: number, modelId: string): Promise<void> {
+  async recordRequest(
+    actualTokens: number,
+    actualCost: number,
+    modelId: string,
+  ): Promise<void> {
     const now = new Date();
     const currentHour = now.getHours().toString().padStart(2, "0");
 
     this.tracker.totalCost += actualCost;
     this.tracker.totalTokens += actualTokens;
     this.tracker.totalRequests += 1;
-    this.tracker.requestsByHour[currentHour] = (this.tracker.requestsByHour[currentHour] || 0) + 1;
-    this.tracker.costByModel[modelId] = (this.tracker.costByModel[modelId] || 0) + actualCost;
+    this.tracker.requestsByHour[currentHour] =
+      (this.tracker.requestsByHour[currentHour] || 0) + 1;
+    this.tracker.costByModel[modelId] =
+      (this.tracker.costByModel[modelId] || 0) + actualCost;
 
     this.saveTracker();
 
-    logger.debug(`Recorded request: ${actualTokens} tokens, $${actualCost.toFixed(4)}, model: ${modelId}`);
+    logger.debug(
+      `Recorded request: ${actualTokens} tokens, $${actualCost.toFixed(4)}, model: ${modelId}`,
+    );
   }
 
   /**
@@ -241,7 +254,7 @@ export class CostController {
    * @returns Estimated cost in USD
    */
   private estimateRequestCost(tokens: number, modelId: string): number {
-    const model = this.config.aiModels.find(m => m.id === modelId);
+    const model = this.config.aiModels.find((m) => m.id === modelId);
     if (!model) {
       logger.warn(`Unknown model for cost estimation: ${modelId}`);
       return 0.00003 * tokens; // Default to GPT-4 pricing
@@ -283,7 +296,8 @@ export class CostController {
     const alerts: SpendingAlert[] = [];
 
     // Check current spending against limits
-    const dailyPercentage = (this.tracker.totalCost / this.limits.maxDailySpend) * 100;
+    const dailyPercentage =
+      (this.tracker.totalCost / this.limits.maxDailySpend) * 100;
     if (dailyPercentage >= this.limits.warningThresholds.daily) {
       alerts.push({
         type: dailyPercentage >= 100 ? "limit_reached" : "warning",
@@ -309,7 +323,9 @@ export class CostController {
    * Resets daily tracking (useful for testing or manual reset).
    */
   resetDailyTracking(): void {
-    this.tracker = this.createNewDayTracker(new Date().toISOString().split("T")[0]);
+    this.tracker = this.createNewDayTracker(
+      new Date().toISOString().split("T")[0],
+    );
     this.saveTracker();
     logger.info("Daily cost tracking reset");
   }

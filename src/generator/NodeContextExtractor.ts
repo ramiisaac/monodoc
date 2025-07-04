@@ -583,7 +583,7 @@ export class NodeContextExtractor {
     if (symbol) return symbol.getName();
     if (Node.isIdentifier(node)) return node.getText();
     if (Node.isConstructorDeclaration(node))
-      return `constructor of ${node.getParent()?.getKindName() || "unnamed class"}`;
+      return `constructor of ${node.getParentOrThrow("unnamed class")}`;
     // Corrected `any` usage
     if (
       Node.hasName(node) &&

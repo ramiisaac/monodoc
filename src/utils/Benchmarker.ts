@@ -1,8 +1,6 @@
 import { PerformanceMonitor } from "./PerformanceMonitor";
 import { logger } from "./logger";
 import { ProcessingStats } from "../types";
-import fs from "fs/promises";
-import path from "path";
 import os from "os"; // For system info in reports
 
 /**

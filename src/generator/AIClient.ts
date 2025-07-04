@@ -46,11 +46,11 @@ export class AIClient {
    */
   private initializeModel(): AIModel {
     const modelConfig = this.config.aiModels[0]; // Use first generation model for now
-    
+
     return {
       name: modelConfig.model,
       provider: modelConfig.provider,
-      apiKey: process.env[modelConfig.apiKeyEnvVar || 'OPENAI_API_KEY'],
+      apiKey: process.env[modelConfig.apiKeyEnvVar || "OPENAI_API_KEY"],
       temperature: modelConfig.temperature || 0.7,
       maxTokens: modelConfig.maxOutputTokens || 1000,
     } as AIModel;
@@ -62,17 +62,17 @@ export class AIClient {
    */
   private getProviderClient() {
     const apiKey = this.model.apiKey;
-    
+
     if (!apiKey) {
       throw new Error(`API key not found for provider: ${this.model.provider}`);
     }
 
     switch (this.model.provider.toLowerCase()) {
-      case 'openai':
+      case "openai":
         return createOpenAI({ apiKey });
-      case 'google':
+      case "google":
         return createGoogleGenerativeAI({ apiKey });
-      case 'anthropic':
+      case "anthropic":
         return createAnthropic({ apiKey });
       default:
         throw new Error(`Unsupported provider: ${this.model.provider}`);
@@ -142,16 +142,18 @@ ${nodeContext.codeSnippet}
       this.requestCount++;
 
       // Generate JSDoc with AI using Vercel AI SDK
-      logger.debug(`Generating JSDoc for ${nodeContext.nodeName} using ${this.model.provider}:${this.model.name}`);
-      
+      logger.debug(
+        `Generating JSDoc for ${nodeContext.nodeName} using ${this.model.provider}:${this.model.name}`,
+      );
+
       let jsdocContent: string;
-      
+
       // Check if we have an API key for actual AI generation
       if (this.model.apiKey) {
         try {
           const provider = this.getProviderClient();
           const prompt = this.buildJSDocPrompt(nodeContext);
-          
+
           const result = await generateText({
             model: provider(this.model.name) as any, // Type assertion to handle version compatibility
             messages: prompt,
@@ -161,7 +163,9 @@ ${nodeContext.codeSnippet}
 
           jsdocContent = result.text.trim();
         } catch (error) {
-          logger.warn(`AI generation failed, falling back to mock: ${error instanceof Error ? error.message : String(error)}`);
+          logger.warn(
+            `AI generation failed, falling back to mock: ${error instanceof Error ? error.message : String(error)}`,
+          );
           jsdocContent = this.generateMockJSDoc(nodeContext);
         }
       } else {
@@ -182,7 +186,9 @@ ${nodeContext.codeSnippet}
         await this.cacheManager.set(cacheKey, response);
       }
 
-      logger.debug(`Generated JSDoc for ${nodeContext.nodeName}: ${jsdocContent.length} characters`);
+      logger.debug(
+        `Generated JSDoc for ${nodeContext.nodeName}: ${jsdocContent.length} characters`,
+      );
       return response;
     } catch (error) {
       logger.error(
@@ -226,8 +232,10 @@ ${nodeContext.codeSnippet}
 
       // TODO: Implement actual embedding generation with AI SDK
       // For now, use mock embeddings until we resolve AI SDK version issues
-      logger.warn("Using mock embeddings - implement actual AI SDK integration");
-      
+      logger.warn(
+        "Using mock embeddings - implement actual AI SDK integration",
+      );
+
       const embeddingDimension = 1536;
       const embeddings = texts.map(() => {
         const embedding = Array.from(
@@ -240,13 +248,15 @@ ${nodeContext.codeSnippet}
         return embedding.map((val) => val / magnitude);
       });
 
-      logger.debug(`Generated ${embeddings.length} embeddings with ${embeddings[0]?.length || 0} dimensions`);
+      logger.debug(
+        `Generated ${embeddings.length} embeddings with ${embeddings[0]?.length || 0} dimensions`,
+      );
       return embeddings;
     } catch (error) {
       logger.error(
         `Error generating embeddings: ${error instanceof Error ? error.message : String(error)}`,
       );
-      
+
       // Fallback to mock embeddings if AI service fails
       const embeddingDimension = 1536;
       return texts.map(() => {
@@ -270,9 +280,9 @@ ${nodeContext.codeSnippet}
    */
   private generateMockJSDoc(nodeContext: NodeContext): string {
     const { nodeName, nodeKind, signatureDetails } = nodeContext;
-    
+
     let jsdoc = `/**\n * ${nodeName}\n`;
-    
+
     // Add description based on node kind
     switch (nodeKind) {
       case "function":
@@ -291,16 +301,16 @@ ${nodeContext.codeSnippet}
       default:
         jsdoc += ` * A ${nodeKind} implementation.\n`;
     }
-    
+
     // Add signature information if available
     if (signatureDetails) {
       jsdoc += ` * Signature: ${signatureDetails}\n`;
     }
-    
+
     // Add TODO note for future AI implementation
     jsdoc += ` * TODO: This JSDoc was generated using a mock implementation. Replace with AI-generated content.\n`;
     jsdoc += ` */`;
-    
+
     return jsdoc;
   }
 
@@ -309,12 +319,15 @@ ${nodeContext.codeSnippet}
    * @param textLength Estimated length of text to process
    * @returns Cost estimation in USD
    */
-  getCostEstimation(textLength: number): { tokens: number; estimatedCost: number } {
+  getCostEstimation(textLength: number): {
+    tokens: number;
+    estimatedCost: number;
+  } {
     // Rough token estimation (1 token ≈ 4 characters)
     const estimatedTokens = Math.ceil(textLength / 4);
-    
+
     let costPerToken = 0;
-    
+
     // Cost estimates based on provider and model (as of 2024)
     switch (this.model.provider) {
       case "openai":
@@ -324,18 +337,18 @@ ${nodeContext.codeSnippet}
           costPerToken = 0.000002; // $0.002 per 1K tokens for GPT-3.5
         }
         break;
-      
+
       case "google":
         costPerToken = 0.000025; // Rough estimate for Gemini
         break;
-      
+
       case "anthropic":
         costPerToken = 0.000015; // Rough estimate for Claude
         break;
     }
-    
+
     const estimatedCost = estimatedTokens * costPerToken;
-    
+
     return {
       tokens: estimatedTokens,
       estimatedCost,

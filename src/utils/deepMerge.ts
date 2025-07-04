@@ -9,7 +9,7 @@ export function deepMerge(target: any, source: any): any {
   if (source === null || source === undefined) {
     return source;
   }
-  
+
   if (target === null || target === undefined) {
     return source;
   }
@@ -26,7 +26,7 @@ export function deepMerge(target: any, source: any): any {
 
   // Handle objects
   const result: any = {};
-  
+
   // Copy all properties from target
   for (const key in target) {
     if (target.hasOwnProperty(key)) {

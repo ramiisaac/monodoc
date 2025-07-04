@@ -1,2 +1,2 @@
-export * from "./AnalyticsDashboard";
-export * from "./TelemetryCollector";
+export * from './AnalyticsDashboard';
+export * from './TelemetryCollector';

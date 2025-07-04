@@ -5,24 +5,11 @@ import {
   GeneratorConfig,
 } from "../types";
 import { logger } from "../utils/logger";
-import {
-  DocumentationQualityAnalyzer,
-  QualityIssue,
-} from "../analyzer/QualityAnalyzer";
+
+import { QualityReportItem, QualityIssue } from "../types/quality";
+import { DocumentationQualityAnalyzer } from "../analyzer/QualityAnalyzer";
 import { WorkspaceAnalyzer } from "../analyzer/WorkspaceAnalyzer";
 import path from "path";
-
-/**
- * Interface for a quality report item, detailing issues for a specific node.
- */
-interface QualityReportItem {
-  file: string;
-  node: string;
-  nodeKind: string;
-  score: number;
-  issues: string[];
-  suggestions: string[];
-}
 
 /**
  * Operation to perform a comprehensive quality check on existing JSDoc documentation.
