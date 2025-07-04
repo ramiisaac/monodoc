@@ -1,12 +1,10 @@
 import { GeneratorConfig, AIResponse, NodeContext } from "../types";
 import { CacheManager } from "../utils/CacheManager";
 import { logger } from "../utils/logger";
-
-// TODO: Re-enable AI SDK imports when dependencies are resolved
-// import { createOpenAI } from "@ai-sdk/openai";
-// import { createGoogleGenerativeAI } from "@ai-sdk/google";
-// import { createAnthropic } from "@ai-sdk/anthropic";
-// import { generateText } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { generateText } from "ai";
 
 // Define internal types for AI model
 interface AIModel {
@@ -60,12 +58,25 @@ export class AIClient {
 
   /**
    * Gets the AI provider SDK client based on the configured provider.
-   * TODO: Implement when AI SDK dependencies are resolved
    * @returns The AI provider client
    */
   private getProviderClient() {
-    // TODO: Implement AI SDK integration
-    return null;
+    const apiKey = this.model.apiKey;
+    
+    if (!apiKey) {
+      throw new Error(`API key not found for provider: ${this.model.provider}`);
+    }
+
+    switch (this.model.provider.toLowerCase()) {
+      case 'openai':
+        return createOpenAI({ apiKey });
+      case 'google':
+        return createGoogleGenerativeAI({ apiKey });
+      case 'anthropic':
+        return createAnthropic({ apiKey });
+      default:
+        throw new Error(`Unsupported provider: ${this.model.provider}`);
+    }
   }
 
   /**
@@ -130,12 +141,34 @@ ${nodeContext.codeSnippet}
       // Track API usage
       this.requestCount++;
 
-      // Generate JSDoc with AI (simplified implementation for now)
-      // TODO: Implement full Vercel AI SDK integration when version compatibility is resolved
+      // Generate JSDoc with AI using Vercel AI SDK
       logger.debug(`Generating JSDoc for ${nodeContext.nodeName} using ${this.model.provider}:${this.model.name}`);
       
-      // For now, create an enhanced mock JSDoc based on the node context
-      const jsdocContent = this.generateMockJSDoc(nodeContext);
+      let jsdocContent: string;
+      
+      // Check if we have an API key for actual AI generation
+      if (this.model.apiKey) {
+        try {
+          const provider = this.getProviderClient();
+          const prompt = this.buildJSDocPrompt(nodeContext);
+          
+          const result = await generateText({
+            model: provider(this.model.name) as any, // Type assertion to handle version compatibility
+            messages: prompt,
+            temperature: this.model.temperature,
+            maxTokens: this.model.maxTokens,
+          });
+
+          jsdocContent = result.text.trim();
+        } catch (error) {
+          logger.warn(`AI generation failed, falling back to mock: ${error instanceof Error ? error.message : String(error)}`);
+          jsdocContent = this.generateMockJSDoc(nodeContext);
+        }
+      } else {
+        // Fallback to mock JSDoc when no API key is available (useful for testing)
+        logger.debug("No API key available, using mock JSDoc generation");
+        jsdocContent = this.generateMockJSDoc(nodeContext);
+      }
 
       // Prepare response
       const response: AIResponse = {

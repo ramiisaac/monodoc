@@ -13,15 +13,20 @@ describe("AIClient", () => {
   let mockNodeContext: NodeContext;
 
   beforeEach(() => {
+    // Mock environment variable for API key
+    process.env.OPENAI_API_KEY = 'test-key';
+    
     mockCacheManager = new MockCacheManager("/tmp/cache") as jest.Mocked<CacheManager>;
     mockConfig = {
       aiModels: [
         {
+          id: "test-openai-gpt4",
           model: "gpt-4",
           provider: "openai",
-          apiKey: "test-key",
+          type: "generation",
+          apiKeyEnvVar: "OPENAI_API_KEY",
           temperature: 0.7,
-          maxTokens: 1000,
+          maxOutputTokens: 1000,
         },
       ],
     } as GeneratorConfig;
@@ -43,6 +48,8 @@ describe("AIClient", () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    // Clean up environment variable
+    delete process.env.OPENAI_API_KEY;
   });
 
   describe("generateJSDoc", () => {
