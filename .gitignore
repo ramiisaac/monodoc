@@ -92,4 +92,6 @@ scratch/
 .yarn-integrity
 yarn.lock
 package-lock.json
+# MCP research files (temporary)
+mcp-servers-research.md
 
