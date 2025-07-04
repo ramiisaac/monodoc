@@ -1,9 +1,15 @@
 name: CI Pipeline
+
 on:
-  pull_request:
-    branches: [main]
   push:
     branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-test-security:
     name: Build · Test (${{ matrix.node-version }}, ${{ matrix.os }}) · Security
@@ -19,10 +25,12 @@ jobs:
         with:
           cache: 'pnpm'
           node-version: ${{ matrix.node-version }}
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
           version: 8
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

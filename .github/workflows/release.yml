@@ -149,7 +149,7 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
+        
       - name: Download dist artifacts
         uses: actions/download-artifact@v3
         with:

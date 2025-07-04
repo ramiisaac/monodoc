@@ -86,5 +86,4 @@ _If applicable, attach relevant screenshots._
 
 ## _Provide any further context or information for reviewers._
 
-**Reviewers**: @ramiisaac
 **Priority**: [ ] Low [ ] ] Medium [ ] High [ ] Critical
