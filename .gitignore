@@ -90,5 +90,5 @@ scratch/
 .vscode-test
 .yarn-integrity
 yarn.lock
-# Keep package-lock.json for npm
-
+package-lock.json
+mcp-servers-research.md
