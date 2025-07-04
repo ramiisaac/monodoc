@@ -1,0 +1,137 @@
+# Turborepo Monorepo Configuration
+name: "Turborepo JSDoc Configuration"
+description: "High-performance setup for Turborepo workspaces with optimized caching and incremental builds"
+
+workspaceDirs:
+  - apps
+  - packages
+  - tooling
+  - docs
+
+includePatterns:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+
+ignorePatterns:
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/.turbo/**"
+  - "**/.next/**"
+  - "**/out/**"
+  - "**/*.test.{ts,tsx,js,jsx}"
+  - "**/*.spec.{ts,tsx,js,jsx}"
+  - "**/__tests__/**"
+  - "**/*.d.ts"
+  - "**/coverage/**"
+  - "**/storybook-static/**"
+
+aiModels:
+  - id: openai-turbo-gen
+    provider: openai
+    model: gpt-4o
+    type: generation
+    apiKeyEnvVar: OPENAI_API_KEY
+    temperature: 0.1
+    maxOutputTokens: 3000
+  - id: anthropic-turbo-fallback
+    provider: anthropic
+    model: claude-3-5-sonnet-20241022
+    type: generation
+    apiKeyEnvVar: ANTHROPIC_API_KEY
+    temperature: 0.15
+    maxOutputTokens: 3000
+  - id: openai-turbo-embedding
+    provider: openai
+    model: text-embedding-3-large
+    type: embedding
+    apiKeyEnvVar: OPENAI_API_KEY
+    dimensions: 1536
+
+aiClientConfig:
+  defaultGenerationModelId: openai-turbo-gen
+  defaultEmbeddingModelId: openai-turbo-embedding
+  maxConcurrentRequests: 8 # High concurrency for Turborepo builds
+  requestDelayMs: 100
+  maxRetries: 4
+  retryDelayMs: 1500
+  maxTokensPerBatch: 10000
+
+embeddingConfig:
+  enabled: true
+  modelId: openai-turbo-embedding
+  minRelationshipScore: 0.78
+  maxRelatedSymbols: 8
+  embeddingBatchSize: 100
+
+jsdocConfig:
+  prioritizeExports: true
+  includePrivate: false
+  generateExamples: true
+  mergeExisting: true
+  minJsdocLength: 80
+  includeSymbolReferences: true
+  includeRelatedSymbols: true
+  maxSnippetLength: 3000
+
+outputConfig:
+  reportDir: ./reports/turborepo
+  reportFileName: turborepo-jsdoc-report.json
+  logLevel: info
+
+plugins:
+  - name: react-component-plugin
+    enabled: true
+    options:
+      enhanceProps: true
+      detectHooks: true
+      analyzeContext: true
+  - name: api-documentation-plugin
+    enabled: true
+    options:
+      generateExamples: true
+      includeMiddleware: true
+      detectValidation: true
+
+# Turborepo-specific optimizations
+performance:
+  enableCaching: true
+  maxConcurrentFiles: 10
+  batchSize: 60
+  timeoutMs: 50000
+  # Align with Turborepo's incremental approach
+  respectTurboCache: true
+  incrementalProcessing: true
+
+# Advanced quality settings for enterprise-grade code
+qualityThresholds:
+  minimumScore: 85
+  requireDescriptions: true
+  requireExamples: false # May be too strict for all packages
+  requireParams: true
+  requireReturns: true
+
+# Telemetry for performance monitoring across packages
+telemetry:
+  enabled: true
+  anonymize: true
+  collectPerformance: true
+  collectErrors: true
+  includePackageMetrics: true
+
+# Turborepo integration settings
+turborepo:
+  enabled: true
+  respectPipeline: true
+  cacheDocumentation: true
+  incrementalGeneration: true
+  # Cache outputs in .turbo for consistency
+  outputCaching: ".turbo/jsdoc-cache"
+
+# Watch mode optimized for Turborepo
+watchMode:
+  enabled: false # Usually handled by Turborepo's watch
+  debounceMs: 300
+  respectTurboignore: true

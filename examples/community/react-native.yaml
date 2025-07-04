@@ -1,0 +1,115 @@
+# React Native Project Configuration
+name: "React Native JSDoc Configuration"
+description: "Optimized for React Native applications with mobile-specific considerations"
+
+workspaceDirs:
+  - src
+  - components
+  - screens
+  - services
+  - utils
+  - hooks
+  - navigation
+  - types
+
+includePatterns:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+
+ignorePatterns:
+  - "**/node_modules/**"
+  - "**/android/**"
+  - "**/ios/**"
+  - "**/.expo/**"
+  - "**/dist/**"
+  - "**/*.test.{ts,tsx,js,jsx}"
+  - "**/*.spec.{ts,tsx,js,jsx}"
+  - "**/__tests__/**"
+  - "**/*.d.ts"
+  - "**/metro.config.js"
+  - "**/babel.config.js"
+
+aiModels:
+  - id: openai-rn-gen
+    provider: openai
+    model: gpt-4o
+    type: generation
+    apiKeyEnvVar: OPENAI_API_KEY
+    temperature: 0.2
+    maxOutputTokens: 2000
+  - id: openai-rn-embedding
+    provider: openai
+    model: text-embedding-3-small
+    type: embedding
+    apiKeyEnvVar: OPENAI_API_KEY
+    dimensions: 1536
+
+aiClientConfig:
+  defaultGenerationModelId: openai-rn-gen
+  defaultEmbeddingModelId: openai-rn-embedding
+  maxConcurrentRequests: 4 # Conservative for mobile development
+  requestDelayMs: 300
+  maxRetries: 3
+  retryDelayMs: 1000
+  maxTokensPerBatch: 5000
+
+embeddingConfig:
+  enabled: true
+  modelId: openai-rn-embedding
+  minRelationshipScore: 0.75
+  maxRelatedSymbols: 4
+  embeddingBatchSize: 25
+
+jsdocConfig:
+  prioritizeExports: true
+  includePrivate: false
+  generateExamples: true
+  mergeExisting: true
+  minJsdocLength: 60
+  includeSymbolReferences: true
+  includeRelatedSymbols: true
+  # React Native specific node kinds
+  includeNodeKinds:
+    - ClassDeclaration
+    - FunctionDeclaration
+    - MethodDeclaration
+    - InterfaceDeclaration
+    - TypeAliasDeclaration
+    - EnumDeclaration
+    - VariableDeclaration
+    - ArrowFunction
+
+outputConfig:
+  reportDir: ./reports/react-native
+  reportFileName: rn-jsdoc-report.json
+  logLevel: info
+
+plugins:
+  - name: react-component-plugin
+    enabled: true
+    options:
+      enhanceProps: true
+      detectHooks: true
+      analyzeContext: true
+      mobileOptimization: true # Custom option for React Native
+
+performance:
+  enableCaching: true
+  maxConcurrentFiles: 4
+  batchSize: 30
+  timeoutMs: 40000
+
+qualityThresholds:
+  minimumScore: 75
+  requireDescriptions: true
+  requireExamples: false
+  requireParams: true
+  requireReturns: true
+
+# React Native specific settings
+mobileOptimizations:
+  prioritizePerformance: true
+  limitComplexity: true
+  focusOnPlatformSpecific: true
