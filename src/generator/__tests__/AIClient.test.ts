@@ -67,7 +67,7 @@ describe("AIClient", () => {
 
       expect(result.status).toBe("success");
       expect(result.jsdocContent).toContain("testFunction");
-      expect(result.jsdocContent).toContain("function implementation with 2 parameters");
+      expect(result.jsdocContent).toContain("A function that performs operations");
       expect(mockCacheManager.set).toHaveBeenCalledWith("jsdoc:test-node-123", result);
     });
 
