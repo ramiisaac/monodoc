@@ -77,7 +77,7 @@ function getDefaultApiKeyEnvVar(provider: string): string {
  */
 function configureCLI(): void {
   program
-    .name('ai-jsdoc')
+    .name('monodoc')
     .description(chalk.bold.blue('🤖 AI-powered JSDoc generation for TypeScript monorepos'))
     .version(appVersion, '-v, --version', 'Display version number')
     .helpOption('-h, --help', 'Display help for command')
@@ -192,14 +192,14 @@ function configureCLI(): void {
   // If no command is specified, default to 'generate' command logic
   // This must be placed after all other command definitions
   if (process.argv.slice(2).length === 0) {
-    // No arguments, so effectively 'ai-jsdoc' was called without subcommand
+    // No arguments, so effectively 'monodoc' was called without subcommand
     // Set a default action for the root program
     program.action(async (options) => {
       await executeCommand(GenerateCommand, options);
     });
   } else if (!process.argv.slice(2).some(arg => program.commands.some(cmd => cmd.name() === arg || cmd.aliases().includes(arg)))) {
     // If there are arguments, but none of them match a command name/alias, assume they are options for the default 'generate' command
-    // This allows `ai-jsdoc --dry-run` instead of `ai-jsdoc generate --dry-run`
+    // This allows `monodoc --dry-run` instead of `monodoc generate --dry-run`
     program.action(async (options) => {
       await executeCommand(GenerateCommand, options);
     });

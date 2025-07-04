@@ -7,7 +7,7 @@ workspaceDirs:
   - packages
   - apps
   - libs
-targetPaths: [] # Typically set by CI via `ai-jsdoc incremental` or specific patterns
+targetPaths: [] # Typically set by CI via `monodoc incremental` or specific patterns
 
 # --- File Filtering ---
 includePatterns:
@@ -118,7 +118,7 @@ plugins:
 # --- Telemetry Configuration (CRITICAL FOR PRODUCTION MONITORING) ---
 telemetry:
   enabled: true # Highly recommended for production monitoring
-  endpoint: https://telemetry.ai-jsdoc.com/collect # Replace with your actual secure telemetry endpoint
+  endpoint: https://telemetry.monodoc.com/collect # Replace with your actual secure telemetry endpoint
   anonymize: true # Ensure PII is anonymized
   collectPerformance: true
   collectErrors: true

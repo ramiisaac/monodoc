@@ -6,7 +6,7 @@
   "types": "dist/src/index.d.ts",
   "bin": {
     "generate-jsdocs": "dist/src/cli.js",
-    "ai-jsdoc": "dist/src/cli.js"
+    "monodoc": "dist/src/cli.js"
   },
   "files": [
     "dist*",
@@ -50,7 +50,7 @@
     "size:check": "bundlephobia dist/index.js",
     "precommit": "lint-staged",
     "prepare": "husky install",
-    "deploy:docker": "docker build -t ai-jsdoc:latest .",
+    "deploy:docker": "docker build -t monodoc:latest .",
     "deploy:publish": "pnpm run prepublishOnly && pnpm publish --access public",
     "deploy:beta": "pnpm run prepublishOnly && pnpm publish --tag beta --access public",
     "markdown:lint": "markdownlint \"**/*.md\" --ignore node_modules --ignore dist --fix"

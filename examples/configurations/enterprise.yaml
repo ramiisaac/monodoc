@@ -148,7 +148,7 @@ plugins:
 # --- Telemetry Configuration ---
 telemetry:
   enabled: true # Opt-in for performance monitoring and insights
-  endpoint: https://telemetry.ai-jsdoc.com/collect # Replace with your actual telemetry endpoint
+  endpoint: https://telemetry.monodoc.com/collect # Replace with your actual telemetry endpoint
   anonymize: true # Anonymize all collected data (recommended)
   collectPerformance: true
   collectErrors: true

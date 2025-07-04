@@ -8,6 +8,6 @@
     "exampleQuality": 78
   },
   "recommendations": [
-    "For a more detailed quality analysis, run `ai-jsdoc quality-check`."
+    "For a more detailed quality analysis, run `monodoc quality-check`."
   ]
 }

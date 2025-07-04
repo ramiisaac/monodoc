@@ -126,7 +126,7 @@ monodoc generate --model gpt-4o-mini
 ## Configuration
 
 The primary configuration file is `jsdoc-config.yaml` (or `.json`).
-A basic setup can be created using `ai-jsdoc setup`.
+A basic setup can be created using `monodoc setup`.
 
 ### Example `jsdoc-config.yaml`
 
@@ -270,7 +270,7 @@ It assesses:
 ### Run a Quality Check
 
 ```bash
-ai-jsdoc quality-check
+monodoc quality-check
 ```
 
 ```
@@ -344,13 +344,13 @@ Run benchmarks to understand and optimize the tool's performance on your codebas
 ### Run Benchmarks
 
 ```bash
-ai-jsdoc benchmark
+monodoc benchmark
 ```
 
 ### Optimization Tips
 
 1. **Enable Caching**: Set `performance.enableCaching: true` in your config to reduce repeat processing and AI API calls.
-2. **Use Incremental Mode**: `ai-jsdoc incremental` only processes changed files, ideal for CI.
+2. **Use Incremental Mode**: `monodoc incremental` only processes changed files, ideal for CI.
 3. **Optimize Concurrency**: Adjust `aiClientConfig.maxConcurrentRequests` and `performance.maxConcurrentFiles` in your config.
 4. **Local LLM**: Using Ollama allows for unlimited local processing, bypassing external AI API rate limits.
 
@@ -383,24 +383,24 @@ Explore the `examples/` directory for various configurations and usage patterns:
 # Ensure AI API key is set in environment:
 export OPENAI_API_KEY=your-key-here # Or GOOGLE_API_KEY, ANTHROPIC_API_KEY, OLLAMA_HOST
 # Validate your config:
-ai-jsdoc validate-config
+monodoc validate-config
 ```
 
 **Performance Issues**
 
 ````bash
-ai-jsdoc generate --cache-clear # Clear cache to test fresh run
-ai-jsdoc benchmark # Run benchmarks to identify bottlenecks
-ai-jsdoc generate --performance # Generate detailed performance report```
+monodoc generate --cache-clear # Clear cache to test fresh run
+monodoc benchmark # Run benchmarks to identify bottlenecks
+monodoc generate --performance # Generate detailed performance report```
 **Quality Issues**
 ```bash
-ai-jsdoc quality-check # Run quality analysis
+monodoc quality-check # Run quality analysis
 ````
 
 ### Debug Mode
 
 ```bash
-DEBUG_JSDOC_GEN=true ai-jsdoc generate --verbose
+DEBUG_JSDOC_GEN=true monodoc generate --verbose
 ```
 
 ## License

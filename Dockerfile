@@ -39,7 +39,7 @@ RUN addgroup -g 1001 -S nodejs && \
 COPY --from=builder --chown=jsdoc:nodejs /app/dist ./dist
 COPY --from=builder --chown=jsdoc:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=jsdoc:nodejs /app/package.json ./package.json
-# Copy example configurations if they are used by the CLI (e.g. for `ai-jsdoc setup`)
+# Copy example configurations if they are used by the CLI (e.g. for `monodoc setup`)
 COPY --from=builder --chown=jsdoc:nodejs /app/examples/ ./examples/
 # Copy the default config file if it's external (e.g., config/jsdoc-config.yaml)
 # If your default config is entirely internal to the JS, this might not be needed.

@@ -28,7 +28,7 @@ interface LocalEnvEntry {
  * in either a global configuration file or a local `.env` file.
  */
 export class AuthManager {
-  private static readonly GLOBAL_CONFIG_DIR = path.join(os.homedir(), '.ai-jsdoc');
+  private static readonly GLOBAL_CONFIG_DIR = path.join(os.homedir(), '.monodoc');
   private static readonly GLOBAL_CREDENTIALS_FILE = path.join(
     AuthManager.GLOBAL_CONFIG_DIR,
     'credentials.json',

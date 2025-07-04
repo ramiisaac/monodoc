@@ -179,6 +179,6 @@ export function printAvailableModels(aiModels: GeneratorConfig['aiModels']): voi
     logger.log();
   }
   logger.log(
-    chalk.gray('Use `ai-jsdoc generate --model <name>` to specify a model for generation.\n'),
+    chalk.gray('Use `monodoc generate --model <name>` to specify a model for generation.\n'),
   );
 }

@@ -374,7 +374,7 @@ export class GenerateDocumentationOperation implements IOperation {
         exampleQuality: 78, // Placeholder
       },
       recommendations: [
-        'For a more detailed quality analysis, run `ai-jsdoc quality-check`.',
+        'For a more detailed quality analysis, run `monodoc quality-check`.',
         ...(this.stats.failedJsdocs > 0
           ? [`Address ${this.stats.failedJsdocs} failed JSDoc generations.`]
           : []),

@@ -1,6 +1,6 @@
 # 🌟 Community Engagement & Open Source Strategy
 
-This document outlines our approach to building a thriving open source community around AI-JSDoc Monorepo Generator.
+This document outlines our approach to building a thriving open source community around monodoc Monorepo Generator.
 
 ## 🎯 Community Goals
 

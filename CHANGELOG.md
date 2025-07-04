@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📂 **Restructured Docs**: Organized `docs/` into `guides/`, `project/`, and `api/` for clearer separation of concerns.
 - 🧪 **Improved Test Setup**: Enhanced `src/utils/test-setup.ts` for more robust mocking.
 - 🔄 **Config Migration**: `ConfigMigrator.ts` updated to handle new `aiModels` and `aiClientConfig` structures.
-- 🚀 **CLI Command Syntax**: Changed CLI commands from flags (e.g., `ai-jsdoc --generate`) to subcommands (e.g., `ai-jsdoc generate`).
+- 🚀 **CLI Command Syntax**: Changed CLI commands from flags (e.g., `monodoc --generate`) to subcommands (e.g., `monodoc generate`).
 
 ### Fixed
 
@@ -175,9 +175,9 @@ This release represents a complete rewrite and enhancement of the original monor
 
 ### Migration Guide
 
-1. Run `ai-jsdoc setup` to create a new configuration
+1. Run `monodoc setup` to create a new configuration
 2. Update environment variables for API keys
-3. Review new CLI options with `ai-jsdoc --help`
+3. Review new CLI options with `monodoc --help`
 4. Update any custom plugins to new API
 
 ### New Requirements

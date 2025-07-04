@@ -97,7 +97,7 @@ export class InfoCommand implements ICommand {
         logger.log(chalk.yellow('No saved credentials found.'));
         logger.log(
           chalk.gray(
-            'Use `ai-jsdoc --api-key <key> --save-api-key global|local` to save credentials.\n',
+            'Use `monodoc --api-key <key> --save-api-key global|local` to save credentials.\n',
           ),
         );
         return;
@@ -148,42 +148,42 @@ export class InfoCommand implements ICommand {
     const examples = [
       {
         title: 'Quick Start',
-        command: 'ai-jsdoc setup',
+        command: 'monodoc setup',
         description: 'Interactive setup wizard to configure your project',
       },
       {
         title: 'Preview Changes',
-        command: 'ai-jsdoc generate --dry-run --verbose',
+        command: 'monodoc generate --dry-run --verbose',
         description: 'See what would be generated without modifying files',
       },
       {
         title: 'Use Specific Model',
-        command: 'ai-jsdoc generate --model gpt-4o --api-key sk-... --save-api-key local',
+        command: 'monodoc generate --model gpt-4o --api-key sk-... --save-api-key local',
         description: 'Use GPT-4o model and save API key locally',
       },
       {
         title: 'Watch Mode',
-        command: 'ai-jsdoc watch',
+        command: 'monodoc watch',
         description: 'Continuously monitor and update documentation',
       },
       {
         title: 'Quality Analysis',
-        command: 'ai-jsdoc quality-check --performance',
+        command: 'monodoc quality-check --performance',
         description: 'Analyze documentation quality with performance metrics',
       },
       {
         title: 'Target Specific Files',
-        command: 'ai-jsdoc generate "src/components/**/*.tsx" --template react-component',
+        command: 'monodoc generate "src/components/**/*.tsx" --template react-component',
         description: 'Generate docs for React components only',
       },
       {
         title: 'Production Deploy',
-        command: 'ai-jsdoc generate --config production.yaml --no-embed --force-overwrite',
+        command: 'monodoc generate --config production.yaml --no-embed --force-overwrite',
         description: 'Production deployment with optimized settings',
       },
       {
         title: 'Validate Configuration',
-        command: 'ai-jsdoc validate-config examples/configurations/basic.yaml',
+        command: 'monodoc validate-config examples/configurations/basic.yaml',
         description: 'Validate a specific configuration file',
       },
     ];

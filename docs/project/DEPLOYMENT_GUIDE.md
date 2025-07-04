@@ -1,6 +1,6 @@
 # 🚀 Open Source Deployment Guide
 
-This guide covers the complete deployment process for the AI-JSDoc Monorepo Generator to both NPM and GitHub Packages registries.
+This guide covers the complete deployment process for the monodoc Monorepo Generator to both NPM and GitHub Packages registries.
 
 ## 📋 Pre-Deployment Checklist
 
