@@ -1,0 +1,264 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-filesystem", "/home/runner/work/monodoc/monodoc"],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "description": "File system operations for reading/writing TypeScript source files, configuration files, and documentation",
+      "capabilities": [
+        "read_file",
+        "write_file",
+        "list_directory",
+        "create_directory",
+        "delete_file",
+        "get_file_info"
+      ]
+    },
+    "git": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-git", "/home/runner/work/monodoc/monodoc"],
+      "env": {
+        "GIT_AUTHOR_NAME": "GitHub Copilot",
+        "GIT_AUTHOR_EMAIL": "copilot@github.com"
+      },
+      "description": "Git operations for version control, commit history, and incremental processing",
+      "capabilities": [
+        "git_status",
+        "git_log",
+        "git_diff",
+        "git_commit",
+        "git_branch",
+        "git_checkout",
+        "git_add"
+      ]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "description": "GitHub API integration for repository operations, issues, and pull requests",
+      "capabilities": [
+        "create_issue",
+        "get_issue",
+        "create_pull_request",
+        "get_pull_request",
+        "list_files",
+        "search_code",
+        "get_repository_info"
+      ]
+    },
+    "bash": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-bash"],
+      "env": {
+        "PATH": "${PATH}",
+        "NODE_ENV": "development"
+      },
+      "description": "Shell command execution for npm scripts, TypeScript compilation, testing, and linting",
+      "capabilities": [
+        "run_command",
+        "get_environment"
+      ],
+      "allowedCommands": [
+        "npm",
+        "npx",
+        "tsc",
+        "jest",
+        "eslint",
+        "prettier",
+        "node",
+        "cat",
+        "ls",
+        "pwd",
+        "find",
+        "grep",
+        "wc"
+      ]
+    },
+    "web": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-web"],
+      "description": "Web scraping and API calls for fetching documentation and API references",
+      "capabilities": [
+        "fetch_url",
+        "scrape_page",
+        "make_request"
+      ],
+      "allowedDomains": [
+        "docs.github.com",
+        "www.typescriptlang.org",
+        "jestjs.io",
+        "eslint.org",
+        "prettier.io",
+        "www.npmjs.com",
+        "platform.openai.com",
+        "ai.google.dev",
+        "docs.anthropic.com",
+        "ollama.ai"
+      ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-memory"],
+      "description": "Persistent memory for remembering project structure, coding patterns, and preferences",
+      "capabilities": [
+        "store_memory",
+        "retrieve_memory",
+        "search_memory",
+        "delete_memory"
+      ]
+    }
+  },
+  "globalSettings": {
+    "timeout": 30000,
+    "maxRetries": 3,
+    "logLevel": "info",
+    "enableLogging": true,
+    "logFile": "/tmp/mcp-copilot.log"
+  },
+  "projectContext": {
+    "name": "monodoc",
+    "description": "AI-powered JSDoc generator for TypeScript monorepos",
+    "type": "typescript-monorepo",
+    "mainLanguage": "typescript",
+    "buildSystem": "npm",
+    "testFramework": "jest",
+    "linter": "eslint",
+    "formatter": "prettier",
+    "documentation": "typedoc",
+    "aiProviders": [
+      "openai",
+      "google",
+      "anthropic",
+      "ollama"
+    ],
+    "keyDirectories": [
+      "src",
+      "examples",
+      "docs",
+      "config",
+      "test"
+    ],
+    "keyFiles": [
+      "package.json",
+      "tsconfig.json",
+      "jest.config.js",
+      "README.MD",
+      "CHANGELOG.md"
+    ],
+    "workspacePatterns": [
+      "packages/*",
+      "apps/*"
+    ],
+    "ignorePatterns": [
+      "node_modules",
+      "dist",
+      "coverage",
+      ".git",
+      "*.log",
+      "tmp"
+    ]
+  },
+  "developmentGuidelines": {
+    "codeStyle": {
+      "indentation": 2,
+      "quotes": "single",
+      "semicolons": true,
+      "trailingCommas": "always"
+    },
+    "naming": {
+      "files": "kebab-case",
+      "functions": "camelCase",
+      "classes": "PascalCase",
+      "constants": "UPPER_SNAKE_CASE",
+      "interfaces": "PascalCase"
+    },
+    "patterns": {
+      "commands": "src/commands/",
+      "utils": "src/utils/",
+      "types": "src/types/",
+      "plugins": "src/plugins/",
+      "config": "src/config/"
+    },
+    "testing": {
+      "testFiles": "*.test.ts",
+      "mockFiles": "__mocks__/",
+      "coverage": {
+        "minimum": 80,
+        "exclude": [
+          "dist",
+          "coverage",
+          "*.test.ts",
+          "*.spec.ts"
+        ]
+      }
+    }
+  },
+  "aiIntegration": {
+    "supportedProviders": [
+      {
+        "name": "openai",
+        "models": ["gpt-4o", "gpt-4o-mini", "text-embedding-3-small"],
+        "apiKeyEnv": "OPENAI_API_KEY"
+      },
+      {
+        "name": "google",
+        "models": ["gemini-1.5-flash", "gemini-1.5-pro", "embedding-001"],
+        "apiKeyEnv": "GOOGLE_API_KEY"
+      },
+      {
+        "name": "anthropic",
+        "models": ["claude-3-haiku-20240307", "claude-3-sonnet-20240229"],
+        "apiKeyEnv": "ANTHROPIC_API_KEY"
+      },
+      {
+        "name": "ollama",
+        "models": ["nomic-embed-text"],
+        "baseUrl": "http://localhost:11434",
+        "apiKeyEnv": "OLLAMA_HOST"
+      }
+    ],
+    "defaultConfig": {
+      "temperature": 0.2,
+      "maxOutputTokens": 4096,
+      "topP": 0.8,
+      "maxRetries": 5,
+      "retryDelayMs": 1000
+    }
+  },
+  "commonTasks": {
+    "build": "npm run build",
+    "test": "npm run test",
+    "lint": "npm run lint",
+    "format": "npm run format",
+    "typecheck": "npm run typecheck",
+    "generateDocs": "npm run docs:generate",
+    "runExample": "npm run example",
+    "qualityCheck": "npm run quality",
+    "benchmark": "npm run benchmark"
+  },
+  "troubleshooting": {
+    "commonIssues": [
+      {
+        "issue": "TypeScript compilation errors",
+        "solution": "Run 'npm run typecheck' and fix type errors"
+      },
+      {
+        "issue": "Lint errors",
+        "solution": "Run 'npm run lint:fix' to auto-fix issues"
+      },
+      {
+        "issue": "Test failures",
+        "solution": "Run 'npm run test' to see detailed test results"
+      },
+      {
+        "issue": "Build failures",
+        "solution": "Check 'npm run clean && npm run build' for fresh build"
+      }
+    ]
+  }
+}

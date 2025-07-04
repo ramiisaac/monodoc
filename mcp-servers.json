@@ -1,0 +1,55 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/home/runner/work/monodoc/monodoc"
+      ]
+    },
+    "git": {
+      "command": "npx",
+      "args": [
+        "-y", 
+        "@modelcontextprotocol/server-git",
+        "--repository",
+        "/home/runner/work/monodoc/monodoc"
+      ]
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "bash": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-bash"
+      ],
+      "env": {
+        "MONODOC_ALLOWED_COMMANDS": "npm,npx,tsc,jest,eslint,prettier,node,cat,ls,pwd,find,grep,wc"
+      }
+    },
+    "web": {
+      "command": "npx", 
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-web"
+      ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
+    }
+  }
+}
