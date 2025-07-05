@@ -23,8 +23,8 @@ export default {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transformIgnorePatterns: [
-    // Allow transformation of ES modules in node_modules - make this more specific to prevent issues
-    'node_modules/(?!(p-limit|yocto-queue)/)'
+    // Allow transformation of ES modules in node_modules - be more comprehensive
+    'node_modules/(?!(p-limit|yocto-queue|inquirer|ansi-escapes|chalk|strip-ansi)/)'
   ],
   transform: {
     // Use ts-jest for TypeScript files

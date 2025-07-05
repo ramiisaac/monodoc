@@ -161,6 +161,7 @@ describe('AIClient', () => {
 
     it('should throw error if API key is missing', () => {
       delete process.env.OPENAI_API_KEY;
+      delete process.env.ANTHROPIC_API_KEY;
       
       expect(() => {
         new AIClient(mockConfig, mockCacheManager);

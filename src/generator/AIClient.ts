@@ -23,10 +23,10 @@ export class AIClient {
   private config: GeneratorConfig;
   private cacheManager: CacheManager;
   private models: Map<string, AIModelInstance> = new Map();
-  private defaultGenerationModel: AIModelInstance;
-  private defaultEmbeddingModel: AIModelInstance;
+  private defaultGenerationModel!: AIModelInstance;
+  private defaultEmbeddingModel!: AIModelInstance;
   private requestCount: number = 0;
-  private concurrencyLimit: (fn: () => Promise<any>) => Promise<any>;
+  private concurrencyLimit!: (fn: () => Promise<any>) => Promise<any>;
 
   /**
    * Creates a new AIClient instance.
