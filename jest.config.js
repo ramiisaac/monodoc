@@ -23,8 +23,8 @@ export default {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transformIgnorePatterns: [
-    // Allow transformation of ES modules in node_modules
-    'node_modules/(?!(p-limit|yocto-queue|globby|dir-glob|fast-glob|@sindresorhus/is|@sindresorhus/df|aggregate-error|clean-stack|escape-string-regexp|@vercel/ai-sdk|ai|@ai-sdk)/)'
+    // Allow transformation of ES modules in node_modules - make this more specific to prevent issues
+    'node_modules/(?!(p-limit|yocto-queue)/)'
   ],
   transform: {
     // Use ts-jest for TypeScript files

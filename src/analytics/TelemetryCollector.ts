@@ -125,7 +125,7 @@ export class TelemetryCollector {
       memoryUsage: [process.memoryUsage().heapUsed],
       cpuUsage: [process.cpuUsage().user],
       apiCalls: successfulJsdocs + failedJsdocs, // Approximation of LLM API calls
-      errorsEncountered: stats.errors.length,
+      errorsEncountered: stats.errors?.length || 0,
     };
   }
 
