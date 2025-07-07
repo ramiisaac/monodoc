@@ -1,4 +1,4 @@
-import pLimit from 'p-limit';
+import pLimit from "p-limit";
 
 /**
  * A shared utility for managing concurrency limits across the application.
@@ -15,7 +15,7 @@ export class ConcurrencyManager {
    */
   constructor(maxConcurrency: number = 4) {
     if (maxConcurrency <= 0) {
-      throw new Error('maxConcurrency must be a positive number');
+      throw new Error("maxConcurrency must be a positive number");
     }
     this.maxConcurrency = maxConcurrency;
     this.limiter = pLimit(maxConcurrency);
@@ -68,6 +68,8 @@ export class ConcurrencyManager {
  * @param maxConcurrency The maximum number of concurrent operations
  * @returns A new ConcurrencyManager instance
  */
-export function createConcurrencyManager(maxConcurrency: number = 4): ConcurrencyManager {
+export function createConcurrencyManager(
+  maxConcurrency: number = 4,
+): ConcurrencyManager {
   return new ConcurrencyManager(maxConcurrency);
 }
