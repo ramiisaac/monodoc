@@ -10,6 +10,10 @@ import { logger } from "./logger";
  * had identical concurrency control patterns using p-limit directly.
  * This consolidates that pattern into a reusable utility to avoid duplication
  * and potential synchronization issues.
+ * 
+ * Note: This is different from RateLimiter which handles rate limiting with delays
+ * for API calls. ConcurrencyController focuses solely on limiting concurrent
+ * execution without adding delays between tasks.
  */
 export class ConcurrencyController {
   private limiter: ReturnType<typeof pLimit>;
