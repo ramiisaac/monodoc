@@ -1,4 +1,4 @@
-import pLimit from "p-limit"; // For concurrency control
+import { ConcurrencyManager } from "../utils/ConcurrencyManager"; // For concurrency control
 import { RelationshipAnalyzer } from "../embeddings/RelationshipAnalyzer";
 import { DynamicTemplateSystem } from "../features/DynamicTemplateSystem";
 import { SmartDocumentationEngine } from "../features/SmartDocumentationEngine";
@@ -50,7 +50,7 @@ export class MonorepoJSDocGenerator {
   private dynamicTemplateSystem!: DynamicTemplateSystem;
   private smartDocumentationEngine!: SmartDocumentationEngine;
   private cacheManager: CacheManager;
-  private concurrencyLimiter: ReturnType<typeof pLimit>; // Concurrency limiter for file processing
+  private concurrencyManager: ConcurrencyManager; // Concurrency manager for file processing
   private progressBar: ProgressBar | null = null; // ProgressBar instance
   private reportGenerator: ReportGenerator; // Injected by CommandRunner context
 
@@ -137,9 +137,9 @@ export class MonorepoJSDocGenerator {
       throw new Error("PluginManager is required for FileProcessor");
     }
 
-    this.concurrencyLimiter = pLimit(
+    this.concurrencyManager = new ConcurrencyManager(
       this.config.performance?.maxConcurrentFiles || 4,
-    ); // Default to 4 concurrent files
+    ); // Initialize concurrency manager
     logger.success(
       `🎯 MonorepoJSDocGenerator initialized with ${packages.length} packages.`,
     );
@@ -255,7 +255,7 @@ export class MonorepoJSDocGenerator {
     const fileProcessingPromises: Promise<void>[] = [];
     for (const fileInfo of batch.files) {
       fileProcessingPromises.push(
-        this.concurrencyLimiter(() =>
+        this.concurrencyManager.execute(() =>
           this.fileProcessor.processFile(fileInfo.path, this.stats),
         ),
       );
