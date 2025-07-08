@@ -12,6 +12,7 @@ updates:
       separator: '-'
     reviewers:
       - ramiisaac
+      - copilot
     labels:
       - dependencies
       - version update
@@ -28,4 +29,4 @@ updates:
           - patch
           - minor
         patterns:
-          - '*'
+        - '*'
