@@ -1,6 +1,6 @@
 import { Project, SourceFile } from "ts-morph";
 import path from "path";
-import Limit from "p-limit"; // Import for concurrency control
+import { createFileProcessingController, ConcurrencyController } from "../utils/ConcurrencyController";
 import {
   GeneratorConfig,
   FileBatch,
@@ -46,7 +46,7 @@ export class GenerateDocumentationOperation implements IOperation {
   private workspaceAnalyzer!: WorkspaceAnalyzer;
   private reportGenerator!: ReportGenerator;
   private progressBar: ProgressBar | null = null;
-  private concurrencyLimiter!: ReturnType<typeof Limit>; // Concurrency limiter for file processing
+  private concurrencyController!: ConcurrencyController; // Concurrency controller for file processing
   private config!: GeneratorConfig;
   private baseDir!: string;
 
@@ -114,9 +114,9 @@ export class GenerateDocumentationOperation implements IOperation {
     this.smartDocumentationEngine = new SmartDocumentationEngine(); // No direct need for DynamicTemplateSystem here
     this.workspaceAnalyzer = new WorkspaceAnalyzer(project);
     this.reportGenerator = reportGenerator; // Use the injected reportGenerator
-    this.concurrencyLimiter = Limit(
+    this.concurrencyController = createFileProcessingController(
       config.performance?.maxConcurrentFiles || 4,
-    ); // Initialize concurrency limiter
+    ); // Initialize concurrency controller
 
     this.aiClient = new AIClient(config, cacheManager);
     this.jsdocManipulator = new JSDocManipulator(config);
@@ -212,7 +212,7 @@ export class GenerateDocumentationOperation implements IOperation {
     for (const batch of batches) {
       for (const fileInfo of batch.files) {
         fileProcessingPromises.push(
-          this.concurrencyLimiter(() =>
+          this.concurrencyController.execute(() =>
             this.fileProcessor.processFile(fileInfo.path, this.stats),
           ),
         );
