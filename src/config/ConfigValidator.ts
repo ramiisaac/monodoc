@@ -128,9 +128,9 @@ export class ConfigValidator {
       this.checkPositiveNumber(
         typedConfig.jsdocConfig,
         "minJsdocLength",
-        warnings,
+        errors,
         10,
-      ); // Often a warning
+      );
       this.checkBooleanProperty(
         typedConfig.jsdocConfig,
         "prioritizeExports",
@@ -340,7 +340,14 @@ export class ConfigValidator {
         );
       }
 
-      // Check specific generation/embedding configs if present
+      // Check API key environment variables
+      if (model.apiKeyEnvVar) {
+        if (!process.env[model.apiKeyEnvVar]) {
+          warningList.push(
+            `Environment variable '${model.apiKeyEnvVar}' is not set for AI model '${model.id}'. This model might not function correctly.`,
+          );
+        }
+      }
       if (model.type === "generation") {
         if (
           model.temperature !== undefined &&

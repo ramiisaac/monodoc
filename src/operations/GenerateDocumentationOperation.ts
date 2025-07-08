@@ -1,6 +1,5 @@
 import { Project, SourceFile } from "ts-morph";
 import path from "path";
-import Limit from "p-limit"; // Import for concurrency control
 import {
   GeneratorConfig,
   FileBatch,
@@ -46,7 +45,7 @@ export class GenerateDocumentationOperation implements IOperation {
   private workspaceAnalyzer!: WorkspaceAnalyzer;
   private reportGenerator!: ReportGenerator;
   private progressBar: ProgressBar | null = null;
-  private concurrencyLimiter!: ReturnType<typeof Limit>; // Concurrency limiter for file processing
+  private concurrencyLimiter!: (fn: () => Promise<any>) => Promise<any>; // Concurrency limiter for file processing
   private config!: GeneratorConfig;
   private baseDir!: string;
 
@@ -114,9 +113,21 @@ export class GenerateDocumentationOperation implements IOperation {
     this.smartDocumentationEngine = new SmartDocumentationEngine(); // No direct need for DynamicTemplateSystem here
     this.workspaceAnalyzer = new WorkspaceAnalyzer(project);
     this.reportGenerator = reportGenerator; // Use the injected reportGenerator
-    this.concurrencyLimiter = Limit(
-      config.performance?.maxConcurrentFiles || 4,
-    ); // Initialize concurrency limiter
+    // Initialize simple concurrency limiter
+    const maxConcurrent = config.performance?.maxConcurrentFiles || 4;
+    let activeRequests = 0;
+    
+    this.concurrencyLimiter = async (fn: () => Promise<any>) => {
+      while (activeRequests >= maxConcurrent) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      activeRequests++;
+      try {
+        return await fn();
+      } finally {
+        activeRequests--;
+      }
+    };
 
     this.aiClient = new AIClient(config, cacheManager);
     this.jsdocManipulator = new JSDocManipulator(config);

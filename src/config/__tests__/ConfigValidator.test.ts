@@ -11,46 +11,75 @@ describe('ConfigValidator', () => {
         {
           id: 'gpt-4',
           provider: 'openai',
+          model: 'gpt-4o',
           type: 'generation',
-          apiKey: 'test-key'
+          apiKeyEnvVar: 'OPENAI_API_KEY'
+        },
+        {
+          id: 'text-embedding-ada-002',
+          provider: 'openai',
+          model: 'text-embedding-ada-002',
+          type: 'embedding',
+          apiKeyEnvVar: 'OPENAI_API_KEY'
         }
       ],
       aiClientConfig: {
         defaultGenerationModelId: 'gpt-4',
         defaultEmbeddingModelId: 'text-embedding-ada-002',
         maxConcurrentRequests: 5,
-        requestTimeout: 30000,
-        maxRetries: 3
-      },
-      jsdocConfig: {
-        overwriteExisting: false,
-        mergeExisting: true,
-        includePrivate: false,
-        includeInternal: false
-      },
-      outputConfig: {
-        outputDir: 'docs',
-        logLevel: 'info'
+        requestDelayMs: 100,
+        maxRetries: 3,
+        retryDelayMs: 1000,
+        maxTokensPerBatch: 10000
       },
       embeddingConfig: {
         enabled: true,
-        dimensions: 1536,
-        similarityThreshold: 0.8
+        modelId: 'text-embedding-ada-002',
+        minRelationshipScore: 0.7,
+        maxRelatedSymbols: 10,
+        embeddingBatchSize: 100
       },
-      cacheConfig: {
-        enabled: true,
-        ttl: 3600000
-      }
+      jsdocConfig: {
+        prioritizeExports: true,
+        includePrivate: false,
+        includeNodeKinds: ['function', 'class', 'interface'],
+        excludeNodeKinds: [],
+        maxSnippetLength: 500,
+        generateExamples: true,
+        overwriteExisting: false,
+        mergeExisting: true,
+        minJsdocLength: 50,
+        includeSymbolReferences: true,
+        includeRelatedSymbols: true
+      },
+      outputConfig: {
+        reportFileName: 'monodoc-report.json',
+        reportDir: 'docs',
+        logLevel: 'info'
+      },
+      includePatterns: ['**/*.ts'],
+      ignorePatterns: ['node_modules/**'],
+      targetPaths: [],
+      dryRun: false,
+      forceOverwrite: false,
+      noMergeExisting: false,
+      disableEmbeddings: false
     };
   });
 
   describe('validate', () => {
     it('should validate a correct configuration', () => {
+      // Set environment variable for the test
+      process.env.OPENAI_API_KEY = 'test-key';
+      
       const result = ConfigValidator.validate(validConfig);
       
       expect(result.error).toBeUndefined();
       expect(result.value).toBeDefined();
       expect(result.warnings).toEqual([]);
+      
+      // Clean up
+      delete process.env.OPENAI_API_KEY;
     });
 
     it('should fail validation when workspaceDirs is missing', () => {
@@ -59,7 +88,7 @@ describe('ConfigValidator', () => {
       const result = ConfigValidator.validate(validConfig);
       
       expect(result.error).toContain('workspaceDirs');
-      expect(result.error).toContain('required');
+      expect(result.error).toContain('non-empty array');
     });
 
     it('should fail validation when workspaceDirs is empty', () => {
@@ -77,7 +106,7 @@ describe('ConfigValidator', () => {
       const result = ConfigValidator.validate(validConfig);
       
       expect(result.error).toContain('aiModels');
-      expect(result.error).toContain('required');
+      expect(result.error).toContain('non-empty array');
     });
 
     it('should fail validation when aiModels is empty', () => {
@@ -113,7 +142,7 @@ describe('ConfigValidator', () => {
       const result = ConfigValidator.validate(validConfig);
       
       expect(result.error).toContain('maxConcurrentRequests');
-      expect(result.error).toContain('positive');
+      expect(result.error).toContain('greater than 0');
     });
 
     it('should fail validation when maxConcurrentRequests is negative', () => {
@@ -122,15 +151,26 @@ describe('ConfigValidator', () => {
       const result = ConfigValidator.validate(validConfig);
       
       expect(result.error).toContain('maxConcurrentRequests');
-      expect(result.error).toContain('positive');
+      expect(result.error).toContain('greater than 0');
     });
 
     it('should validate AI model configurations', () => {
+      process.env.OPENAI_API_KEY = 'test-key';
+      
       validConfig.aiModels = [
         {
           id: 'gpt-4',
           provider: 'openai',
-          type: 'generation'
+          model: 'gpt-4o',
+          type: 'generation',
+          apiKeyEnvVar: 'OPENAI_API_KEY'
+        },
+        {
+          id: 'text-embedding-ada-002',
+          provider: 'openai',
+          model: 'text-embedding-ada-002',
+          type: 'embedding',
+          apiKeyEnvVar: 'OPENAI_API_KEY'
         }
       ];
       
@@ -138,6 +178,9 @@ describe('ConfigValidator', () => {
       
       expect(result.error).toBeUndefined();
       expect(result.value).toBeDefined();
+      
+      // Clean up
+      delete process.env.OPENAI_API_KEY;
     });
 
     it('should handle multiple validation errors', () => {
@@ -154,20 +197,67 @@ describe('ConfigValidator', () => {
 
     it('should generate warnings for optional configurations', () => {
       // Test with minimal valid config that might generate warnings
+      process.env.OPENAI_API_KEY = 'test-key';
+      
       const minimalConfig = {
         workspaceDirs: ['src'],
         aiModels: [
           {
             id: 'gpt-4',
             provider: 'openai',
-            type: 'generation'
+            model: 'gpt-4o',
+            type: 'generation',
+            apiKeyEnvVar: 'OPENAI_API_KEY'
+          },
+          {
+            id: 'text-embedding-ada-002',
+            provider: 'openai',
+            model: 'text-embedding-ada-002',
+            type: 'embedding',
+            apiKeyEnvVar: 'OPENAI_API_KEY'
           }
         ],
         aiClientConfig: {
           defaultGenerationModelId: 'gpt-4',
           defaultEmbeddingModelId: 'text-embedding-ada-002',
-          maxConcurrentRequests: 1
-        }
+          maxConcurrentRequests: 1,
+          requestDelayMs: 100,
+          maxRetries: 3,
+          retryDelayMs: 1000,
+          maxTokensPerBatch: 10000
+        },
+        embeddingConfig: {
+          enabled: true,
+          modelId: 'text-embedding-ada-002',
+          minRelationshipScore: 0.7,
+          maxRelatedSymbols: 10,
+          embeddingBatchSize: 100
+        },
+        jsdocConfig: {
+          prioritizeExports: true,
+          includePrivate: false,
+          includeNodeKinds: ['function'],
+          excludeNodeKinds: [],
+          maxSnippetLength: 500,
+          generateExamples: true,
+          overwriteExisting: false,
+          mergeExisting: true,
+          minJsdocLength: 50,
+          includeSymbolReferences: true,
+          includeRelatedSymbols: true
+        },
+        outputConfig: {
+          reportFileName: 'report.json',
+          reportDir: 'docs',
+          logLevel: 'info'
+        },
+        includePatterns: ['**/*.ts'],
+        ignorePatterns: ['node_modules/**'],
+        targetPaths: [],
+        dryRun: false,
+        forceOverwrite: false,
+        noMergeExisting: false,
+        disableEmbeddings: false
       };
       
       const result = ConfigValidator.validate(minimalConfig);
@@ -175,6 +265,9 @@ describe('ConfigValidator', () => {
       expect(result.error).toBeUndefined();
       expect(result.warnings).toBeDefined();
       expect(Array.isArray(result.warnings)).toBe(true);
+      
+      // Clean up
+      delete process.env.OPENAI_API_KEY;
     });
 
     it('should handle invalid data types gracefully', () => {
